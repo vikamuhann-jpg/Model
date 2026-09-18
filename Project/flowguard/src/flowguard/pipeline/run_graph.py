@@ -10,6 +10,7 @@ That identity is the entire basis on which E1 and E2 can be compared.
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import time
 from pathlib import Path
@@ -89,8 +90,17 @@ def run(
 
     # Drop all-constant columns: GFP emits a fixed feature block regardless of
     # which patterns actually occur, so many are structurally zero here.
-    varying = gfp_features.loc[:, gfp_features.std(numeric_only=True) > 0]
-    print(f"  {varying.shape[1]} of {gfp_features.shape[1]} features vary")
+    #
+    # Memory matters from here on. The full block is 5M x 215 float32 = 4.4 GB,
+    # and the train/val/test concats copy slices of it again. Selecting the
+    # varying columns by name and releasing the original keeps the peak near one
+    # copy instead of three.
+    keep = [c for c in gfp_features.columns if gfp_features[c].std() > 0]
+    n_total = gfp_features.shape[1]
+    varying = gfp_features[keep].copy()
+    del gfp_features
+    gc.collect()
+    print(f"  {varying.shape[1]} of {n_total} features vary", flush=True)
 
     tx_extractor = TransactionFeatures()
 
@@ -112,7 +122,9 @@ def run(
         return pd.concat([tabular, varying.loc[part.index]], axis=1)
 
     X_train, X_val, X_test = build(train_df), build(val_df), build(test_df)
-    print(f"combined feature count: {X_train.shape[1]}")
+    del varying
+    gc.collect()
+    print(f"combined feature count: {X_train.shape[1]}", flush=True)
 
     # ------------------------------------------------------------------ fit
     _header("Training")

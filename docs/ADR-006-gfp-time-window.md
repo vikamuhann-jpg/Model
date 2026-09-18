@@ -1,6 +1,6 @@
 # ADR-006 — GFP `time_window` must bound the graph
 
-**Status:** Provisional — hypothesis under test
+**Status:** Accepted — hypothesis confirmed, with one correction
 **Date:** 2026-09-18
 **Decision:** Set GFP's `time_window` to **2 days**, not the 10-day corpus span. A window
 equal to the corpus disables eviction and makes extraction fail to terminate in useful
@@ -47,27 +47,39 @@ Two things follow directly:
 2. **The 10-day window fails gate P8** (>1,000 tx/s extraction throughput), and was
    already failing it by 34.5% of the way through.
 
-## Verification in progress
+## Verification — confirmed, and partially
 
-The causal claim above is **not yet confirmed**. A 2-day run tracks the 10-day run
-almost exactly through the first fifth of the corpus:
+Matched checkpoints, 10-day versus 2-day window:
 
-| Progress | 10-day | 2-day |
-|---:|---:|---:|
-| 4.9% | 13,596 tx/s | 12,539 tx/s |
-| 9.8% | 12,735 tx/s | 12,484 tx/s |
-| 14.8% | 8,395 tx/s | 8,118 tx/s |
-| 19.7% | 5,383 tx/s | 5,155 tx/s |
+| Progress | 10-day | 2-day | Speed-up |
+|---:|---:|---:|---:|
+| 4.9% | 13,596 | 12,539 | 0.92× |
+| 9.8% | 12,735 | 12,484 | 0.98× |
+| 14.8% | 8,395 | 8,118 | 0.97× |
+| 19.7% | 5,383 | 5,155 | 0.96× |
+| 24.6% | 3,440 | 3,448 | 1.00× |
+| 29.5% | 1,664 | **2,281** | **1.37×** |
+| 34.5% | 1,161 | **1,721** | **1.48×** |
+| 39.4% | 870 | **1,334** | **1.53×** |
+| 44.3% | 822 | **1,150** | **1.40×** |
 
-That is consistent with the hypothesis rather than against it: 19.7% of 5,077,237 rows
-is ~1M transactions, and day 1 alone holds 1,114,921. Neither configuration has reached
-its eviction horizon yet, so both are still accumulating. **The windows cannot diverge
-until roughly 37%** (the end of day 2).
+The two curves are indistinguishable through the first quarter and then separate
+decisively. That is the predicted shape: day 1 alone holds 1,114,921 of 5,077,237 rows,
+so neither configuration reaches its eviction horizon early on, and **nothing can diverge
+until the window starts evicting**. Once it does, the bounded window runs 37–53% faster
+and stays there.
 
-If the 2-day curve is still tracking the 10-day curve past 44%, the window is not the
-cause and the real driver is something that grows regardless of edge eviction — most
-likely the vertex map, which retains all 515,088 accounts however old their edges are.
-This ADR is to be corrected rather than defended if that is what the data shows.
+**The correction: eviction helps, but it is not the whole story.** The 2-day window still
+degrades — from 12,539 to 1,150 tx/s, an 11× fall of its own. Bounding the edge set does
+not bound everything that grows. The most likely remaining driver is the vertex map:
+GFP retains all 515,078 accounts regardless of how old their edges are, so lookup and
+cycle-search cost keep climbing even as edges are dropped.
+
+So the original claim — "a window equal to the corpus disables eviction and makes
+extraction fail to terminate in useful time" — is correct as far as it goes, but
+incomplete. A bounded window is necessary and not sufficient; the residual degradation is
+a property of the implementation's vertex handling and would need a different remedy
+(sharding, or periodic reconstruction) to address.
 
 ## Decision
 

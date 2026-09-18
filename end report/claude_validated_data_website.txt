@@ -1,0 +1,1 @@
+1. https://claude.ai/artifact/Y9qSGamEhR5nbeyacw6yzy -> contains the report for the model training and visual respresentation of the data
