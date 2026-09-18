@@ -1,0 +1,19 @@
+# Data and wheelhouse live outside the repo (C:\Users\vikam\flowguard_data).
+# Project/flowguard/data is a junction to it.
+Project/flowguard/data/
+Project/flowguard/.venv/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.parquet
+Project/flowguard/models/*
+!Project/flowguard/models/.gitkeep
+Project/flowguard/experiments/*/
+Project/flowguard/reports/**/*
+!Project/flowguard/reports/**/.gitkeep
+
+# Saved web pages: keep the HTML, drop the asset dumps (thousands of files)
+websites/*_files/

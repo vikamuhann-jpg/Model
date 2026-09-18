@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flowguard"
+version = "0.1.0"
+description = "Graph-based, temporal and resource-efficient AML detection (Track R)"
+readme = "README.md"
+# Python 3.12 on LINUX is a hard requirement, not a preference.
+# The Graph Feature Preprocessor's native backend (gf_* symbols) ships only in
+# snapml's manylinux wheels. The Windows wheel contains the Python wrapper but
+# zero gf_* symbols, so GraphFeaturePreprocessor() raises AttributeError there.
+# Verified empirically -- see docs/ADR-001-gfp-platform.md.
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+  "snapml==1.17.2",
+  "xgboost>=3.0",
+  "scikit-learn>=1.9",
+  "pandas>=2.1",
+  "pyarrow>=14",
+  "networkx>=3.2",
+  "shap>=0.49",
+  "numpy>=2.0",
+  "pyyaml>=6",
+  "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.3"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "leakage: merge-blocking leakage checks (plan v3 s27)",
+  "environment: asserts a platform capability the pipeline depends on",
+  "slow: excluded from the fast loop",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

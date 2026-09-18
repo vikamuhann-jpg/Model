@@ -1,0 +1,21 @@
+# Data is a junction to C:/Users/vikam/flowguard_data (outside OneDrive).
+# Never commit data, and never let OneDrive sync it.
+data/
+*.parquet
+*.csv
+!tests/**/*.csv
+
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+models/*
+!models/.gitkeep
+experiments/*/
+!experiments/.gitkeep
+reports/**/*
+!reports/**/.gitkeep
