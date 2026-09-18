@@ -12,6 +12,7 @@ a superseded scope.
 | [`FlowGuard_Unified_Plan_v2.md`](FlowGuard_Unified_Plan_v2.md) | Track R + **Track P** (product). §§29–33 are the only source for the product layer | **Governing** for Track P only |
 | [`FlowGuard_AI_Master_Project_Blueprint.md`](FlowGuard_AI_Master_Project_Blueprint.md) | PS9 problem framing, functional requirements, regulatory context | Reference |
 | [`FlowGuard_AI_PS9_Quick_Brief.md`](FlowGuard_AI_PS9_Quick_Brief.md) | Pitch, demo script, judging narrative | Reference |
+| [`Execution_Plan_TrackR.md`](Execution_Plan_TrackR.md) | **Execution plan** — milestones M1–M6, gates, pre-registered targets | **Active working plan** |
 | [`NEED_TO_RESEARCH.txt`](NEED_TO_RESEARCH.txt) | Research Track B brief for a *second* researcher | Unassigned — see open items |
 | [`archive/start.txt`](archive/start.txt) | v1 of everything | **Superseded** — do not build from it |
 
