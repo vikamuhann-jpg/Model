@@ -13,26 +13,55 @@ number has to be fixed in advance, it is fixed here and marked for sign-off.
 
 ## 1. Status snapshot
 
+*Updated 2026-09-18 after the M1-M4 build.*
+
 | v3 Phase | Component | State |
 |---|---|---|
-| Phase 0 | Environment, GFP availability | **Done** — WSL2 / CPython 3.12 / snapml 1.17.2, gated by 5 tests ([ADR-001](ADR-001-gfp-platform.md)) |
-| Phase 5 | Canonical schema, label isolation | **Done** — `data/schema.py` |
-| Phase 5 | Chronological splitter, 3 boundary policies | **Done** — `splits/temporal.py` |
-| Phase 5 | Leakage suite (3 of 7 v3 §11 tests) | **Done** — the 4 remaining need the components they test |
-| — | Feature extractor base, label-blind by construction | **Done** — `features/base.py` |
-| Phase 1–3 | Ingestion, profiling, validation | **Not started** — blocked on the download |
-| Phase 4 | Target definition | Not started |
-| Phase 6 | Streaming transaction graph | Not started |
-| Phase 7 | Feature extraction | Not started |
-| Phase 8–9 | Baselines, training protocol | Not started |
-| Phase 10–14 | Evaluation, error analysis, interpretation, profiling | Not started |
-| Phase 15–19 | Ablations, results, registry, final selection | Not started |
+| Phase 0 | Environment, GFP availability | **Done** ([ADR-001](ADR-001-gfp-platform.md)) |
+| Phase 1 | Ingestion, checksums, `dataset_summary.json` | **Done** |
+| Phase 2 | Profiling (daily profile, typology counts) | **Done** |
+| Phase 3 | Validation and quality policy | **Done** |
+| Phase 5 | Canonical schema, label isolation | **Done** |
+| Phase 5 | Chronological splitter, 3 boundary policies | **Done** ([ADR-002](ADR-002-boundary-policy.md)) |
+| Phase 5 | Leakage suite | **Done** — incl. `test_future_edge_invariance` |
+| Phase 6 | Streaming transaction graph | **Done** — via GFP's internal CTDG |
+| Phase 7 | Transaction features, GFP features | **Done** ([ADR-004](ADR-004-gfp-batch-leakage.md)) |
+| Phase 8 | E0 rules, E1 tabular, sanity baselines | **Done** |
+| Phase 9 | Training protocol, calibration | **Done** — `scale_pos_weight`, isotonic on validation |
+| Phase 10 | Evaluation framework, alert budgets | **Done** |
+| Phase 17 | Experiment registry | **Done** |
+| Phase 7-8 | E2 graph baseline | **In progress** |
+| Phase 11 | Error analysis | Not started — **gates the feature work** |
+| Phase 12 | Research feature families (E3-E7) | Not started |
+| Phase 13-16 | Interpretation, profiling, ablation, results | Not started |
 | Phase 20 | Validation gates | Not started |
 
-**41 tests passing.** Everything below assumes that stays true; a red suite blocks the
-next milestone rather than being worked around.
+### Measured results so far (HI-Small, 5,077,237 transactions)
 
----
+| Experiment | PR-AUC | Lift | Recall @1% | Precision @1% |
+|---|---:|---:|---:|---:|
+| E0 — rules | 0.0011 | 1.0x | 1.0% | 0.12% |
+| E1 — transaction-only XGBoost | **0.0424** | **35.7x** | **41.1%** | 4.89% |
+| E2 — + GFP graph features | *running* | | | |
+
+Sanity baselines all pass: random 0.0011, constant 0.0011, shuffled-label 0.0011
+against a test base rate of 0.00119. Gate **P2 (E1 beats E0) passes**: +0.0413.
+
+### Four findings that changed the plan
+
+1. **GFP is Linux-only** — the Windows wheel ships the wrapper with no native
+   backend ([ADR-001](ADR-001-gfp-platform.md)).
+2. **Purge is infeasible here** — pattern durations reach 8d10h against a 10-day
+   corpus, so the plan's preferred boundary policy erases the dataset
+   ([ADR-002](ADR-002-boundary-policy.md)).
+3. **The corpus has a laundering-saturated tail** — the last 1,108 transactions are
+   ~59% positive, a 290x enrichment that made `day_of_week` alone outscore the whole
+   model ([ADR-003](ADR-003-sparse-tail-trim.md)).
+4. **GFP batching leaks the future** — an edge transformed alongside later edges in
+   the same batch counts them, so extraction must run one transaction at a time
+   ([ADR-004](ADR-004-gfp-batch-leakage.md)).
+
+Findings 3 and 4 would each have produced a large, clean, entirely artificial result.
 
 ## 2. Dataset roles
 

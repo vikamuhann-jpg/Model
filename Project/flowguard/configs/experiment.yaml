@@ -1,0 +1,104 @@
+# Frozen experimental rules (plan v3 Phase 0, section 4).
+#
+# Every experiment E0..E7 must use these. Changing any of them invalidates
+# prior results, which then need a new experiment id rather than a quiet re-run.
+
+dataset:
+  primary: HI-Small
+  raw_dir: /mnt/c/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Dataset_/IBM_Dataset
+  processed_dir: /mnt/c/Users/vikam/flowguard_data/processed
+  # Derived at ingestion, not copied from the planning documents.
+  rows: 5077237
+  accounts: 515088
+  positives: 4522
+  base_rate: 0.000891
+  span: "2022-09-01T00:00:00Z .. 2022-09-10T23:59:00Z"
+  roles:
+    HI-Small: primary            # all model selection and headline numbers
+    HI-Medium: scale_test_only   # throughput and memory (P8, P9) -- never selection
+    LI-Small: optional_contrast
+    HI-Large: excluded           # will not fit the 12 GB WSL ceiling
+
+loading:
+  # Both legs are retained; this picks which becomes canonical `amount`.
+  amount_side: paid
+  # Account identity is the (bank, account) composite. The bare account number
+  # collides for 8 of 518,581 accounts, which would merge distinct graph nodes.
+  account_id: "{bank_id_int}:{account_number}"
+  # No transaction id exists in the source; position becomes identity.
+  transaction_id: "TX{row_position:010d}"
+
+windowing:
+  # Drop the generator's laundering-saturated tail -- see docs/ADR-003.
+  trim_sparse_tail: true
+  min_density: 0.05
+
+split:
+  train_frac: 0.70
+  val_frac: 0.15
+  # HARD_CUT, not the plan's preferred PURGE -- see docs/ADR-002.
+  boundary_policy: hard_cut
+  seed: 42
+  boundaries:
+    train_end: "2022-09-07T14:55:00Z"
+    val_end: "2022-09-09T03:16:00Z"
+  patterns_spanning_boundary: 140
+
+target:
+  label: is_laundering            # never `label`, `target`, `y` or `fraud`
+  unit: per_transaction
+  evaluation_only_columns: [is_laundering, scenario_id, pattern_type]
+
+training:
+  imbalance: scale_pos_weight     # SMOTE prohibited -- v3 section 15
+  calibration: isotonic           # fitted on validation only
+  # 100, not 30: GPU hist stops ~80 iterations early on this imbalance and
+  # silently undertrains, costing 22% PR-AUC. See docs/ADR-005.
+  early_stopping_rounds: 100
+  n_estimators: 300
+  seed: 42
+  device: auto                    # cuda when usable; recorded as device_used
+  # Measured across 5 seeds (docs/ADR-005). This sets the bar every feature
+  # family must clear to count as a real improvement rather than a lucky seed.
+  seed_sd_pr_auc: 0.0017
+  two_sigma_pr_auc: 0.0034
+
+evaluation:
+  headline_metric: pr_auc
+  alert_budgets: [0.001, 0.005, 0.01, 0.05]
+  threshold_source: validation    # never test
+
+features:
+  gfp:
+    # Keys are HYPHENATED; underscored spellings raise KeyError.
+    batch_size: 1                 # >1 leaks future edges -- see docs/ADR-004
+    exclude_self_transfers: true
+    time_window_days: 10
+    fan_tw_days: 1
+    degree_tw_days: 1
+    scatter_gather_tw_days: 2
+    temp_cycle_tw_days: 3
+    lc_cycle_tw_days: 3
+    lc_cycle_len: 10
+    vertex_stats_tw_days: 2
+
+# Pre-registered performance gates (v3 section 26.2). Fixed BEFORE E7 runs;
+# a gate chosen after seeing results is not a gate. AWAITING SIGN-OFF.
+gates:
+  P1_e2_beats_e1: "delta PR-AUC > 2 sigma"
+  P2_e1_beats_e0: "delta PR-AUC > 2 sigma"
+  P3_e7_beats_e2: "delta PR-AUC > 2 sigma, or documented inconclusive"
+  P4_recall_at_1pct_budget: 0.60
+  P5_per_typology_recall: "no typology at zero recall"
+  P6_seed_stability_sd: 0.02
+  P7_temporal_stability: "no monotone decline across test sub-windows"
+  P8_extraction_throughput_tx_per_s: 1000
+  P9_peak_rss_gb: 10
+
+environment:
+  platform: "WSL2 Ubuntu 24.04"    # GFP is Linux-only -- see docs/ADR-001
+  python: "3.12.3"
+  snapml: "1.17.2"
+  xgboost: "3.4.1"
+  host_cpu: "Intel i7-13620H, 10 cores / 16 threads"
+  wsl_memory_gb: 12

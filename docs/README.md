@@ -13,6 +13,8 @@ a superseded scope.
 | [`FlowGuard_AI_Master_Project_Blueprint.md`](FlowGuard_AI_Master_Project_Blueprint.md) | PS9 problem framing, functional requirements, regulatory context | Reference |
 | [`FlowGuard_AI_PS9_Quick_Brief.md`](FlowGuard_AI_PS9_Quick_Brief.md) | Pitch, demo script, judging narrative | Reference |
 | [`Execution_Plan_TrackR.md`](Execution_Plan_TrackR.md) | **Execution plan** — milestones M1–M6, gates, pre-registered targets | **Active working plan** |
+| [`OPEN_ITEMS.md`](OPEN_ITEMS.md) | **Open items** — every outstanding problem, proposed fix, build/compute timing | **Review this first** |
+| [`ERROR_ANALYSIS_A2.md`](ERROR_ANALYSIS_A2.md) | Where the artifact-free baseline fails — **gates all feature work** (v3 §17.2) | Active finding |
 | [`NEED_TO_RESEARCH.txt`](NEED_TO_RESEARCH.txt) | Research Track B brief for a *second* researcher | Unassigned — see open items |
 | [`archive/start.txt`](archive/start.txt) | v1 of everything | **Superseded** — do not build from it |
 
@@ -37,6 +39,12 @@ v3 §4 = Phase 0). Cite phases as `v3 Phase 6` or `v2 §16`, never a bare "Phase
 | ADR | Subject |
 |---|---|
 | [ADR-001](ADR-001-gfp-platform.md) | Execution platform for the GFP baseline — **Linux/WSL only** |
+| [ADR-002](ADR-002-boundary-policy.md) | Boundary policy is `HARD_CUT`; purge is infeasible on this corpus |
+| [ADR-003](ADR-003-sparse-tail-trim.md) | Trim the generator's sparse tail; drop absolute-calendar features |
+| [ADR-004](ADR-004-gfp-batch-leakage.md) | GFP extraction must use `batch_size=1` |
+| [ADR-005](ADR-005-gpu-training.md) | GPU training + `early_stopping_rounds=100`; results are device-dependent |
+| [ADR-006](ADR-006-gfp-time-window.md) | GFP `time_window` must bound the graph (provisional) |
+| [ADR-007](ADR-007-payment-type-artifact.md) | `payment_type` is a generator artifact — ablate every headline result |
 
 ## Conventions that are enforced, not suggested
 

@@ -1,6 +1,7 @@
-# Data is a junction to C:/Users/vikam/flowguard_data (outside OneDrive).
-# Never commit data, and never let OneDrive sync it.
-data/
+# The data junction -> C:/Users/vikam/flowguard_data (outside OneDrive).
+# LEADING SLASH IS REQUIRED: a bare "data/" matches any directory named data at
+# any depth, which silently excluded src/flowguard/data/ -- four core modules.
+/data/
 *.parquet
 *.csv
 !tests/**/*.csv
@@ -19,3 +20,5 @@ experiments/*/
 !experiments/.gitkeep
 reports/**/*
 !reports/**/.gitkeep
+
+# Raw corpora live in ../../Dataset_/IBM_Dataset (~39 GB). Never tracked.

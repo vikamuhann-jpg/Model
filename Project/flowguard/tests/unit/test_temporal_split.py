@@ -101,7 +101,8 @@ def test_metadata_is_registry_ready(transactions):
     split = chronological_split(transactions, SplitSpec())
     meta = split.to_metadata()
 
-    assert meta["spec"]["boundary_policy"] == "purge"
+    # Default is HARD_CUT, chosen on measured grounds -- see docs/ADR-002.
+    assert meta["spec"]["boundary_policy"] == "hard_cut"
     assert meta["spec"]["seed"] == 42
     assert set(meta["sizes"]) == {"train", "val", "test"}
     pd.Timestamp(meta["boundaries"]["train_end"])  # parses

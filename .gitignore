@@ -17,3 +17,9 @@ Project/flowguard/reports/**/*
 
 # Saved web pages: keep the HTML, drop the asset dumps (thousands of files)
 websites/*_files/
+
+# Raw corpora: ~39 GB. Never tracked. Also excluded from OneDrive sync --
+# see docs/README.md. The canonical raw layer is Dataset_/IBM_Dataset/.
+Dataset_/IBM_Dataset/
+*.csv
+!tests/**/*.csv

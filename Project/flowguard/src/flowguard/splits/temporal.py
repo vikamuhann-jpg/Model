@@ -59,7 +59,13 @@ class SplitSpec:
 
     train_frac: float = DEFAULT_TRAIN_FRAC
     val_frac: float = DEFAULT_VAL_FRAC
-    boundary_policy: BoundaryPolicy = BoundaryPolicy.PURGE
+    #: HARD_CUT rather than plan v3's preferred PURGE. Measured on HI-Small:
+    #: pattern durations reach 8d10h against a ~10-day effective corpus, so an
+    #: auto-sized purge buffer drops 100% of rows, and a 12h buffer still drops
+    #: 21% without resolving spanning (median pattern is 3 days). PATTERN_START
+    #: leaks 238 test-period transactions into training -- material when only
+    #: 5,177 positives exist. See docs/ADR-002-boundary-policy.md.
+    boundary_policy: BoundaryPolicy = BoundaryPolicy.HARD_CUT
     #: Buffer half-width for PURGE. ``None`` derives it from observed pattern spans.
     purge_buffer: pd.Timedelta | None = None
     seed: int = 42

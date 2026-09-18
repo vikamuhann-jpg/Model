@@ -50,6 +50,9 @@ def make_transactions(
             S.IS_LAUNDERING: 0,
             S.SCENARIO_ID: pd.NA,
             S.PATTERN_TYPE: pd.NA,
+            S.AMOUNT_RECEIVED: np.round(rng.lognormal(7.0, 1.1, n), 2),
+            S.CURRENCY_RECEIVED: "USD",
+            S.IS_SELF_TRANSFER: 0,
         }
     )
     # No self-transfers.
@@ -71,9 +74,12 @@ def make_transactions(
         df.loc[df.index[rows], S.SCENARIO_ID] = f"SC_{p:03d}"
         df.loc[df.index[rows], S.PATTERN_TYPE] = typologies[p % len(typologies)]
 
+    df[S.IS_SELF_TRANSFER] = (
+        df[S.SOURCE_ACCOUNT] == df[S.DESTINATION_ACCOUNT]
+    ).astype("int8")
     df = df.astype({S.IS_LAUNDERING: "int8"})
     for col, dtype in S.CANONICAL_DTYPES.items():
-        if dtype == "string":
+        if dtype == "string" and col in df.columns:
             df[col] = df[col].astype("string")
     return df
 
