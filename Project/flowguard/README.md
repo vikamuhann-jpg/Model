@@ -57,5 +57,12 @@ research plan rests on can actually run here.
 
 ## Status
 
-Phase 0 (environment) complete and gated. Phase 2 (dataset acquisition) is blocked
-on the dataset decision recorded in [`docs/README.md`](../../docs/README.md).
+| Phase (plan v3) | State |
+|---|---|
+| Phase 0 — environment | Done, gated by `tests/integration/` |
+| Phase 5 — canonical schema + leakage-safe split | Done, 41 tests passing |
+| Phase 1 — ingestion | **Blocked** on Kaggle credentials (see [`docs/README.md`](../../docs/README.md)) |
+
+Phase 5 was built before Phase 1 deliberately: plan v3 §11 requires the splitter and
+its leakage tests to exist before any model code, and none of that logic depends on
+which corpus is chosen.

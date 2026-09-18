@@ -45,24 +45,38 @@ v3 §4 = Phase 0). Cite phases as `v3 Phase 6` or `v2 §16`, never a bare "Phase
   they appear in a report or slide. Several dataset statistics in v2 §6.1 and
   several references in v3 §35 carry this flag.
 
-## Open items blocking progress
+## Decisions taken
 
-1. **Which dataset?** — *blocks v3 Phase 1.* The plans waffle between IBM **AMLSim**
-   (a generator) and the **AML HI/LI** corpora whose statistics appear in v2 §6.1.
-   These are different artifacts with different schemas; `archive/start.txt` §4
-   warns explicitly against assuming they are interchangeable. Nothing can be
-   ingested until this is fixed and its checksums recorded.
-2. **Track R only, or R + P?** — v3 terminates at a validated model package with no
-   UI; the PS9 demo needs the dashboard, fund tracing and evidence package from
-   v2 §§29–33. This changes the timeline materially.
-3. **Is the Track B researcher real?** `NEED_TO_RESEARCH.txt` is addressed to a second
-   person. If that person does not exist, it is aspirational and must leave the
-   critical path.
-4. **WSL memory ceiling.** The 16 GB host gives WSL 7.6 GiB by default. AML HI Small
-   is ~5 M edges; raise it via `%USERPROFILE%\.wslconfig` (`memory=12GB`) before
-   ingestion. Requires a `wsl --shutdown`.
+| Decision | Choice | Date |
+|---|---|---|
+| Execution platform | WSL2 Ubuntu 24.04 / CPython 3.12 (see [ADR-001](ADR-001-gfp-platform.md)) | 2026-09-18 |
+| Primary dataset | **IBM AML HI-Small** (the Kaggle "IBM Transactions for Anti-Money Laundering" corpus) | 2026-09-18 |
+| Scope | **Track R only** -- terminus is the validated model package of v3 §26.4. No API, dashboard or evidence layer. | 2026-09-18 |
+| Track B (`NEED_TO_RESEARCH.txt`) | Off the critical path. Not staffed. | 2026-09-18 |
+
+Because scope is Track R only, **`FlowGuard_ML_Pipeline_Plan_v3.md` is the governing
+document for all work.** v2 §§29–33 are retained for reference but are not being built.
+
+## Open items
+
+1. **Kaggle credentials** — *blocks v3 Phase 1.* The HI-Small corpus needs a
+   `kaggle.json` API token at `%USERPROFILE%\.kaggle\kaggle.json` (Kaggle → Account →
+   Create New API Token), or a manual browser download. Nothing can be ingested until
+   the files are local and checksummed.
+2. **Verify HI-Small's real schema against the contract.** v2 §6.1's statistics are
+   flagged unverified in the plan itself and must be re-derived from the downloaded
+   files into `dataset_summary.json`. The raw columns (`Timestamp`, `From Bank`,
+   `Account`, `Amount Received`, `Receiving Currency`, `Payment Format`,
+   `Is Laundering`) need mapping to the canonical schema, and account identity there is
+   a *(bank, account)* pair rather than a single column — the loader must resolve that.
+3. **Boundary policy for the real corpus.** The splitter defaults to `PURGE` with a
+   buffer derived from the longest observed pattern. On a 10-day corpus that may purge
+   too much; decide against the real pattern-duration distribution and record it.
+4. **WSL memory ceiling.** The 16 GB host gives WSL 7.6 GiB by default. HI-Small is
+   ~5 M transactions; raise it via `%USERPROFILE%\.wslconfig` (`memory=12GB`) before
+   ingestion. Requires `wsl --shutdown`.
 5. **WSL has no outbound network.** `apt` and PyPI are both unreachable — the gateway
-   itself does not answer (campus network, `saveetha.in` search domain). Worked
-   around with an offline wheelhouse. The real fix is likely
-   `networkingMode=mirrored` in `.wslconfig`, but that is machine-wide and may
+   itself does not answer (campus network, `saveetha.in` search domain). Worked around
+   with an offline wheelhouse (`scripts/refresh_wheelhouse.ps1`). The real fix is
+   likely `networkingMode=mirrored` in `.wslconfig`, but that is machine-wide and may
    affect Docker Desktop, so it needs a deliberate decision.
