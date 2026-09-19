@@ -180,6 +180,18 @@ EXPECTED: dict[str, set[Capability]] = {
         Capability.SELF_TRANSFERS,
         Capability.ACCOUNT_REFERENCE,
     },
+    # Same generator as HI-Small, so the same capabilities -- including the ACH
+    # convention (ADR-007). Useful as a base-rate contrast, not as external
+    # validation.
+    "LI-Small": {
+        Capability.PAYMENT_TYPE,
+        Capability.CURRENCY,
+        Capability.CROSS_CURRENCY,
+        Capability.TYPOLOGY,
+        Capability.TRANSACTION_LABELS,
+        Capability.SELF_TRANSFERS,
+        Capability.ACCOUNT_REFERENCE,
+    },
     "ETH-Phishing": {
         Capability.ACCOUNT_LABELS,
         Capability.SELF_TRANSFERS,

@@ -47,6 +47,35 @@ generator explicitly injected as part of a laundering pattern:
 shows it holds for all eight — BIPARTITE, CYCLE, FAN-IN, FAN-OUT, GATHER-SCATTER,
 RANDOM, SCATTER-GATHER and STACK are essentially pure ACH.
 
+## The artifact is generator-wide, not corpus-specific
+
+Checked against the second corpus on disk. Restricting to transactions the generator
+explicitly injected as part of a laundering pattern:
+
+| Corpus | Pattern transactions | On ACH | Share |
+|---|---:|---:|---:|
+| HI-Small | 2,554 | 2,553 | **99.96%** |
+| LI-Small | 1,023 | 1,022 | **99.90%** |
+
+LI-Small is a different corpus — 6,924,049 transactions, 712,688 accounts, 117 injected
+patterns, and roughly half the illicit rate — and it carries **the same convention**.
+
+This matters for two separate reasons.
+
+**It strengthens the finding.** A single corpus leaves open the possibility of a quirk in
+one generation run. Two independent corpora with the same near-total concentration make
+it a property of AMLSim's pattern injection, not an accident.
+
+**It bounds what LI-Small can be used to test.** LI-Small is a useful *contrast* corpus —
+different base rate, different pattern density, a genuine check on whether results hold
+when positives are rarer. It is **not** a test of simulator-independence, because it
+shares the exact convention under suspicion. Any cross-corpus result on LI-Small must say
+so explicitly rather than being presented as external validation.
+
+Only a corpus from a different generator — or a real network — can answer whether the
+method has learned laundering or learned AMLSim. That is the argument for Tier C, and
+this table is why it cannot be satisfied with the data already on disk.
+
 ## What this is, and is not
 
 **It is not leakage.** `payment_type` is a legitimate attribute observable at scoring

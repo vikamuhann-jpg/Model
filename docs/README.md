@@ -13,6 +13,7 @@ a superseded scope.
 | [`FlowGuard_AI_Master_Project_Blueprint.md`](FlowGuard_AI_Master_Project_Blueprint.md) | PS9 problem framing, functional requirements, regulatory context | Reference |
 | [`FlowGuard_AI_PS9_Quick_Brief.md`](FlowGuard_AI_PS9_Quick_Brief.md) | Pitch, demo script, judging narrative | Reference |
 | [`Execution_Plan_TrackR.md`](Execution_Plan_TrackR.md) | **Execution plan** — milestones M1–M6, gates, pre-registered targets | **Active working plan** |
+| [`CORPUS_COMPARISON.md`](CORPUS_COMPARISON.md) | HI-Small vs LI-Small — what a second corpus from the same generator does and does not establish | Active finding |
 | [`STATUS.md`](STATUS.md) | **Current status** — what is done, what remains, time to completion, open issues | **Start here** |
 | [`COMPLETION_PLAN.md`](COMPLETION_PLAN.md) | **End-to-end plan to completion** — Tiers A/B/C, gates, ~11h schedule | **Active** |
 | [`OPEN_ITEMS.md`](OPEN_ITEMS.md) | **Open items** — every outstanding problem, proposed fix, build/compute timing | Reference |
