@@ -21,7 +21,11 @@ import pytest
 from flowguard.data import schema as S
 from flowguard.features.gfp import DAY, DEFAULT_GFP_PARAMS, GFPFeatures
 
-pytestmark = pytest.mark.leakage
+# `slow` as well as `leakage`: these four run full extractions at batch_size=1
+# purely to document a rejected optimisation (ADR-008). They belong in the
+# suite, but re-running them on every validation costs ~14 minutes and tells
+# the gate nothing new, so the C1 gate deselects them.
+pytestmark = [pytest.mark.leakage, pytest.mark.slow]
 
 BASE = pd.Timestamp("2026-01-01T00:00:00Z")
 

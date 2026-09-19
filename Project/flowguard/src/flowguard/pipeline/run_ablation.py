@@ -17,6 +17,7 @@ artifact rather than a feature (docs/ADR-007-payment-type-artifact.md).
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -26,6 +27,7 @@ import pandas as pd
 
 from flowguard.data import schema as S
 from flowguard.evaluation.metrics import evaluate
+from flowguard.features.adaptive import AdaptiveFeatures
 from flowguard.features.transaction import TransactionFeatures
 from flowguard.models.xgb import XGBModel
 from flowguard.registry.experiments import ExperimentRecord, Registry
@@ -43,6 +45,7 @@ class Arm:
     description: str
     include_payment_type: bool = True
     include_gfp: bool = False
+    include_adaptive: bool = False
     scores: list[float] = field(default_factory=list)
     recalls: list[float] = field(default_factory=list)
     n_features: int | None = None
@@ -66,6 +69,7 @@ class Arm:
             "description": self.description,
             "include_payment_type": self.include_payment_type,
             "include_gfp": self.include_gfp,
+            "include_adaptive": self.include_adaptive,
             "n_features": self.n_features,
             "pr_auc_runs": self.scores,
             "pr_auc_mean": self.mean,
@@ -91,9 +95,15 @@ def run(
 
     gfp = None
     if gfp_cache and gfp_cache.exists():
-        gfp = pd.read_parquet(gfp_cache)
-        gfp.index = df.index
-        gfp = gfp.loc[:, gfp.std(numeric_only=True) > 0]
+        if gfp_cache.is_dir():
+            from flowguard.features.gfp import read_varying_chunks
+
+            gfp = read_varying_chunks(gfp_cache, order=df.index)
+        else:
+            gfp = pd.read_parquet(gfp_cache)
+            gfp.index = df.index
+            gfp = gfp.loc[:, gfp.std(numeric_only=True) > 0]
+        gc.collect()
         print(f"GFP features available: {gfp.shape[1]}", flush=True)
 
     arms = [
@@ -105,6 +115,11 @@ def run(
             Arm("A3", "+ GFP graph features, payment_type included", True, True),
             Arm("A4", "+ GFP graph features, payment_type REMOVED", False, True),
         ]
+    arms.append(Arm("A5", "+ adaptive neighbourhood, no graph", False, False))
+    arms[-1].include_adaptive = True
+    if gfp is not None:
+        arms.append(Arm("A6", "+ GFP graph + adaptive neighbourhood", False, True))
+        arms[-1].include_adaptive = True
     arms.append(Arm("E_LEAK", "deliberate leak: random split, global fit", False, False, is_leaky=True))
 
     print(f"\n{len(arms)} arms x {len(seeds)} seeds "
@@ -129,11 +144,17 @@ def run(
             include_payment_type=arm.include_payment_type
         ).fit(S.feature_view(fit_df))
 
+        adaptive = None
+        if arm.include_adaptive:
+            adaptive = AdaptiveFeatures().fit(S.feature_view(fit_df))
+
         def build(part: pd.DataFrame) -> pd.DataFrame:
-            tabular = extractor.run(S.feature_view(part))
+            blocks = [extractor.run(S.feature_view(part))]
             if arm.include_gfp and gfp is not None:
-                return pd.concat([tabular, gfp.loc[part.index]], axis=1)
-            return tabular
+                blocks.append(gfp.loc[part.index])
+            if adaptive is not None:
+                blocks.append(adaptive.run(S.feature_view(part)))
+            return pd.concat(blocks, axis=1) if len(blocks) > 1 else blocks[0]
 
         X_train, X_val, X_test = build(arm_train_df), build(arm_val_df), build(arm_test_df)
         arm_y_train = arm_train_df[S.IS_LAUNDERING].to_numpy().astype(int)
@@ -155,6 +176,12 @@ def run(
               f"PR-AUC {arm.mean:.4f} +/- {arm.sd:.4f}  "
               f"R@1% {arm.mean_recall:.1%}", flush=True)
 
+        # Release before the next arm allocates. Seven arms each holding a
+        # train/val/test set on top of the GFP block exceeded the memory
+        # ceiling and killed the VM outright.
+        del X_train, X_val, X_test, extractor, adaptive
+        gc.collect()
+
     # Pooled seed sd sets the bar every comparison is judged against.
     pooled_sd = float(np.mean([a.sd for a in arms if a.sd > 0]))
     two_sigma = 2 * pooled_sd
@@ -167,6 +194,8 @@ def run(
         pairs += [
             ("A3", "A1", "graph features, artifact present"),
             ("A4", "A2", "graph features, artifact removed"),
+            ("A5", "A2", "adaptive neighbourhood alone"),
+            ("A6", "A4", "adaptive ON TOP of graph -- the Tier B question"),
         ]
     index = {a.name: a for a in arms}
     for better, worse, label in pairs:

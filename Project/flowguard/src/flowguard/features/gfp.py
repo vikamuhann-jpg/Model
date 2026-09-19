@@ -61,6 +61,55 @@ DEFAULT_GFP_PARAMS: dict[str, Any] = {
 }
 
 
+def varying_columns(parts: list[Path]) -> tuple[list[str], int]:
+    """Columns that are not constant across the whole corpus.
+
+    Accumulates per-column min/max one part at a time so peak memory is a
+    single part rather than the whole block.
+    """
+    lo: dict[str, float] = {}
+    hi: dict[str, float] = {}
+    for path in parts:
+        frame = pd.read_parquet(path)
+        for col in frame.columns:
+            if col == "_row":
+                continue
+            values = frame[col].to_numpy()
+            cmin, cmax = float(np.nanmin(values)), float(np.nanmax(values))
+            lo[col] = min(lo.get(col, cmin), cmin)
+            hi[col] = max(hi.get(col, cmax), cmax)
+        del frame
+        gc.collect()
+    return [c for c in lo if hi[c] > lo[c]], len(lo)
+
+
+def read_varying_chunks(
+    chunk_dir: Path, order: pd.Index | None = None
+) -> pd.DataFrame:
+    """Load only the columns that carry information.
+
+    The naive path -- concatenate every part, then drop constant columns --
+    peaks at the full 5M x 215 float32 block plus a copy. That is what OOM'd
+    assembly and took WSL down with it. GFP emits a fixed feature block
+    regardless of which patterns occur, so a large share of its columns are
+    structurally constant here; selecting them out *during* the read rather
+    than after is the difference between fitting in memory and not.
+    """
+    parts = sorted(Path(chunk_dir).glob("part_*.parquet"))
+    if not parts:
+        raise FileNotFoundError(f"no part files in {chunk_dir}")
+
+    keep, total = varying_columns(parts)
+    print(f"  {len(keep)} of {total} GFP features vary; reading only those",
+          flush=True)
+
+    frames = [pd.read_parquet(p, columns=["_row"] + keep) for p in parts]
+    frame = pd.concat(frames, ignore_index=True).set_index("_row")
+    del frames
+    gc.collect()
+    return frame.reindex(order) if order is not None else frame
+
+
 def read_chunks(chunk_dir: Path, order: pd.Index | None = None) -> pd.DataFrame:
     """Read part files back as one frame, restoring the original row index.
 

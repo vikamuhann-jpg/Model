@@ -95,3 +95,4 @@ document for all work.** v2 §§29–33 are retained for reference but are not b
 | [ADR-008](ADR-008-reconstruction-rejected.md) | Periodic graph reconstruction — tried, measured, **rejected** |
 | [ADR-009](ADR-009-chunked-extraction.md) | Chunked feature persistence; why extraction cannot resume |
 | [ADR-010](ADR-010-contaminated-pre-registration.md) | Gate P4 stays as written and is reported as a miss |
+| [ADR-011](ADR-011-adaptive-features-rejected.md) | Adaptive neighbourhood features — built, measured, **rejected** |

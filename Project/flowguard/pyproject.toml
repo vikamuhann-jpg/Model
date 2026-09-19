@@ -38,7 +38,7 @@ testpaths = ["tests"]
 markers = [
   "leakage: merge-blocking leakage checks (plan v3 s27)",
   "environment: asserts a platform capability the pipeline depends on",
-  "slow: excluded from the fast loop",
+  "slow: long-running; deselected by the C1 validation gate",
 ]
 
 [tool.ruff]
