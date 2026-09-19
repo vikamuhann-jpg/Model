@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import gc
 import json
+import platform
 import time
 from pathlib import Path
 
@@ -26,7 +27,7 @@ from flowguard.models.xgb import XGBModel
 from flowguard.registry.experiments import ExperimentRecord, Registry
 from flowguard.splits.temporal import SplitSpec, chronological_split
 
-DEFAULT_PROCESSED = Path("/mnt/c/Users/vikam/flowguard_data/processed")
+from flowguard.config import GFP_CACHE, PROCESSED_DIR as DEFAULT_PROCESSED
 
 
 def _header(title: str) -> None:
@@ -66,7 +67,8 @@ def run(
     params["time_window"] = window
     for key in ("vertex_stats_tw", "scatter-gather_tw", "temp-cycle_tw", "lc-cycle_tw"):
         params[key] = min(params[key], window)
-    gfp = GFPFeatures(params=params)
+    chunk_dir = cache.parent / f"{cache.stem}_parts" if cache else None
+    gfp = GFPFeatures(params=params, chunk_dir=chunk_dir)
     print(f"GFP time_window = {window_days} days")
     view = S.feature_view(df)
 
@@ -74,7 +76,12 @@ def run(
         print(f"loading cached features from {cache.name}")
         gfp_features = pd.read_parquet(cache)
         gfp_features.index = df.index
+        # Features came from a potentially different machine (e.g. WSL extraction
+        # loaded on Windows). Record current platform as training_platform and
+        # note the cache origin so provenance is unambiguous.
+        extraction_platform: str | None = platform.platform()
     else:
+        extraction_platform = None  # extraction and training on the same machine
         print("extracting -- transform before partial_fit, one edge at a time")
         started = time.perf_counter()
         gfp_features = gfp.run_streaming(view)
@@ -83,10 +90,16 @@ def run(
             f"in {time.perf_counter() - started:.0f}s "
             f"({gfp.n_edges_inserted_ / (gfp.extract_seconds_ or 1):,.0f} tx/s)"
         )
-        if cache:
+        if cache and chunk_dir is None:
             cache.parent.mkdir(parents=True, exist_ok=True)
             gfp_features.to_parquet(cache, index=False)
             print(f"  cached to {cache}")
+        elif chunk_dir is not None:
+            # The part files are the cache. Writing a monolithic copy as well
+            # would double the disk and re-introduce the 4.4 GB peak that
+            # chunking exists to avoid.
+            print(f"  cache = {self_parts} ({len(list(chunk_dir.glob('part_*.parquet')))} parts)"
+                  .replace("{self_parts}", str(chunk_dir)))
 
     # Drop all-constant columns: GFP emits a fixed feature block regardless of
     # which patterns actually occur, so many are structurally zero here.
@@ -190,6 +203,7 @@ def run(
                 "the same batch, so larger batches leak future structure.",
                 "Self-transfers excluded from the graph, retained as rows.",
             ],
+            extraction_platform=extraction_platform,
         )
     )
 
@@ -222,8 +236,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--registry", type=Path, default=None)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--sample", type=int, default=None)
-    parser.add_argument("--cache", type=Path, default=None)
+    parser.add_argument("--cache", type=Path, default=None,
+                        help="path to GFP feature parquet; defaults to paths.yaml gfp_cache"
+                             " when --cache is not supplied (set to GFP_CACHE in config.py)")
     parser.add_argument("--window-days", type=float, default=2.0)
+    parser.add_argument("--chunk-rows", type=int, default=250_000)
     parser.add_argument("--experiment-id", default="E2")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)

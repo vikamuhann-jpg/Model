@@ -32,7 +32,7 @@ from flowguard.models.xgb import XGBModel
 from flowguard.registry.experiments import ExperimentRecord, Registry
 from flowguard.splits.temporal import SplitSpec, chronological_split
 
-DEFAULT_PROCESSED = Path("/mnt/c/Users/vikam/flowguard_data/processed")
+from flowguard.config import PROCESSED_DIR as DEFAULT_PROCESSED
 
 
 def _print_header(title: str) -> None:

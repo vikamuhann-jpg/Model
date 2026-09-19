@@ -31,7 +31,7 @@ from flowguard.models.xgb import XGBModel
 from flowguard.registry.experiments import ExperimentRecord, Registry
 from flowguard.splits.temporal import SplitSpec, chronological_split
 
-DEFAULT_PROCESSED = Path("/mnt/c/Users/vikam/flowguard_data/processed")
+from flowguard.config import PROCESSED_DIR as DEFAULT_PROCESSED
 SEEDS = (42, 7, 123, 2024, 31337)
 
 
@@ -46,6 +46,7 @@ class Arm:
     scores: list[float] = field(default_factory=list)
     recalls: list[float] = field(default_factory=list)
     n_features: int | None = None
+    is_leaky: bool = False
 
     @property
     def mean(self) -> float:
@@ -104,15 +105,29 @@ def run(
             Arm("A3", "+ GFP graph features, payment_type included", True, True),
             Arm("A4", "+ GFP graph features, payment_type REMOVED", False, True),
         ]
+    arms.append(Arm("E_LEAK", "deliberate leak: random split, global fit", False, False, is_leaky=True))
 
     print(f"\n{len(arms)} arms x {len(seeds)} seeds "
           f"| train={len(y_train):,} test={len(y_test):,} "
           f"| test positives={y_test.sum():,}\n", flush=True)
 
     for arm in arms:
+        if arm.is_leaky:
+            # Deliberate leak: random split instead of chronological, and fit on entire df
+            from sklearn.model_selection import train_test_split
+            train_idx, test_idx = train_test_split(df.index, test_size=0.15, random_state=42)
+            train_idx, val_idx = train_test_split(train_idx, test_size=0.15/0.85, random_state=42)
+            arm_train_df = df.loc[train_idx]
+            arm_val_df = df.loc[val_idx]
+            arm_test_df = df.loc[test_idx]
+            fit_df = df  # Fit on everything!
+        else:
+            arm_train_df, arm_val_df, arm_test_df = train_df, val_df, test_df
+            fit_df = train_df
+            
         extractor = TransactionFeatures(
             include_payment_type=arm.include_payment_type
-        ).fit(S.feature_view(train_df))
+        ).fit(S.feature_view(fit_df))
 
         def build(part: pd.DataFrame) -> pd.DataFrame:
             tabular = extractor.run(S.feature_view(part))
@@ -120,14 +135,18 @@ def run(
                 return pd.concat([tabular, gfp.loc[part.index]], axis=1)
             return tabular
 
-        X_train, X_val, X_test = build(train_df), build(val_df), build(test_df)
+        X_train, X_val, X_test = build(arm_train_df), build(arm_val_df), build(arm_test_df)
+        arm_y_train = arm_train_df[S.IS_LAUNDERING].to_numpy().astype(int)
+        arm_y_val = arm_val_df[S.IS_LAUNDERING].to_numpy().astype(int)
+        arm_y_test = arm_test_df[S.IS_LAUNDERING].to_numpy().astype(int)
+        
         arm.n_features = X_train.shape[1]
 
         for seed in seeds:
             model = XGBModel(params={**XGBModel().params, "random_state": seed})
-            model.fit(X_train, y_train, X_val, y_val)
-            model.calibrate(X_val, y_val)
-            m = evaluate(y_test, model.predict(X_test))
+            model.fit(X_train, arm_y_train, X_val, arm_y_val)
+            model.calibrate(X_val, arm_y_val)
+            m = evaluate(arm_y_test, model.predict(X_test))
             arm.scores.append(m.pr_auc)
             arm.recalls.append(m.at_budget(0.01).recall)
 

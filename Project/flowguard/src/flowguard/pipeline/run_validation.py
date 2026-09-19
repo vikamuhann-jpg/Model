@@ -39,7 +39,7 @@ from flowguard.splits.hard_negative import select_hard_negatives
 from flowguard.splits.temporal import SplitSpec, chronological_split
 from flowguard.splits.unseen_pattern import annotation_coverage, split_by_typology
 
-DEFAULT_PROCESSED = Path("/mnt/c/Users/vikam/flowguard_data/processed")
+from flowguard.config import PROCESSED_DIR as DEFAULT_PROCESSED
 BUDGETS = (0.001, 0.005, 0.01, 0.05)
 SEEDS = (42, 7, 123, 2024, 31337)
 

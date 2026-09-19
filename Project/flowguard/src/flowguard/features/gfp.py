@@ -22,8 +22,10 @@ docs/ADR-001-gfp-platform.md.
 
 from __future__ import annotations
 
+import gc
 import time
 import warnings
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -57,6 +59,23 @@ DEFAULT_GFP_PARAMS: dict[str, Any] = {
     "lc-cycle_tw": 3 * DAY,
     "lc-cycle_len": 10,
 }
+
+
+def read_chunks(chunk_dir: Path, order: pd.Index | None = None) -> pd.DataFrame:
+    """Read part files back as one frame, restoring the original row index.
+
+    ``order`` reorders to the caller's row order in the same pass, rather than
+    materialising the concatenation and then copying it again to reindex.
+    """
+    parts = sorted(Path(chunk_dir).glob("part_*.parquet"))
+    if not parts:
+        raise FileNotFoundError(f"no part files in {chunk_dir}")
+    frame = pd.concat(
+        [pd.read_parquet(p) for p in parts], ignore_index=True
+    ).set_index("_row")
+    if order is not None:
+        frame = frame.reindex(order)
+    return frame
 
 
 class VertexIndex:
@@ -102,6 +121,26 @@ class GFPFeatures(FeatureExtractor):
     #: the graph fills, so a rate measured on an empty graph badly
     #: overestimates the full run.
     progress_every: int = 250_000
+    #: REJECTED OPTIMISATION -- do not enable for any reported result.
+    #: The idea was to periodically rebuild the preprocessor from the windowed
+    #: edges alone, bounding the vertex set. It is measurably UNSOUND: rebuilt
+    #: features differ from continuously-fed ones, so GFP retains state beyond
+    #: the windowed edge set. Kept only so the regression test can keep
+    #: asserting the defect. See docs/ADR-008-reconstruction-rejected.md.
+    rebuild_every: int = 0
+    n_rebuilds_: int = 0
+    rebuild_seconds_: float = 0.0
+    #: Write feature chunks to this directory as they are produced instead of
+    #: holding the whole block in RAM. Peak memory becomes one chunk rather
+    #: than the full corpus, and -- crucially -- the features survive a crash
+    #: in the *assembly* step afterwards, which is what killed the first full
+    #: run at 98.5%. It does NOT make extraction resumable: GFP's Python
+    #: wrapper exposes no way to serialise the graph, so a crash *during*
+    #: extraction still means starting over. See docs/ADR-009.
+    chunk_dir: Path | None = None
+    #: Rows per part file. 250k x 215 float32 is ~215 MB per part.
+    chunk_rows: int = 250_000
+    n_parts_written_: int = 0
 
     n_engineered_: int | None = None
     n_vertices_: int | None = None
@@ -110,6 +149,13 @@ class GFPFeatures(FeatureExtractor):
 
     def __post_init__(self) -> None:
         super().__init__()
+        if self.rebuild_every:
+            warnings.warn(
+                "GFPFeatures(rebuild_every>0) is UNSOUND: rebuilt features do "
+                "not match continuously-fed ones (docs/ADR-008). Never use it "
+                "for a reported result.",
+                stacklevel=2,
+            )
         if self.batch_size != 1:
             warnings.warn(
                 f"GFPFeatures(batch_size={self.batch_size}) leaks future edges: "
@@ -170,6 +216,8 @@ class GFPFeatures(FeatureExtractor):
         preproc = self._new_preprocessor()
         n_raw = edges.shape[1]
         total = len(edges)
+        window_seconds = float(self.params.get("time_window", 0) or 0)
+        last_rebuild = 0
 
         # The output buffer is preallocated rather than accumulated. At
         # batch_size=1 a list of per-row arrays would hold ~5M tiny ndarrays,
@@ -179,6 +227,14 @@ class GFPFeatures(FeatureExtractor):
         # here, which is what makes the full corpus fit in the memory budget.
         engineered: np.ndarray | None = None
 
+        # Chunked mode: accumulate one part at a time and flush to disk.
+        chunk_buffer: np.ndarray | None = None
+        chunk_start = 0
+        if self.chunk_dir is not None:
+            self.chunk_dir.mkdir(parents=True, exist_ok=True)
+            for stale in self.chunk_dir.glob("part_*.parquet"):
+                stale.unlink()
+
         for start in range(0, total, self.batch_size):
             stop = min(start + self.batch_size, total)
             batch = edges[start:stop]
@@ -186,15 +242,63 @@ class GFPFeatures(FeatureExtractor):
             # 1. Features from history only -- BEFORE this batch is inserted.
             transformed = preproc.transform(batch)[:, n_raw:]
 
-            if engineered is None:
-                engineered = np.empty((total, transformed.shape[1]), dtype="float32")
-            engineered[start:stop] = transformed
+            if self.chunk_dir is not None:
+                if chunk_buffer is None:
+                    chunk_buffer = np.empty(
+                        (min(self.chunk_rows, total), transformed.shape[1]),
+                        dtype="float32",
+                    )
+                offset = start - chunk_start
+                chunk_buffer[offset : offset + (stop - start)] = transformed
+                if offset + (stop - start) >= len(chunk_buffer) or stop == total:
+                    filled = offset + (stop - start)
+                    self._flush_chunk(
+                        chunk_buffer[:filled], ordered.index[chunk_start:stop]
+                    )
+                    chunk_start = stop
+                    remaining = total - chunk_start
+                    chunk_buffer = (
+                        None
+                        if remaining <= 0
+                        else np.empty(
+                            (min(self.chunk_rows, remaining), transformed.shape[1]),
+                            dtype="float32",
+                        )
+                    )
+            else:
+                if engineered is None:
+                    engineered = np.empty(
+                        (total, transformed.shape[1]), dtype="float32"
+                    )
+                engineered[start:stop] = transformed
 
             # 2. Now insert, so later batches can see these edges.
             insertable = batch[in_graph[start:stop]]
             if len(insertable):
                 preproc.partial_fit(insertable)
                 self.n_edges_inserted_ += len(insertable)
+
+            # Rebuild on a bounded vertex set. Replay runs against a near-empty
+            # graph -- the fast regime -- so the cost is small relative to the
+            # decay it avoids.
+            if (
+                self.rebuild_every
+                and window_seconds > 0
+                and start - last_rebuild >= self.rebuild_every
+                and start > 0
+            ):
+                rebuild_started = time.perf_counter()
+                cutoff = timestamps[stop - 1] - window_seconds
+                # Edges are in chronological order, so the live window is a
+                # contiguous tail of everything inserted so far.
+                first_live = int(np.searchsorted(timestamps[:stop], cutoff, "left"))
+                live = edges[first_live:stop][in_graph[first_live:stop]]
+                preproc = self._new_preprocessor()
+                if len(live):
+                    preproc.partial_fit(live)
+                last_rebuild = start
+                self.n_rebuilds_ += 1
+                self.rebuild_seconds_ += time.perf_counter() - rebuild_started
 
             if self.progress_every and start and start % self.progress_every == 0:
                 rate = start / (time.perf_counter() - started)
@@ -204,6 +308,23 @@ class GFPFeatures(FeatureExtractor):
                     f"{rate:>8,.0f} tx/s  ~{remaining:.1f} min left",
                     flush=True,
                 )
+
+        if self.chunk_dir is not None:
+            self.n_vertices_ = len(index)
+            self.extract_seconds_ = time.perf_counter() - started
+            print(
+                f"  wrote {self.n_parts_written_} parts to {self.chunk_dir}",
+                flush=True,
+            )
+            # Release everything extraction needed BEFORE assembling. The graph
+            # alone is several GB by the end, and holding it while concatenating
+            # the parts and reordering them is what put the first run over the
+            # ceiling at 98.5%. Chunked writes bound the extraction phase; this
+            # bounds the assembly phase.
+            del preproc, edges, ordered, source, destination, timestamps, amounts
+            del in_graph, chunk_buffer
+            gc.collect()
+            return read_chunks(self.chunk_dir, order=tx_view.index)
 
         if engineered is None:
             raise ValueError("no transactions to extract features from")
@@ -215,10 +336,27 @@ class GFPFeatures(FeatureExtractor):
         out = pd.DataFrame(engineered, index=ordered.index, columns=columns)
         return out.reindex(tx_view.index)
 
+    def _flush_chunk(self, block: np.ndarray, index: pd.Index) -> None:
+        """Write one part file. Carries its own row index so order survives."""
+        if self.n_engineered_ is None:
+            self.n_engineered_ = block.shape[1]
+        frame = pd.DataFrame(
+            block,
+            index=index,
+            columns=[f"{self.family}_f{i:03d}" for i in range(block.shape[1])],
+        )
+        frame.index.name = "_row"
+        path = self.chunk_dir / f"part_{self.n_parts_written_:05d}.parquet"
+        frame.reset_index().to_parquet(path, index=False)
+        self.n_parts_written_ += 1
+
     def to_metadata(self) -> dict:
         return {
             "family": self.family,
             "params": self.params,
+            "chunk_dir": str(self.chunk_dir) if self.chunk_dir else None,
+            "chunk_rows": self.chunk_rows if self.chunk_dir else None,
+            "n_parts_written": self.n_parts_written_,
             "batch_size": self.batch_size,
             "exclude_self_transfers": self.exclude_self_transfers,
             "n_engineered": self.n_engineered_,
@@ -231,4 +369,7 @@ class GFPFeatures(FeatureExtractor):
                 else round(self.n_edges_inserted_ / self.extract_seconds_, 1)
             ),
             "insertion_convention": "transform before partial_fit (v3 s12)",
+            "rebuild_every": self.rebuild_every,
+            "n_rebuilds": self.n_rebuilds_,
+            "rebuild_seconds": round(self.rebuild_seconds_, 1),
         }

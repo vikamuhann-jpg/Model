@@ -51,7 +51,9 @@ def cuda_available() -> bool:
             return False
         import ctypes
 
-        ctypes.CDLL("libcuda.so.1")
+        import sys as _sys
+        _cuda_lib = "nvcuda.dll" if _sys.platform == "win32" else "libcuda.so.1"
+        ctypes.CDLL(_cuda_lib)
         return True
     except Exception:
         return False

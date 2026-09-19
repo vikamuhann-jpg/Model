@@ -35,8 +35,9 @@ from flowguard.data.patterns import attach_patterns, parse_patterns
 from flowguard.data.windowing import daily_profile, trim_sparse_tail
 from flowguard.data.validator import validate_transactions
 
-CHUNK = 1 << 22  # 4 MiB
+from flowguard.config import PROCESSED_DIR, RAW_DIR
 
+CHUNK = 1 << 22  # 4 MiB
 
 def sha256(path: Path) -> str:
     """Checksum a file without loading it into memory."""
@@ -209,11 +210,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--raw-dir",
         type=Path,
-        default=Path("/mnt/c/Users/vikam/OneDrive/Desktop/Hackathon_project/"
-                     "datathon_research/Dataset_/IBM_Dataset"),
+        default=RAW_DIR,
     )
     parser.add_argument(
-        "--out-dir", type=Path, default=Path("/mnt/c/Users/vikam/flowguard_data/processed")
+        "--out-dir", type=Path, default=PROCESSED_DIR
     )
     parser.add_argument("--amount-side", choices=["paid", "received"], default="paid")
     parser.add_argument("--nrows", type=int, default=None)

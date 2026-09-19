@@ -73,7 +73,7 @@ features:
     # Keys are HYPHENATED; underscored spellings raise KeyError.
     batch_size: 1                 # >1 leaks future edges -- see docs/ADR-004
     exclude_self_transfers: true
-    time_window_days: 10
+    time_window_days: 2
     fan_tw_days: 1
     degree_tw_days: 1
     scatter_gather_tw_days: 2

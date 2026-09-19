@@ -58,8 +58,20 @@ class ExperimentRecord:
     metrics: dict[str, Any] = field(default_factory=dict)
     cost: dict[str, Any] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
+    #: Set when extraction and training ran on different platforms (e.g.
+    #: GFP extracted in WSL, trained on Windows). ``None`` for tabular-only
+    #: experiments where a single machine did everything.
+    extraction_platform: str | None = None
 
     def to_metadata(self) -> dict:
+        provenance: dict[str, Any] = {
+            "git_commit": _git_commit(),
+            "python": sys.version.split()[0],
+            "training_platform": platform.platform(),
+            "libraries": _library_versions(),
+        }
+        if self.extraction_platform is not None:
+            provenance["extraction_platform"] = self.extraction_platform
         return {
             "experiment_id": self.experiment_id,
             "description": self.description,
@@ -71,12 +83,7 @@ class ExperimentRecord:
             "metrics": self.metrics,
             "cost": self.cost,
             "notes": self.notes,
-            "provenance": {
-                "git_commit": _git_commit(),
-                "python": sys.version.split()[0],
-                "platform": platform.platform(),
-                "libraries": _library_versions(),
-            },
+            "provenance": provenance,
         }
 
 
