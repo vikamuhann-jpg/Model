@@ -31,6 +31,7 @@ from flowguard.data.loader import (
     load_accounts,
     load_transactions,
 )
+from flowguard.data.capabilities import detect as detect_capabilities, reconcile
 from flowguard.data.patterns import attach_patterns, parse_patterns
 from flowguard.data.windowing import daily_profile, trim_sparse_tail
 from flowguard.data.validator import validate_transactions
@@ -144,6 +145,11 @@ def ingest(
     validation = validate_transactions(tx)
     print(validation.summary())
 
+    caps = detect_capabilities(tx, variant, accounts=accounts)
+    print(caps.summary(), flush=True)
+    for problem in reconcile(caps):
+        print(f"  CAPABILITY MISMATCH: {problem}", flush=True)
+
     print("[6/6] writing canonical parquet")
     tx_path = out_dir / f"{variant}_transactions.parquet"
     acct_path = out_dir / f"{variant}_accounts.parquet"
@@ -177,6 +183,7 @@ def ingest(
             "transaction_endpoints": len(endpoints),
             "orphan_endpoints": orphans,
         },
+        "capabilities": caps.to_metadata(),
         "window_trim": window_report.to_metadata(),
         "daily_profile": {
             str(day): {"rows": int(r["rows"]), "positives": int(r["positives"]),

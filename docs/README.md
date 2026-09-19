@@ -91,3 +91,6 @@ document for all work.** v2 §§29–33 are retained for reference but are not b
    with an offline wheelhouse (`scripts/refresh_wheelhouse.ps1`). The real fix is
    likely `networkingMode=mirrored` in `.wslconfig`, but that is machine-wide and may
    affect Docker Desktop, so it needs a deliberate decision.
+| [ADR-008](ADR-008-reconstruction-rejected.md) | Periodic graph reconstruction — tried, measured, **rejected** |
+| [ADR-009](ADR-009-chunked-extraction.md) | Chunked feature persistence; why extraction cannot resume |
+| [ADR-010](ADR-010-contaminated-pre-registration.md) | Gate P4 stays as written and is reported as a miss |

@@ -94,11 +94,17 @@ def build_inputs(
 
     gfp_features = None
     if gfp_cache and gfp_cache.exists():
-        gfp_features = pd.read_parquet(gfp_cache)
-        gfp_features.index = df.index
-        gfp_features = gfp_features.loc[
-            :, gfp_features.std(numeric_only=True) > 0
-        ]
+        # The cache is a directory of part files (ADR-009). A plain
+        # read_parquet on it would lose the row index the parts carry.
+        if gfp_cache.is_dir():
+            from flowguard.features.gfp import read_chunks
+
+            gfp_features = read_chunks(gfp_cache, order=df.index)
+        else:
+            gfp_features = pd.read_parquet(gfp_cache)
+            gfp_features.index = df.index
+        keep = [c for c in gfp_features.columns if gfp_features[c].std() > 0]
+        gfp_features = gfp_features[keep]
         print(f"loaded {gfp_features.shape[1]} varying GFP features", flush=True)
 
     def build(part: pd.DataFrame) -> pd.DataFrame:
