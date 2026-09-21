@@ -107,7 +107,11 @@ class ValidationInputs:
 
 
 def build_inputs(
-    variant: str, processed_dir: Path, gfp_cache: Path | None, seed: int
+    variant: str,
+    processed_dir: Path,
+    gfp_cache: Path | None,
+    seed: int,
+    include_payment_type: bool = True,
 ) -> ValidationInputs:
     df = pd.read_parquet(processed_dir / f"{variant}_transactions.parquet")
     print(f"loaded {len(df):,} transactions", flush=True)
@@ -115,7 +119,12 @@ def build_inputs(
     split = chronological_split(df, SplitSpec(seed=seed))
     train_df, val_df, test_df = split.apply(df)
 
-    extractor = TransactionFeatures().fit(S.feature_view(train_df))
+    # payment_type is a simulator artifact (ADR-007): it nearly identifies an
+    # injected pattern. It stays on by default so E2 reproduces exactly; the
+    # inference package is built with it off.
+    extractor = TransactionFeatures(include_payment_type=include_payment_type).fit(
+        S.feature_view(train_df)
+    )
 
     gfp_features = None
     if gfp_cache and gfp_cache.exists():
@@ -162,13 +171,14 @@ def run(
     seed: int = 42,
     out_root: Path | None = None,
     n_seeds: int = len(SEEDS),
+    include_payment_type: bool = True,
 ) -> dict:
     registry = Registry()
     report = G.GateReport()
     started = time.perf_counter()
 
     _header(f"FlowGuard validation — {variant} / {model_id}")
-    inputs = build_inputs(variant, processed_dir, gfp_cache, seed)
+    inputs = build_inputs(variant, processed_dir, gfp_cache, seed, include_payment_type)
     y_train = inputs.train_df[S.IS_LAUNDERING].to_numpy().astype(int)
     y_val = inputs.val_df[S.IS_LAUNDERING].to_numpy().astype(int)
     y_test = inputs.test_df[S.IS_LAUNDERING].to_numpy().astype(int)
@@ -679,6 +689,18 @@ validation has been performed, so generalisation beyond this generator is
 * `day_of_week`, `is_weekend` — removed. Over a 10-day corpus they proxy the
   calendar date and, under a chronological split, identified the generator's
   laundering-saturated tail rather than any behaviour (ADR-003).
+* `payment_type` — removed. 2,553 of 2,554 pattern rows are ACH, so the feature
+  encodes a generator convention rather than behaviour. It was worth 84% of the
+  tabular baseline's PR-AUC (ADR-007).
+* **Adaptive neighbourhood family** (11 features, `features/adaptive.py`) — built
+  to attack the hard-negative enrichment by normalising structure against
+  same-degree peers. Measured **A6 − A4 = −0.0326 PR-AUC** against a 2σ inclusion
+  bar of 0.0059: a real regression at more than five times the noise threshold,
+  costing 23% of the graph model's PR-AUC. Alone (A5) it scores 0.0041, below the
+  12-feature tabular baseline. The code stays in the tree and is not wired into any
+  reported model (ADR-011).
+* **Value-flow family** — never built. Gate A falsified the low-band concentration
+  prediction the hypothesis depended on, so it was ruled out before implementation.
 
 ## Performance envelope
 
@@ -701,12 +723,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--n-seeds", type=int, default=5)
     parser.add_argument("--out-root", type=Path, default=None)
+    parser.add_argument(
+        "--artifact-free",
+        action="store_true",
+        help="Drop the payment_type feature, a simulator artifact (ADR-007). "
+        "Use this for any model meant for inference.",
+    )
     args = parser.parse_args(argv)
 
     run(
         args.variant, args.processed_dir, gfp_cache=args.gfp_cache,
         model_id=args.model_id, seed=args.seed, out_root=args.out_root,
-        n_seeds=args.n_seeds,
+        n_seeds=args.n_seeds, include_payment_type=not args.artifact_free,
     )
     return 0
 

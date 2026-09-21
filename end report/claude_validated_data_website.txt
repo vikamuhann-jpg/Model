@@ -1,1 +1,4 @@
 1. https://claude.ai/artifact/Y9qSGamEhR5nbeyacw6yzy -> contains the report for the model training and visual respresentation of the data
+2. https://claude.ai/artifact/UpGYYThbJiNrnsV5U9hkNC -> To validate the model and its metrics 
+3. https://claude.ai/artifact/83KjAnxMtm2xEAk7nRdsVQ -> full analysis report
+4. https://claude.ai/artifact/Mrrx53zCPmCuBndyiy4Ejo -> build phases P1-P6 and every gate result

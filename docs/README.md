@@ -16,6 +16,7 @@ a superseded scope.
 | [`CORPUS_COMPARISON.md`](CORPUS_COMPARISON.md) | HI-Small vs LI-Small — what a second corpus from the same generator does and does not establish | Active finding |
 | [`STATUS.md`](STATUS.md) | **Current status** — what is done, what remains, time to completion, open issues | **Start here** |
 | [`COMPLETION_PLAN.md`](COMPLETION_PLAN.md) | **End-to-end plan to completion** — Tiers A/B/C, gates, ~11h schedule | **Active** |
+| [`TRACK_P_PLAN.md`](TRACK_P_PLAN.md) | **Plan for the open functional requirements** — tracing, evidence, cascade, typology; ~16h with pre-registered gates. FR-03/FR-08 left open deliberately | **Active** |
 | [`OPEN_ITEMS.md`](OPEN_ITEMS.md) | **Open items** — every outstanding problem, proposed fix, build/compute timing | Reference |
 | [`ERROR_ANALYSIS_A2.md`](ERROR_ANALYSIS_A2.md) | Where the artifact-free baseline fails — **gates all feature work** (v3 §17.2) | Active finding |
 | [`NEED_TO_RESEARCH.txt`](NEED_TO_RESEARCH.txt) | Research Track B brief for a *second* researcher | Unassigned — see open items |
@@ -48,6 +49,13 @@ v3 §4 = Phase 0). Cite phases as `v3 Phase 6` or `v2 §16`, never a bare "Phase
 | [ADR-005](ADR-005-gpu-training.md) | GPU training + `early_stopping_rounds=100`; results are device-dependent |
 | [ADR-006](ADR-006-gfp-time-window.md) | GFP `time_window` must bound the graph (provisional) |
 | [ADR-007](ADR-007-payment-type-artifact.md) | `payment_type` is a generator artifact — ablate every headline result |
+| [ADR-008](ADR-008-reconstruction-rejected.md) | Periodic graph reconstruction — tried, measured, **rejected** |
+| [ADR-009](ADR-009-chunked-extraction.md) | Chunked feature persistence; why extraction cannot resume |
+| [ADR-010](ADR-010-contaminated-pre-registration.md) | Gate P4 stays as written and is reported as a miss |
+| [ADR-011](ADR-011-adaptive-features-rejected.md) | Adaptive neighbourhood features — built, measured, **rejected** |
+| [ADR-012](ADR-012-account-disjoint-proxy.md) | A weak proxy label needs an **account-disjoint** partition, not just a chronological split |
+| [ADR-013](ADR-013-degree-skew-dominates-cost.md) | Extraction cost tracks **degree skew**; P8 and the scaling envelope are generator-specific |
+| [ADR-014](ADR-014-cascade-cannot-prefilter.md) | Two-tier cascading meets the throughput gate and costs half the recall — **rejected** |
 
 ## Conventions that are enforced, not suggested
 
@@ -71,28 +79,9 @@ document for all work.** v2 §§29–33 are retained for reference but are not b
 
 ## Open items
 
-1. **Kaggle credentials** — *blocks v3 Phase 1.* The HI-Small corpus needs a
-   `kaggle.json` API token at `%USERPROFILE%\.kaggle\kaggle.json` (Kaggle → Account →
-   Create New API Token), or a manual browser download. Nothing can be ingested until
-   the files are local and checksummed.
-2. **Verify HI-Small's real schema against the contract.** v2 §6.1's statistics are
-   flagged unverified in the plan itself and must be re-derived from the downloaded
-   files into `dataset_summary.json`. The raw columns (`Timestamp`, `From Bank`,
-   `Account`, `Amount Received`, `Receiving Currency`, `Payment Format`,
-   `Is Laundering`) need mapping to the canonical schema, and account identity there is
-   a *(bank, account)* pair rather than a single column — the loader must resolve that.
-3. **Boundary policy for the real corpus.** The splitter defaults to `PURGE` with a
-   buffer derived from the longest observed pattern. On a 10-day corpus that may purge
-   too much; decide against the real pattern-duration distribution and record it.
-4. **WSL memory ceiling.** The 16 GB host gives WSL 7.6 GiB by default. HI-Small is
-   ~5 M transactions; raise it via `%USERPROFILE%\.wslconfig` (`memory=12GB`) before
-   ingestion. Requires `wsl --shutdown`.
-5. **WSL has no outbound network.** `apt` and PyPI are both unreachable — the gateway
-   itself does not answer (campus network, `saveetha.in` search domain). Worked around
-   with an offline wheelhouse (`scripts/refresh_wheelhouse.ps1`). The real fix is
-   likely `networkingMode=mirrored` in `.wslconfig`, but that is machine-wide and may
-   affect Docker Desktop, so it needs a deliberate decision.
-| [ADR-008](ADR-008-reconstruction-rejected.md) | Periodic graph reconstruction — tried, measured, **rejected** |
-| [ADR-009](ADR-009-chunked-extraction.md) | Chunked feature persistence; why extraction cannot resume |
-| [ADR-010](ADR-010-contaminated-pre-registration.md) | Gate P4 stays as written and is reported as a miss |
-| [ADR-011](ADR-011-adaptive-features-rejected.md) | Adaptive neighbourhood features — built, measured, **rejected** |
+Every item that was listed here — Kaggle credentials, schema verification, boundary
+policy, the WSL memory ceiling, the offline wheelhouse — was resolved during the build.
+The boundary-policy decision became [ADR-002](ADR-002-boundary-policy.md).
+
+Current open items live in [`OPEN_ITEMS.md`](OPEN_ITEMS.md); current status is in
+[`STATUS.md`](STATUS.md).

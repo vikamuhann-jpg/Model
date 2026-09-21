@@ -1,0 +1,24 @@
+{
+  "model_id": "flowguard_A4_v1",
+  "git_commit": "d230c50ef73e93e3d48cf20e5d30f1d8fcbdc1f4",
+  "feature_schema_hash": "ca7efed40f449a71",
+  "uses_payment_type": false,
+  "threshold": 0.009264620952308178,
+  "threshold_source": "validation @ 1.0% alert budget",
+  "n_transactions": 50000,
+  "n_alerts": 2484,
+  "case_ids": [
+    "FG-fcbd97f8",
+    "FG-c971aac1",
+    "FG-88e0bcb5",
+    "FG-39c67d92",
+    "FG-9ab632d5",
+    "FG-5cbf2c0f",
+    "FG-a0e9b30d",
+    "FG-a4955b4e",
+    "FG-8aa3bfef",
+    "FG-59aedba7"
+  ],
+  "scored_at": "2026-09-21T13:27:57Z",
+  "seconds": 10.9
+}

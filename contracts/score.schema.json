@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flowguard/score.schema.json",
+  "title": "Score (one row of scores.csv)",
+  "description": "One scored transaction. scores.csv holds one row per input transaction, sorted by `rank`.",
+  "type": "object",
+  "required": [
+    "transaction_id",
+    "timestamp",
+    "source_account",
+    "destination_account",
+    "amount",
+    "score",
+    "raw_score",
+    "rank",
+    "alert"
+  ],
+  "properties": {
+    "transaction_id": {"type": "string"},
+    "timestamp": {"type": "string", "description": "ISO-8601 UTC, e.g. 2022-09-09T15:58:00Z."},
+    "source_account": {"type": "string"},
+    "destination_account": {"type": "string"},
+    "amount": {"type": "number"},
+    "payment_type": {"type": "string", "description": "Present only when the input carried it."},
+    "score": {"type": "number", "minimum": 0, "maximum": 1, "description": "Calibrated probability of laundering. Saturates at 1.0 for the most severe cases; order those by `rank`, not by score."},
+    "raw_score": {"type": "number", "description": "Uncalibrated model output. Use it only to break ties among equal scores; `rank` already does."},
+    "rank": {"type": "integer", "minimum": 1, "description": "1 = most suspicious. Orders by score, then raw_score."},
+    "alert": {"type": "boolean", "description": "score >= the package threshold for a 1% alert budget (see run.json)."}
+  }
+}

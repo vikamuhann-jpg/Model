@@ -1,3 +1,6 @@
+# This is the AI repository. Frontend, backend and database live in a separate
+# repository that consumes contracts/ and sample_outputs/ from this one.
+
 # Data and wheelhouse live outside the repo (C:\Users\vikam\flowguard_data).
 # Project/flowguard/data is a junction to it.
 Project/flowguard/data/
@@ -9,17 +12,25 @@ Project/flowguard/.venv/
 .ruff_cache/
 .ipynb_checkpoints/
 *.parquet
+*.csv
+!tests/**/*.csv
+!sample_outputs/*.csv
+
+# Raw corpora (4.4 GB) stay local. The whole Dataset_ folder is excluded --
+# excluding only Dataset_/IBM_Dataset/ is how a 310 MB archive once reached a
+# commit.
+Dataset_/
+
+# Reference material (papers/, websites/, docs/*.pdf) IS tracked -- this is a
+# private repository. Saved web pages keep their HTML; the *_files/ asset dumps
+# (thousands of files) stay out.
+websites/*_files/
+
+# Models: only the inference package ships. Research packages stay local.
 Project/flowguard/models/*
 !Project/flowguard/models/.gitkeep
+!Project/flowguard/models/flowguard_A4_v1/
+
 Project/flowguard/experiments/*/
 Project/flowguard/reports/**/*
 !Project/flowguard/reports/**/.gitkeep
-
-# Saved web pages: keep the HTML, drop the asset dumps (thousands of files)
-websites/*_files/
-
-# Raw corpora: ~39 GB. Never tracked. Also excluded from OneDrive sync --
-# see docs/README.md. The canonical raw layer is Dataset_/IBM_Dataset/.
-Dataset_/IBM_Dataset/
-*.csv
-!tests/**/*.csv

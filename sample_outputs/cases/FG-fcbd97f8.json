@@ -1,0 +1,486 @@
+{
+  "accounts": [
+    "10344:8081F2700",
+    "1047:806535D40",
+    "11157:801A090C0",
+    "11904:801D4B5E0",
+    "122151:808E5E2E0",
+    "12:800EBE390",
+    "1362:804602630",
+    "1420:8011A5800",
+    "14387:808D26060",
+    "1601:8005D0700",
+    "17732:8030D3D10",
+    "18015:80E6B6C20",
+    "19329:808E99300",
+    "19474:803AE9360",
+    "232583:80DC7B6D0",
+    "25981:803BE2A60",
+    "3149:80131F8A0",
+    "70:100428660"
+  ],
+  "case_id": "FG-fcbd97f8",
+  "coverage": {
+    "demonstrated_rails": [
+      "ACH"
+    ],
+    "rails": {
+      "Cash": 1,
+      "Cheque": 12,
+      "Credit Card": 5,
+      "Wire": 1
+    },
+    "unknown_rail_transactions": 0,
+    "warning": "This case involves payment rails on which the model has NOT demonstrated recall. On the validation corpus it caught 599 of 796 ACH laundering transactions and 1 of 100 across all other rails combined (ADR-007). Absence of an alert on these transactions is not evidence of absence."
+  },
+  "created_at": "2026-09-21T13:27:55.825658+00:00",
+  "disposition": null,
+  "investigator_notes": [],
+  "model": {
+    "feature_schema_hash": "ca7efed40f449a71",
+    "git_commit": "d230c50ef73e93e3d48cf20e5d30f1d8fcbdc1f4",
+    "model_id": "flowguard_A4_v1",
+    "uses_payment_type": false
+  },
+  "path": [
+    {
+      "amount": 6197.48,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "12:800EBE390",
+      "transaction_id": "TX0004323610"
+    },
+    {
+      "amount": 1057.45,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "1420:8011A5800",
+      "transaction_id": "TX0004323700"
+    },
+    {
+      "amount": 4063.29,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Credit Card",
+      "to": "3149:80131F8A0",
+      "transaction_id": "TX0004323746"
+    },
+    {
+      "amount": 2581.08,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "11157:801A090C0",
+      "transaction_id": "TX0004323901"
+    },
+    {
+      "amount": 7018.85,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "11904:801D4B5E0",
+      "transaction_id": "TX0004323956"
+    },
+    {
+      "amount": 503.27,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cash",
+      "to": "17732:8030D3D10",
+      "transaction_id": "TX0004324277"
+    },
+    {
+      "amount": 98.82,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Credit Card",
+      "to": "19474:803AE9360",
+      "transaction_id": "TX0004324416"
+    },
+    {
+      "amount": 2420.74,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "25981:803BE2A60",
+      "transaction_id": "TX0004324426"
+    },
+    {
+      "amount": 176.44,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "1362:804602630",
+      "transaction_id": "TX0004324582"
+    },
+    {
+      "amount": 1446.38,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Credit Card",
+      "to": "1047:806535D40",
+      "transaction_id": "TX0004324955"
+    },
+    {
+      "amount": 408.82,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "10344:8081F2700",
+      "transaction_id": "TX0004325389"
+    },
+    {
+      "amount": 65.4,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Credit Card",
+      "to": "122151:808E5E2E0",
+      "transaction_id": "TX0004325548"
+    },
+    {
+      "amount": 296.72,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "19329:808E99300",
+      "transaction_id": "TX0004325556"
+    },
+    {
+      "amount": 1900.3,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "232583:80DC7B6D0",
+      "transaction_id": "TX0004326631"
+    },
+    {
+      "amount": 137.25,
+      "at": "2022-09-09T03:45:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "18015:80E6B6C20",
+      "transaction_id": "TX0004326836"
+    },
+    {
+      "amount": 1626.1,
+      "at": "2022-09-09T03:46:00+00:00",
+      "depth": 1,
+      "from": "70:100428660",
+      "payment_type": "Cheque",
+      "to": "1601:8005D0700",
+      "transaction_id": "TX0004323394"
+    },
+    {
+      "amount": 67.48,
+      "at": "2022-09-09T04:46:00+00:00",
+      "depth": 2,
+      "from": "11904:801D4B5E0",
+      "payment_type": "Cheque",
+      "to": "14387:808D26060",
+      "transaction_id": "TX0004352136"
+    },
+    {
+      "amount": 345.67,
+      "at": "2022-09-09T04:50:00+00:00",
+      "depth": 2,
+      "from": "11904:801D4B5E0",
+      "payment_type": "Credit Card",
+      "to": "14387:808D26060",
+      "transaction_id": "TX0004352137"
+    },
+    {
+      "amount": 181.03,
+      "at": "2022-09-09T04:59:00+00:00",
+      "depth": 2,
+      "from": "11904:801D4B5E0",
+      "payment_type": "Wire",
+      "to": "14387:808D26060",
+      "transaction_id": "TX0004352138"
+    }
+  ],
+  "reasons": [
+    {
+      "code": "GFP_F207_LOWERED",
+      "contribution": -14.495867729187012,
+      "feature": "gfp_f207",
+      "opaque": true,
+      "transaction_ids": [
+        "TX0004352137",
+        "TX0004352136",
+        "TX0004352138",
+        "TX0004323901",
+        "TX0004323956",
+        "TX0004323610",
+        "TX0004326631",
+        "TX0004324426",
+        "TX0004323394",
+        "TX0004323700",
+        "TX0004324955",
+        "TX0004324277",
+        "TX0004324582",
+        "TX0004325556",
+        "TX0004326836",
+        "TX0004325389",
+        "TX0004324416",
+        "TX0004325548",
+        "TX0004323746"
+      ]
+    },
+    {
+      "code": "GFP_F183_RAISED",
+      "contribution": 10.61634349822998,
+      "feature": "gfp_f183",
+      "opaque": true,
+      "transaction_ids": [
+        "TX0004324416",
+        "TX0004325548",
+        "TX0004323610",
+        "TX0004326631",
+        "TX0004324426",
+        "TX0004323700",
+        "TX0004324955",
+        "TX0004324277",
+        "TX0004326836",
+        "TX0004324582",
+        "TX0004325556",
+        "TX0004325389",
+        "TX0004323394",
+        "TX0004323901",
+        "TX0004323956",
+        "TX0004323746"
+      ]
+    },
+    {
+      "code": "GFP_F192_RAISED",
+      "contribution": 9.568878173828125,
+      "feature": "gfp_f192",
+      "opaque": true,
+      "transaction_ids": [
+        "TX0004324582",
+        "TX0004326836",
+        "TX0004325556",
+        "TX0004324416",
+        "TX0004324426",
+        "TX0004325548",
+        "TX0004325389",
+        "TX0004326631",
+        "TX0004324277",
+        "TX0004324955",
+        "TX0004323394",
+        "TX0004323746",
+        "TX0004323901",
+        "TX0004323700",
+        "TX0004323610",
+        "TX0004323956"
+      ]
+    },
+    {
+      "code": "GFP_F185_RAISED",
+      "contribution": 7.145622253417969,
+      "feature": "gfp_f185",
+      "opaque": true,
+      "transaction_ids": [
+        "TX0004326631",
+        "TX0004324426",
+        "TX0004324955",
+        "TX0004324277",
+        "TX0004352136",
+        "TX0004323394",
+        "TX0004325556",
+        "TX0004325389",
+        "TX0004323746",
+        "TX0004324582",
+        "TX0004323901",
+        "TX0004324416",
+        "TX0004325548",
+        "TX0004326836",
+        "TX0004323610",
+        "TX0004323700",
+        "TX0004323956"
+      ]
+    },
+    {
+      "code": "TX_AMOUNT_LOWERED",
+      "contribution": -5.622677803039551,
+      "feature": "tx_amount",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0004352136",
+        "TX0004352138",
+        "TX0004325548",
+        "TX0004324416",
+        "TX0004326836",
+        "TX0004352137",
+        "TX0004324582",
+        "TX0004325389",
+        "TX0004325556",
+        "TX0004324277",
+        "TX0004326631",
+        "TX0004323610"
+      ]
+    },
+    {
+      "code": "GFP_F209_RAISED",
+      "contribution": 4.865357398986816,
+      "feature": "gfp_f209",
+      "opaque": true,
+      "transaction_ids": [
+        "TX0004323746",
+        "TX0004325389",
+        "TX0004323394",
+        "TX0004324582",
+        "TX0004323901",
+        "TX0004325556",
+        "TX0004326836",
+        "TX0004323956",
+        "TX0004352136",
+        "TX0004324416",
+        "TX0004325548",
+        "TX0004324277",
+        "TX0004324955",
+        "TX0004326631",
+        "TX0004323610"
+      ]
+    },
+    {
+      "code": "GFP_F211_LOWERED",
+      "contribution": -3.684936761856079,
+      "feature": "gfp_f211",
+      "opaque": true,
+      "transaction_ids": [
+        "TX0004352136",
+        "TX0004352138",
+        "TX0004324582",
+        "TX0004326836",
+        "TX0004325548",
+        "TX0004323394",
+        "TX0004325556",
+        "TX0004324416",
+        "TX0004324955",
+        "TX0004323901",
+        "TX0004325389",
+        "TX0004324426",
+        "TX0004324277",
+        "TX0004352137",
+        "TX0004323700",
+        "TX0004326631"
+      ]
+    },
+    {
+      "code": "TX_AMOUNT_RECEIVED_LOG_LOWERED",
+      "contribution": -3.459054946899414,
+      "feature": "tx_amount_received_log",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0004352136",
+        "TX0004352138",
+        "TX0004324277",
+        "TX0004324582",
+        "TX0004326836",
+        "TX0004325389",
+        "TX0004352137",
+        "TX0004325556",
+        "TX0004325548",
+        "TX0004324416",
+        "TX0004323700",
+        "TX0004326631",
+        "TX0004323394",
+        "TX0004324955",
+        "TX0004323746",
+        "TX0004324426",
+        "TX0004323901"
+      ]
+    }
+  ],
+  "risk": {
+    "above_threshold": true,
+    "score": 0.06578947603702545,
+    "threshold": 0.009264620952308178,
+    "threshold_source": "validation @ 1.0% alert budget"
+  },
+  "schema_version": "1.0",
+  "subject_account": "70:100428660",
+  "trace": {
+    "direction": "forward",
+    "horizon": 3,
+    "is_complete": false,
+    "per_hop": [
+      {
+        "amount": 29998.39,
+        "depth": 1,
+        "n_accounts": 16,
+        "n_transactions": 16
+      },
+      {
+        "amount": 594.1800000000001,
+        "depth": 2,
+        "n_accounts": 1,
+        "n_transactions": 3
+      }
+    ],
+    "root": "70:100428660",
+    "terminals": [
+      "10344:8081F2700",
+      "1047:806535D40",
+      "11157:801A090C0",
+      "122151:808E5E2E0",
+      "12:800EBE390",
+      "1362:804602630",
+      "1420:8011A5800",
+      "14387:808D26060",
+      "1601:8005D0700",
+      "17732:8030D3D10",
+      "18015:80E6B6C20",
+      "19329:808E99300",
+      "19474:803AE9360",
+      "232583:80DC7B6D0",
+      "25981:803BE2A60",
+      "3149:80131F8A0"
+    ],
+    "truncation": {
+      "budget_exhausted": false,
+      "capped_vertices": 1,
+      "degree_cap": 16,
+      "edge_budget": 200,
+      "reason": "1 vertices hit the degree cap"
+    }
+  },
+  "transaction_ids": [
+    "TX0004323610",
+    "TX0004323700",
+    "TX0004323746",
+    "TX0004323901",
+    "TX0004323956",
+    "TX0004324277",
+    "TX0004324416",
+    "TX0004324426",
+    "TX0004324582",
+    "TX0004324955",
+    "TX0004325389",
+    "TX0004325548",
+    "TX0004325556",
+    "TX0004326631",
+    "TX0004326836",
+    "TX0004323394",
+    "TX0004352136",
+    "TX0004352137",
+    "TX0004352138"
+  ]
+}

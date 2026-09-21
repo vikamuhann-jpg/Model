@@ -12,6 +12,31 @@ ends in something reportable, and so an early stop still leaves a defensible del
 
 ---
 
+> ## Outcome — 2026-09-20
+>
+> This document is the **plan as written on 2026-09-18** and is kept as the record of
+> what was pre-registered. What actually happened is in [`STATUS.md`](STATUS.md); the
+> "Current position" table below is a snapshot from that date and is not maintained.
+>
+> | Tier | Outcome |
+> |---|---|
+> | **A** — close Track R | **Done.** E2 validated, 8/8 correctness gates, PR-AUC 0.2048 (0.1400 artifact-free). |
+> | **B** — feature research | **Done, negative.** Value-flow ruled out before building; adaptive built and rejected at −0.0326 ([ADR-011](ADR-011-adaptive-features-rejected.md)). E2 stands as final. |
+> | **C** — cross-dataset | **Done.** ETH phishing slice (1.25M-edge prefix), account-level, account-disjoint protocol. Graph features transfer: +0.0504 account PR-AUC, 95% CI [0.019, 0.123], 2000/2000 bootstrap resamples favour graph. |
+> | **S1** — reconstruction | **Rejected** — failed its identity test ([ADR-008](ADR-008-reconstruction-rejected.md)). |
+> | **S2** — chunked persistence | **Done** ([ADR-009](ADR-009-chunked-extraction.md)). |
+> | **S3** — capability matrix | **Done** — `data/capabilities.py`. |
+> | **S4** — account-level evaluation | **Done** — `evaluation/account_level.py`; label propagation explicitly rejected. |
+> | **S5** — scaling envelope | **Done** — measured on an HI-Medium prefix under a 20-minute budget, published as a floor and labelled generator-specific ([ADR-013](ADR-013-degree-skew-dominates-cost.md)). |
+> | **S6** — contaminated pre-registration | **Done** ([ADR-010](ADR-010-contaminated-pre-registration.md)); P4 left as written and reported as a conditional pass. |
+>
+> The pre-registered inclusion bar in this document reads **2σ ≈ 0.0034**, derived from
+> the tabular-only seed spread. The final seven-arm ablation pooled a larger spread, so
+> the bar actually applied was **2σ = 0.0059**. Both are recorded; the looser bar was
+> used, and Tier B failed against it by more than five times over.
+
+---
+
 ## Current position
 
 | | |

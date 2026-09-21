@@ -1,0 +1,501 @@
+{
+  "test": {
+    "n": 761422,
+    "positives": 906,
+    "base_rate": 0.001189878937041483,
+    "pr_auc": 0.1368849038449003,
+    "roc_auc": 0.9468721651711849,
+    "lift_over_base_rate": 115.0410344982248,
+    "best_f1": 0.23516835916622128,
+    "best_f1_threshold": 0.1538461446762085,
+    "budgets": [
+      {
+        "budget": 0.001,
+        "threshold": 0.18390804529190063,
+        "alerts": 761,
+        "true_positives": 188,
+        "precision": 0.24704336399474375,
+        "recall": 0.20750551876379691
+      },
+      {
+        "budget": 0.005,
+        "threshold": 0.054999999701976776,
+        "alerts": 3807,
+        "true_positives": 404,
+        "precision": 0.10612030470186498,
+        "recall": 0.445916114790287
+      },
+      {
+        "budget": 0.01,
+        "threshold": 0.022771889343857765,
+        "alerts": 7614,
+        "true_positives": 485,
+        "precision": 0.06369845022327292,
+        "recall": 0.5353200883002207
+      },
+      {
+        "budget": 0.05,
+        "threshold": 0.0026193438097834587,
+        "alerts": 38071,
+        "true_positives": 696,
+        "precision": 0.018281631688161593,
+        "recall": 0.7682119205298014
+      }
+    ]
+  },
+  "seed_scores": [
+    0.1368849038449003,
+    0.1429462095395969,
+    0.1400793265398538
+  ],
+  "typology_recall_at_1pct": {
+    "BIPARTITE": {
+      "positives": 40,
+      "caught": 22,
+      "recall": 0.55
+    },
+    "CYCLE": {
+      "positives": 52,
+      "caught": 23,
+      "recall": 0.4423076923076923
+    },
+    "FAN-IN": {
+      "positives": 56,
+      "caught": 42,
+      "recall": 0.75
+    },
+    "FAN-OUT": {
+      "positives": 63,
+      "caught": 45,
+      "recall": 0.7142857142857143
+    },
+    "GATHER-SCATTER": {
+      "positives": 125,
+      "caught": 87,
+      "recall": 0.696
+    },
+    "RANDOM": {
+      "positives": 41,
+      "caught": 23,
+      "recall": 0.5609756097560976
+    },
+    "SCATTER-GATHER": {
+      "positives": 106,
+      "caught": 86,
+      "recall": 0.8113207547169812
+    },
+    "STACK": {
+      "positives": 81,
+      "caught": 47,
+      "recall": 0.5802469135802469
+    }
+  },
+  "temporal_stability": {
+    "windows": [
+      {
+        "start": "2022-09-09 03:15:00+00:00",
+        "end": "2022-09-09 12:11:48+00:00",
+        "n": 239133,
+        "positives": 184,
+        "pr_auc": 0.0945835335864613,
+        "base_rate": 0.0007694462913943287
+      },
+      {
+        "start": "2022-09-09 12:11:48+00:00",
+        "end": "2022-09-09 21:08:36+00:00",
+        "n": 238463,
+        "positives": 229,
+        "pr_auc": 0.20021705178663857,
+        "base_rate": 0.0009603166948331607
+      },
+      {
+        "start": "2022-09-09 21:08:36+00:00",
+        "end": "2022-09-10 06:05:24+00:00",
+        "n": 139972,
+        "positives": 130,
+        "pr_auc": 0.06094429649986018,
+        "base_rate": 0.0009287571800074301
+      },
+      {
+        "start": "2022-09-10 06:05:24+00:00",
+        "end": "2022-09-10 15:02:12+00:00",
+        "n": 72077,
+        "positives": 196,
+        "pr_auc": 0.21024820101786226,
+        "base_rate": 0.0027193140669006756
+      },
+      {
+        "start": "2022-09-10 15:02:12+00:00",
+        "end": "2022-09-10 23:59:00+00:00",
+        "n": 71777,
+        "positives": 167,
+        "pr_auc": 0.1361674250919222,
+        "base_rate": 0.002326650598381097
+      }
+    ],
+    "gate_p7": {
+      "passes": true,
+      "detail": "no monotone decline; spread 0.1493"
+    },
+    "mean_pr_auc": 0.1404321015965489,
+    "sd_pr_auc": 0.06497522185608935
+  },
+  "hard_negatives": {
+    "n": 172158,
+    "budget": 0.01,
+    "flagged": 4022,
+    "false_positive_rate": 0.02336226024930587,
+    "baseline_benign_rate": 0.011138490182981029,
+    "enrichment_vs_ordinary_benign": 2.097435098071196,
+    "n_transactions": 172158,
+    "selection_reasons": {
+      "high_fan_out": 116717,
+      "high_fan_in": 18735,
+      "high_volume_hub": 119959,
+      "regular_cadence_fan_out": 9,
+      "reciprocal_pair": 31327,
+      "share_of_benign": 0.2264
+    },
+    "n_accounts_flagged": {
+      "high_fan_out": 2106,
+      "high_fan_in": 1321,
+      "high_volume_hub": 1992,
+      "regular_cadence_fan_out": 1,
+      "reciprocal_pair": 2309
+    }
+  },
+  "unseen_pattern_split": {
+    "held_out_typologies": [
+      "BIPARTITE",
+      "SCATTER-GATHER"
+    ],
+    "seen_typologies": [
+      "CYCLE",
+      "FAN-IN",
+      "FAN-OUT",
+      "GATHER-SCATTER",
+      "RANDOM",
+      "STACK"
+    ],
+    "sizes": {
+      "train": 2540142,
+      "test": 2537095
+    },
+    "excluded_unannotated_positives": 1968,
+    "positive_annotation_coverage": 0.5647943387881469,
+    "notes": [
+      "1,968 positives lack a typology annotation (43.5% of positives) and were kept on the training side; the held-out evaluation therefore covers only annotated patterns",
+      "this split is not chronological -- it measures structural generalisation, not future performance, and must never be reported as the headline result"
+    ]
+  },
+  "feature_drift": {
+    "psi_threshold": 0.25,
+    "n_features": 167,
+    "n_significant_drift": 15,
+    "significant_features": [
+      "gfp_f208",
+      "gfp_f185",
+      "gfp_f209",
+      "gfp_f184",
+      "gfp_f192",
+      "gfp_f193",
+      "gfp_f201",
+      "gfp_f214",
+      "gfp_f213",
+      "gfp_f207",
+      "gfp_f200",
+      "tx_hour",
+      "tx_minute_of_day",
+      "gfp_f197",
+      "gfp_f198"
+    ],
+    "top_by_psi": [
+      {
+        "feature": "gfp_f208",
+        "psi": 2.6005288871328123,
+        "ks": 0.6337424304872956
+      },
+      {
+        "feature": "gfp_f185",
+        "psi": 2.02177304083109,
+        "ks": 0.582701223100762
+      },
+      {
+        "feature": "gfp_f209",
+        "psi": 2.017814938594048,
+        "ks": 0.5892234421892628
+      },
+      {
+        "feature": "gfp_f184",
+        "psi": 1.2740375303064662,
+        "ks": 0.42240285489301227
+      },
+      {
+        "feature": "gfp_f192",
+        "psi": 1.2112481259004548,
+        "ks": 0.4512722764506814
+      },
+      {
+        "feature": "gfp_f193",
+        "psi": 0.9914568466509182,
+        "ks": 0.40248912960176
+      },
+      {
+        "feature": "gfp_f201",
+        "psi": 0.5868229395120668,
+        "ks": 0.28323126994432113
+      },
+      {
+        "feature": "gfp_f214",
+        "psi": 0.5861627313005517,
+        "ks": 0.26772889953343576
+      },
+      {
+        "feature": "gfp_f213",
+        "psi": 0.5477812416308814,
+        "ks": 0.2512207255304633
+      },
+      {
+        "feature": "gfp_f207",
+        "psi": 0.47456054152423377,
+        "ks": 0.2318909659666667
+      },
+      {
+        "feature": "gfp_f200",
+        "psi": 0.3583952057978466,
+        "ks": 0.24609912686991509
+      },
+      {
+        "feature": "tx_hour",
+        "psi": 0.2911563075831323,
+        "ks": 0.18066236309114325
+      },
+      {
+        "feature": "tx_minute_of_day",
+        "psi": 0.2894856412134887,
+        "ks": 0.18517949842132114
+      },
+      {
+        "feature": "gfp_f197",
+        "psi": 0.2857247329405304,
+        "ks": 0.22101558152192047
+      },
+      {
+        "feature": "gfp_f198",
+        "psi": 0.27890602706550044,
+        "ks": 0.23371696492887206
+      },
+      {
+        "feature": "gfp_f190",
+        "psi": 0.23717507732739396,
+        "ks": 0.2052526549650595
+      },
+      {
+        "feature": "gfp_f191",
+        "psi": 0.23298811675538603,
+        "ks": 0.18677504736669248
+      },
+      {
+        "feature": "gfp_f189",
+        "psi": 0.21368152734493562,
+        "ks": 0.19359905124172716
+      },
+      {
+        "feature": "gfp_f206",
+        "psi": 0.1639656481222898,
+        "ks": 0.13468457263293498
+      },
+      {
+        "feature": "gfp_f211",
+        "psi": 0.15976352859477924,
+        "ks": 0.15449813092944953
+      }
+    ]
+  },
+  "error_analysis": {
+    "budget": 0.01,
+    "true_positives": 485,
+    "false_positives": 7129,
+    "false_negatives": 421,
+    "true_negatives": 753387,
+    "slices": {
+      "typology": {
+        "(unannotated)": {
+          "positives": 342,
+          "caught": 110,
+          "recall": 0.3216374269005848
+        },
+        "CYCLE": {
+          "positives": 52,
+          "caught": 23,
+          "recall": 0.4423076923076923
+        },
+        "BIPARTITE": {
+          "positives": 40,
+          "caught": 22,
+          "recall": 0.55
+        },
+        "RANDOM": {
+          "positives": 41,
+          "caught": 23,
+          "recall": 0.5609756097560976
+        },
+        "STACK": {
+          "positives": 81,
+          "caught": 47,
+          "recall": 0.5802469135802469
+        },
+        "GATHER-SCATTER": {
+          "positives": 125,
+          "caught": 87,
+          "recall": 0.696
+        },
+        "FAN-OUT": {
+          "positives": 63,
+          "caught": 45,
+          "recall": 0.7142857142857143
+        },
+        "FAN-IN": {
+          "positives": 56,
+          "caught": 42,
+          "recall": 0.75
+        },
+        "SCATTER-GATHER": {
+          "positives": 106,
+          "caught": 86,
+          "recall": 0.8113207547169812
+        }
+      },
+      "amount_band": {
+        "(-0.000999, 144.172]": {
+          "positives": 42,
+          "caught": 1,
+          "recall": 0.023809523809523808
+        },
+        "(144.172, 613.914]": {
+          "positives": 35,
+          "caught": 5,
+          "recall": 0.14285714285714285
+        },
+        "(613.914, 2670.728]": {
+          "positives": 143,
+          "caught": 68,
+          "recall": 0.4755244755244755
+        },
+        "(17157.762, 626035501453.45]": {
+          "positives": 244,
+          "caught": 145,
+          "recall": 0.5942622950819673
+        },
+        "(2670.728, 17157.762]": {
+          "positives": 442,
+          "caught": 266,
+          "recall": 0.6018099547511312
+        }
+      },
+      "hour_band": {
+        "18-23": {
+          "positives": 209,
+          "caught": 86,
+          "recall": 0.41148325358851673
+        },
+        "00-05": {
+          "positives": 126,
+          "caught": 61,
+          "recall": 0.48412698412698413
+        },
+        "06-11": {
+          "positives": 250,
+          "caught": 139,
+          "recall": 0.556
+        },
+        "12-17": {
+          "positives": 321,
+          "caught": 199,
+          "recall": 0.6199376947040498
+        }
+      },
+      "payment_type": {
+        "Bitcoin": {
+          "positives": 10,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "Cash": {
+          "positives": 17,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "Credit Card": {
+          "positives": 30,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "Cheque": {
+          "positives": 53,
+          "caught": 3,
+          "recall": 0.05660377358490566
+        },
+        "ACH": {
+          "positives": 796,
+          "caught": 482,
+          "recall": 0.6055276381909548
+        }
+      },
+      "pattern_position": {
+        "middle": {
+          "positives": 172,
+          "caught": 108,
+          "recall": 0.627906976744186
+        },
+        "late": {
+          "positives": 128,
+          "caught": 86,
+          "recall": 0.671875
+        },
+        "early": {
+          "positives": 264,
+          "caught": 181,
+          "recall": 0.6856060606060606
+        }
+      }
+    },
+    "false_negative_profile": {
+      "count": 421,
+      "median_amount": 5284.6,
+      "self_transfer_rate": 0.004750593824228029,
+      "top_payment_types": {
+        "ACH": 314,
+        "Cheque": 50,
+        "Credit Card": 30
+      },
+      "caught_for_contrast": {
+        "count": 485,
+        "median_amount": 12320.7,
+        "self_transfer_rate": 0.0,
+        "top_payment_types": {
+          "ACH": 482,
+          "Cheque": 3
+        }
+      }
+    },
+    "false_positive_profile": {
+      "count": 7129,
+      "median_amount": 5584.09,
+      "self_transfer_rate": 0.0,
+      "top_payment_types": {
+        "ACH": 5252,
+        "Cheque": 1270,
+        "Credit Card": 412
+      }
+    }
+  },
+  "inference_latency": {
+    "batch_size": 1,
+    "repeats": 5,
+    "median_ms": 13.096746000030635,
+    "p95_ms": 14.257073200019477,
+    "min_ms": 8.989589000009346
+  },
+  "elapsed_seconds": 368.7
+}

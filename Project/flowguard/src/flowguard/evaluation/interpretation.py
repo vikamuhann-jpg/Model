@@ -126,6 +126,30 @@ def explain(
     )
 
 
+def local_contributions(model, X: pd.DataFrame) -> pd.DataFrame:
+    """Per-row SHAP contributions, signed.
+
+    :func:`explain` aggregates to a global mean and discards the sign, which
+    answers "what does this model use" but not "why this case". An evidence
+    bundle needs the second question, so this returns the raw matrix: one row per
+    transaction, one column per feature, positive meaning the feature pushed the
+    score up.
+
+    No sampling -- a case is a handful of transactions, and silently explaining a
+    subset of the evidence would defeat the purpose.
+    """
+    import shap
+
+    booster = model.booster_ if hasattr(model, "booster_") else model
+    if hasattr(booster, "set_param"):
+        booster.set_param({"device": "cpu"})
+
+    values = shap.TreeExplainer(booster).shap_values(X)
+    if isinstance(values, list):  # older SHAP returns per-class lists
+        values = values[-1]
+    return pd.DataFrame(values, index=X.index, columns=X.columns)
+
+
 def stability_across_seeds(
     interpretations: list[Interpretation], top: int = 10
 ) -> dict:

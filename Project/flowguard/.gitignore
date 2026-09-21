@@ -16,6 +16,10 @@ __pycache__/
 
 models/*
 !models/.gitkeep
+# The shipped inference model is the one package that goes into git. This file
+# overrides the root .gitignore for everything under Project/flowguard/, so the
+# exception has to live here as well.
+!models/flowguard_A4_v1/
 experiments/*/
 !experiments/.gitkeep
 reports/**/*

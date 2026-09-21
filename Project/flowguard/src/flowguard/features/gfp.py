@@ -61,6 +61,24 @@ DEFAULT_GFP_PARAMS: dict[str, Any] = {
 }
 
 
+def windowed_params(window_days: float = 2.0) -> dict[str, Any]:
+    """The graph parameters every shipped model was trained with.
+
+    Training and scoring must build graph features identically -- a model scored
+    on features computed with a different window receives inputs it never saw,
+    and nothing downstream would notice. One definition, used by both.
+
+    The window bounds the internal graph (ADR-006); sub-windows larger than it
+    are capped, since the graph holds nothing older to search.
+    """
+    params = dict(DEFAULT_GFP_PARAMS)
+    window = int(window_days * DAY)
+    params["time_window"] = window
+    for key in ("vertex_stats_tw", "scatter-gather_tw", "temp-cycle_tw", "lc-cycle_tw"):
+        params[key] = min(params[key], window)
+    return params
+
+
 def varying_columns(parts: list[Path]) -> tuple[list[str], int]:
     """Columns that are not constant across the whole corpus.
 

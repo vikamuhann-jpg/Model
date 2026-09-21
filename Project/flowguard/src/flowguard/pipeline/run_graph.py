@@ -60,13 +60,10 @@ def run(
     # The GFP time_window bounds the internal graph. At 10 days (the whole
     # corpus) nothing is ever evicted, so every transform searches an
     # ever-growing structure and extraction does not terminate in useful time.
-    from flowguard.features.gfp import DAY, DEFAULT_GFP_PARAMS
+    from flowguard.features.gfp import windowed_params
 
-    params = dict(DEFAULT_GFP_PARAMS)
-    window = int(window_days * DAY)
-    params["time_window"] = window
-    for key in ("vertex_stats_tw", "scatter-gather_tw", "temp-cycle_tw", "lc-cycle_tw"):
-        params[key] = min(params[key], window)
+    # Shared with pipeline/score.py so training and inference cannot drift.
+    params = windowed_params(window_days)
     chunk_dir = cache.parent / f"{cache.stem}_parts" if cache else None
     gfp = GFPFeatures(params=params, chunk_dir=chunk_dir)
     print(f"GFP time_window = {window_days} days")

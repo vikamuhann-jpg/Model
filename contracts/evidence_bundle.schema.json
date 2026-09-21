@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flowguard/evidence_bundle.schema.json",
+  "title": "Evidence bundle (one case)",
+  "description": "Everything an investigator is shown for one case. Self-contained: every aggregate in it is derived from `path` and can be re-derived from it. A UI must render these fields, never recompute its own figures. Written by flowguard.evidence.bundle.EvidenceBundle.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id", "created_at", "subject_account", "risk", "transaction_ids", "accounts",
+    "path", "trace", "reasons", "coverage", "model", "schema_version",
+    "investigator_notes", "disposition"
+  ],
+  "properties": {
+    "case_id": {"type": "string", "description": "FG- plus a hash of the traced transaction ids. Stable for the same evidence."},
+    "created_at": {"type": "string", "description": "ISO-8601 UTC."},
+    "subject_account": {"type": "string", "description": "The account the trace starts from."},
+    "schema_version": {"type": "string", "enum": ["1.0"]},
+    "risk": {
+      "type": "object",
+      "required": ["score", "threshold", "threshold_source", "above_threshold"],
+      "properties": {
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "threshold": {"type": "number"},
+        "threshold_source": {"type": "string"},
+        "above_threshold": {"type": "boolean"}
+      }
+    },
+    "transaction_ids": {"type": "array", "items": {"type": "string"}},
+    "accounts": {"type": "array", "items": {"type": "string"}, "description": "Every account in `path`, sorted."},
+    "path": {
+      "type": "array",
+      "description": "The traced transactions, ordered by depth then time. The fund-flow graph to draw.",
+      "items": {
+        "type": "object",
+        "required": ["transaction_id", "from", "to", "amount", "at", "depth"],
+        "properties": {
+          "transaction_id": {"type": "string"},
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "amount": {"type": "number"},
+          "at": {"type": "string", "description": "ISO-8601 UTC."},
+          "depth": {"type": "integer", "minimum": 1, "description": "Hops from the subject account."},
+          "payment_type": {"type": "string"}
+        }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "required": ["root", "direction", "horizon", "is_complete", "truncation", "terminals", "per_hop"],
+      "properties": {
+        "root": {"type": "string"},
+        "direction": {"type": "string", "enum": ["forward", "backward"]},
+        "horizon": {"type": "integer", "minimum": 1},
+        "is_complete": {"type": "boolean", "description": "False means the trace hit a bound and is a SAMPLE of the neighbourhood. Say so in the UI."},
+        "truncation": {
+          "type": "object",
+          "required": ["degree_cap", "edge_budget", "capped_vertices", "budget_exhausted", "reason"],
+          "properties": {
+            "degree_cap": {"type": "integer"},
+            "edge_budget": {"type": "integer"},
+            "capped_vertices": {"type": "integer"},
+            "budget_exhausted": {"type": "boolean"},
+            "reason": {"type": ["string", "null"]}
+          }
+        },
+        "terminals": {"type": "array", "items": {"type": "string"}, "description": "Accounts where the traced money stopped."},
+        "per_hop": {
+          "type": "array",
+          "description": "Amounts OBSERVED at each hop. Not an attribution of which funds moved: money entering an account is commingled. Never label this 'funds traced'.",
+          "items": {
+            "type": "object",
+            "required": ["depth", "n_transactions", "n_accounts", "amount"],
+            "properties": {
+              "depth": {"type": "integer"},
+              "n_transactions": {"type": "integer"},
+              "n_accounts": {"type": "integer"},
+              "amount": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "description": "Why the model scored this case, ranked by absolute contribution.",
+      "items": {
+        "type": "object",
+        "required": ["code", "feature", "contribution", "opaque", "transaction_ids"],
+        "properties": {
+          "code": {"type": "string", "description": "FEATURE_RAISED or FEATURE_LOWERED."},
+          "feature": {"type": "string"},
+          "contribution": {"type": "number", "description": "Signed SHAP value summed over the cited transactions. Positive raised the score."},
+          "opaque": {"type": "boolean", "description": "True for graph features (gfp_f*): the library exposes no feature names, so the reason is a position, not a concept. Show it as such."},
+          "transaction_ids": {"type": "array", "items": {"type": "string"}, "description": "Always a subset of the bundle's transaction_ids."}
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["rails", "unknown_rail_transactions", "demonstrated_rails", "warning"],
+      "properties": {
+        "rails": {"type": "object", "description": "Payment rail -> count of transactions in the path."},
+        "unknown_rail_transactions": {"type": "integer"},
+        "demonstrated_rails": {"type": "array", "items": {"type": "string"}},
+        "warning": {"type": ["string", "null"], "description": "When set, the UI MUST show it on the case itself, not behind a link. The model has near-zero recall off the ACH rail."}
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["model_id"],
+      "description": "Which model produced the case. Extra keys are provenance.",
+      "properties": {"model_id": {"type": "string"}}
+    },
+    "investigator_notes": {"type": "array", "items": {"type": "string"}},
+    "disposition": {
+      "type": ["string", "null"],
+      "enum": [null, "open", "escalated", "closed-false-positive", "closed-reported"],
+      "description": "Set by an investigator. Null until reviewed. The only route this project has to real labels."
+    }
+  }
+}
