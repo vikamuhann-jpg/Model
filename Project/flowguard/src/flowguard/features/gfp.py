@@ -4,17 +4,13 @@ Wraps IBM's ``snapml.GraphFeaturePreprocessor``, which maintains a
 continuous-time dynamic graph internally and emits fan-in/fan-out, degree,
 scatter-gather, cycle and vertex-statistics features per edge.
 
-**The insertion-order convention is the whole correctness story** (plan v3
-section 12). Features for an edge must be computed against the graph as it stood
-*before* that edge was inserted. The sequence per batch is therefore:
-
-    transform(batch)      -> features from history only
-    partial_fit(batch)    -> now insert the batch
-
-Doing it the other way round lets a transaction contribute to its own degree,
-fan and cycle counts, which inflates exactly the structural signals the
-experiment is trying to measure. ``tests/leakage/test_gfp_no_self_inflation.py``
-asserts the difference is real rather than theoretical.
+**Each edge enters the graph exactly once, through ``transform``.** Per the
+Snap ML docs, ``transform(batch)`` inserts the batch and then computes features
+on the updated graph -- so an edge counts itself (it is known when it is
+scored) and sees no later batch. Until 2026-09-21 this module believed
+transform was read-only and followed it with ``partial_fit(batch)``, inserting
+every edge twice; E2 and A4 were extracted that way (WINNING_PLAN.md, S1 log).
+``test_each_edge_enters_the_graph_once`` pins the corrected behaviour.
 
 Requires Linux -- the Windows snapml wheel has no native GFP backend. See
 docs/ADR-001-gfp-platform.md.
@@ -77,6 +73,71 @@ def windowed_params(window_days: float = 2.0) -> dict[str, Any]:
     for key in ("vertex_stats_tw", "scatter-gather_tw", "temp-cycle_tw", "lc-cycle_tw"):
         params[key] = min(params[key], window)
     return params
+
+
+#: Snap ML's default histogram bins (read from get_params(), snapml 1.15.6);
+#: used when params do not set ``<pattern>_bins``.
+_DEFAULT_BINS = {
+    "fan": list(range(2, 31)), "degree": list(range(2, 31)),
+    "scatter-gather": list(range(2, 31)), "temp-cycle": list(range(2, 31)),
+    "lc-cycle": list(range(2, 11)),
+}
+_HISTOGRAMS = [  # documented output order: (pattern, direction, readable name)
+    ("fan", "in", "fan-in"), ("fan", "out", "fan-out"),
+    ("degree", "in", "degree-in"), ("degree", "out", "degree-out"),
+    ("scatter-gather", None, "scatter-gather"), ("temp-cycle", None, "temporal cycle"),
+    ("lc-cycle", None, "length-constrained cycle"),
+]
+_VERTEX_STATS = {0: "distinct counterparties", 1: "transaction count",
+                 2: "fan/degree ratio (GFP 'ratio')", 3: "average", 4: "total", 5: "minimum",
+                 6: "maximum", 7: "median", 8: "variance", 9: "skew", 10: "kurtosis"}
+_RAW_COLUMNS = {3: "timestamp", 4: "amount"}  # edge columns (see run_streaming)
+
+
+def _hours(seconds: float) -> str:
+    return f"{seconds / 3600:g}h"
+
+
+def feature_labels(params: dict[str, Any] | None = None) -> list[str]:
+    """Human-readable meaning of every GFP output column, in output order.
+
+    Built from the layout the Snap ML docs define: pattern histograms (fan-in,
+    fan-out, degree-in, degree-out, scatter-gather, temporal cycle, length-
+    constrained cycle; enabled ones only), then vertex statistics for sender-out,
+    sender-in, receiver-out, receiver-in. ``gfp_f042`` is ``labels[42]``.
+    """
+    p = {**DEFAULT_GFP_PARAMS, **(params or {})}
+    labels = []
+    for pattern, _direction, name in _HISTOGRAMS:
+        if not p.get(pattern):
+            continue
+        bins = list(p.get(f"{pattern}_bins") or _DEFAULT_BINS[pattern])
+        window = _hours(p[f"{pattern}_tw"])
+        for i, low in enumerate(bins):
+            size = f"size {low}" if i + 1 < len(bins) and bins[i + 1] == low + 1 else (
+                f"size {low}-{bins[i + 1] - 1}" if i + 1 < len(bins) else f"size {low}+")
+            labels.append(f"count of {name} patterns of {size} containing this "
+                          f"transaction ({window} window)")
+    if p.get("vertex_stats"):
+        feats = list(p["vertex_stats_feats"])
+        window = _hours(p["vertex_stats_tw"])
+        for party, direction in [("sender", "outgoing"), ("sender", "incoming"),
+                                 ("receiver", "outgoing"), ("receiver", "incoming")]:
+            prefix = f"{party}'s {direction} transfers ({window} window)"
+            labels += [f"{prefix}: {_VERTEX_STATS[f]}" for f in feats if f <= 2]
+            for col in p["vertex_stats_cols"]:
+                raw = _RAW_COLUMNS.get(col, f"column {col}")
+                labels += [f"{prefix}: {_VERTEX_STATS[f]} {raw}" for f in feats if f > 2]
+    return labels
+
+
+def feature_label(column: str, params: dict[str, Any] | None = None) -> str | None:
+    """Label for one ``gfp_fNNN`` column; None for anything else."""
+    if not column.startswith("gfp_f"):
+        return None
+    labels = feature_labels(params)
+    i = int(column[len("gfp_f"):])
+    return labels[i] if i < len(labels) else None
 
 
 def varying_columns(parts: list[Path]) -> tuple[list[str], int]:
@@ -223,6 +284,11 @@ class GFPFeatures(FeatureExtractor):
                 "for a reported result.",
                 stacklevel=2,
             )
+        # A batch must never straddle two part files: the chunk buffer is
+        # filled one whole batch at a time.
+        self.chunk_rows = max(
+            self.batch_size, self.chunk_rows - self.chunk_rows % self.batch_size
+        )
         if self.batch_size != 1:
             warnings.warn(
                 f"GFPFeatures(batch_size={self.batch_size}) leaks future edges: "
@@ -244,11 +310,15 @@ class GFPFeatures(FeatureExtractor):
             "GFPFeatures streams over the whole corpus; call run_streaming()"
         )
 
-    def run_streaming(self, tx_view: pd.DataFrame) -> pd.DataFrame:
+    def run_streaming(
+        self, tx_view: pd.DataFrame, *, assemble: bool = True
+    ) -> pd.DataFrame | None:
         """Extract features for every row, in chronological order.
 
         ``tx_view`` must be label-free and is sorted internally; the returned
-        frame is reindexed to match the input order.
+        frame is reindexed to match the input order. In chunked mode,
+        ``assemble=False`` returns None and leaves the parts on disk, so the
+        caller can read only the varying columns (:func:`read_varying_chunks`).
         """
         S.assert_label_blind(tx_view)
         started = time.perf_counter()
@@ -283,6 +353,9 @@ class GFPFeatures(FeatureExtractor):
         preproc = self._new_preprocessor()
         n_raw = edges.shape[1]
         total = len(edges)
+        # Output width, probed on a throwaway preprocessor so the real graph is
+        # untouched (the first batch may hold only self-transfers).
+        n_eng = self._new_preprocessor().transform(edges[:1]).shape[1] - n_raw
         window_seconds = float(self.params.get("time_window", 0) or 0)
         last_rebuild = 0
 
@@ -306,8 +379,18 @@ class GFPFeatures(FeatureExtractor):
             stop = min(start + self.batch_size, total)
             batch = edges[start:stop]
 
-            # 1. Features from history only -- BEFORE this batch is inserted.
-            transformed = preproc.transform(batch)[:, n_raw:]
+            # transform() INSERTS the batch and computes features on the
+            # updated graph (Snap ML docs; pinned by
+            # test_each_edge_enters_the_graph_once). So an edge counts itself --
+            # it is known at scoring time -- and sees nothing later than its own
+            # batch. It must not also be partial_fit: that inserted every edge
+            # twice, which is how E2 and A4 were extracted.
+            # Self-transfers never enter the graph; their features stay NaN.
+            mask = in_graph[start:stop]
+            transformed = np.full((stop - start, n_eng), np.nan, dtype="float32")
+            if mask.any():
+                transformed[mask] = preproc.transform(batch[mask])[:, n_raw:]
+                self.n_edges_inserted_ += int(mask.sum())
 
             if self.chunk_dir is not None:
                 if chunk_buffer is None:
@@ -338,12 +421,6 @@ class GFPFeatures(FeatureExtractor):
                         (total, transformed.shape[1]), dtype="float32"
                     )
                 engineered[start:stop] = transformed
-
-            # 2. Now insert, so later batches can see these edges.
-            insertable = batch[in_graph[start:stop]]
-            if len(insertable):
-                preproc.partial_fit(insertable)
-                self.n_edges_inserted_ += len(insertable)
 
             # Rebuild on a bounded vertex set. Replay runs against a near-empty
             # graph -- the fast regime -- so the cost is small relative to the
@@ -391,6 +468,8 @@ class GFPFeatures(FeatureExtractor):
             del preproc, edges, ordered, source, destination, timestamps, amounts
             del in_graph, chunk_buffer
             gc.collect()
+            if not assemble:
+                return None
             return read_chunks(self.chunk_dir, order=tx_view.index)
 
         if engineered is None:
@@ -435,7 +514,9 @@ class GFPFeatures(FeatureExtractor):
                 if not self.extract_seconds_
                 else round(self.n_edges_inserted_ / self.extract_seconds_, 1)
             ),
-            "insertion_convention": "transform before partial_fit (v3 s12)",
+            # Pre-2026-09-21 extractions recorded "transform before partial_fit",
+            # which inserted every edge twice. This string marks corrected ones.
+            "insertion_convention": "transform inserts once",
             "rebuild_every": self.rebuild_every,
             "n_rebuilds": self.n_rebuilds_,
             "rebuild_seconds": round(self.rebuild_seconds_, 1),

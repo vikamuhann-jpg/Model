@@ -37,6 +37,7 @@ from typing import Any
 import pandas as pd
 
 from flowguard.data import schema as S
+from flowguard.features.gfp import feature_label
 from flowguard.graph.trace import TraceResult
 
 SCHEMA_VERSION = "1.0"
@@ -83,17 +84,20 @@ class Reason:
     feature: str
     contribution: float
     transaction_ids: list[str]
-    #: True when the feature's *meaning* is not recoverable. The graph library
-    #: exposes no feature names (no ``get_feature_names`` on the preprocessor),
-    #: so ``gfp_f042`` is a position, not a concept. Those features carry 69.8%
-    #: of the model's attribution mass, which makes this the honest ceiling on
-    #: per-case explainability rather than a detail.
+    #: True when the feature's *meaning* is not recoverable. GFP has no
+    #: ``get_feature_names``, but its docs define the output layout, so
+    #: ``gfp_f042`` can be named from the extraction parameters
+    #: (:func:`flowguard.features.gfp.feature_labels`). Opaque only when those
+    #: parameters were not supplied.
     opaque: bool = False
+    #: Plain-language meaning of ``feature``; None when unknown.
+    label: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "code": self.code,
             "feature": self.feature,
+            "label": self.label,
             "contribution": self.contribution,
             "opaque": self.opaque,
             "transaction_ids": list(self.transaction_ids),
@@ -192,6 +196,7 @@ class EvidenceBundle:
                     contribution=r["contribution"],
                     transaction_ids=list(r["transaction_ids"]),
                     opaque=r["opaque"],
+                    label=r.get("label"),
                 )
                 for r in payload["reasons"]
             ],
@@ -285,6 +290,8 @@ class EvidenceBundle:
         for reason in self.reasons[:5]:
             mark = " [opaque]" if reason.opaque else ""
             lines.append(f"    {reason.code:38s} {reason.contribution:+.5f}{mark}")
+            if reason.label:
+                lines.append(f"      {reason.label}")
         return "\n".join(lines)
 
 
@@ -323,13 +330,15 @@ def build_bundle(
     transactions: pd.DataFrame | None = None,
     top_reasons: int = 8,
     created_at: datetime | None = None,
+    gfp_params: dict[str, Any] | None = None,
 ) -> EvidenceBundle:
     """Assemble a case from a trace, a score and (optionally) SHAP values.
 
     ``contributions`` is the signed per-row SHAP matrix from
     :func:`flowguard.evaluation.interpretation.local_contributions`, indexed to
     match ``result.edges``. Without it the bundle carries no reasons rather than
-    fabricated ones.
+    fabricated ones. ``gfp_params`` -- the parameters the graph features were
+    extracted with -- names graph reasons; without them they stay opaque.
     """
     edges = result.edges
     rail_lookup: dict[str, Any] = {}
@@ -406,13 +415,15 @@ def build_bundle(
                 str(edges.loc[i, S.TRANSACTION_ID])
                 for i in driving.sort_values(ascending=total < 0).index
             ]
+            label = feature_label(str(feature), gfp_params) if gfp_params else None
             reasons.append(
                 Reason(
                     code=reason_code(feature, total),
                     feature=str(feature),
                     contribution=total,
                     transaction_ids=cited,
-                    opaque=_is_opaque(str(feature)),
+                    opaque=_is_opaque(str(feature)) and label is None,
+                    label=label,
                 )
             )
 

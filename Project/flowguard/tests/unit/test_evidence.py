@@ -178,11 +178,23 @@ def test_reasons_are_ranked_by_absolute_contribution(chain, contributions):
     assert magnitudes == sorted(magnitudes, reverse=True)
 
 
-def test_graph_features_are_flagged_opaque(chain, contributions):
-    """The library exposes no feature names, so gfp_* is a position, not a concept."""
+def test_graph_features_are_opaque_without_extraction_params(chain, contributions):
+    """Without the GFP params a gfp_* column is a position, not a concept."""
     by_feature = {r.feature: r for r in _bundle(chain, contributions).reasons}
     assert by_feature["gfp_f042"].opaque is True
+    assert by_feature["gfp_f042"].label is None
     assert by_feature["amount_log"].opaque is False
+
+
+def test_graph_features_are_named_from_extraction_params(chain, contributions):
+    """With them, the documented GFP layout names every column (WINNING_PLAN S7)."""
+    from flowguard.features.gfp import DEFAULT_GFP_PARAMS, feature_labels
+
+    bundle = _bundle(chain, contributions, gfp_params=DEFAULT_GFP_PARAMS)
+    reason = {r.feature: r for r in bundle.reasons}["gfp_f042"]
+    assert reason.opaque is False
+    assert reason.label == feature_labels(DEFAULT_GFP_PARAMS)[42]
+    assert EvidenceBundle.from_json(bundle.to_json()).reasons[0].label == bundle.reasons[0].label
 
 
 def test_without_contributions_there_are_no_reasons(chain):

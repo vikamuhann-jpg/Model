@@ -137,3 +137,15 @@ def test_read_chunks_rejects_an_empty_directory(tmp_path):
 
 def test_chunking_is_off_by_default():
     assert GFPFeatures().chunk_dir is None
+
+
+@pytest.mark.filterwarnings("ignore:GFPFeatures\\(batch_size")
+def test_batches_never_straddle_part_files(tmp_path):
+    """chunk_rows=37 is not a multiple of 8; a batch used to overflow the part
+    buffer (ValueError: could not broadcast) on the first boundary it crossed."""
+    extractor = GFPFeatures(
+        params=_params(), progress_every=0, batch_size=8,
+        chunk_dir=tmp_path / "parts", chunk_rows=37,
+    )
+    assert extractor.chunk_rows % 8 == 0
+    assert extractor.run_streaming(_frame(n=120)).shape[0] == 120
