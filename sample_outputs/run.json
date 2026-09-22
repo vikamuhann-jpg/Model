@@ -1,24 +1,25 @@
 {
-  "model_id": "flowguard_A4_v1",
-  "git_commit": "d230c50ef73e93e3d48cf20e5d30f1d8fcbdc1f4",
-  "feature_schema_hash": "ca7efed40f449a71",
+  "model_id": "flowguard_V2_v1",
+  "git_commit": "d59a1254c41d203119f7264c1d16015c95a84b4c",
+  "feature_schema_hash": "7c58a20d069f9985",
   "uses_payment_type": false,
-  "threshold": 0.009264620952308178,
+  "threshold": 0.01364365965127945,
   "threshold_source": "validation @ 1.0% alert budget",
-  "n_transactions": 50000,
-  "n_alerts": 2484,
+  "n_transactions": 50263,
+  "n_alerts": 630,
+  "history_transactions": 5028082,
   "case_ids": [
-    "FG-fcbd97f8",
-    "FG-c971aac1",
-    "FG-88e0bcb5",
-    "FG-39c67d92",
-    "FG-9ab632d5",
-    "FG-5cbf2c0f",
-    "FG-a0e9b30d",
-    "FG-a4955b4e",
-    "FG-8aa3bfef",
-    "FG-59aedba7"
+    "FG-06436b78",
+    "FG-6fef29de",
+    "FG-1e2cb533",
+    "FG-2cf77da2",
+    "FG-dcdbcfa9",
+    "FG-1e270556",
+    "FG-14cf0822",
+    "FG-85f4a314",
+    "FG-82b960dd",
+    "FG-b21ffd83"
   ],
-  "scored_at": "2026-09-21T13:27:57Z",
-  "seconds": 10.9
+  "scored_at": "2026-09-22T12:35:51Z",
+  "seconds": 449.5
 }

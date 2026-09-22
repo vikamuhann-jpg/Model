@@ -98,5 +98,8 @@ the model does not support.
 - `run.json` carries `model_id` and `feature_schema_hash`. Store them with every run; a change
   in either means scores from different runs are not directly comparable.
 - Every bundle carries `schema_version`. A breaking change to these contracts bumps it.
-- The shipped model is `flowguard_A4_v1`. Its `uses_payment_type` is `false`, and a test fails
-  if a model that uses the payment-type artifact is ever committed.
+- The shipped model is `flowguard_V2_v1` (A4 is retired, [ADR-015](../docs/ADR-015-gfp-double-insertion.md)).
+  Its `uses_payment_type` is `false`, and a test fails if a model that uses the payment-type
+  artifact is ever committed.
+- `run.json` may carry `history_transactions`: rows used as history for features but not
+  scored (`score.py --emit-from`). Store it; a run with little history alerts above budget.

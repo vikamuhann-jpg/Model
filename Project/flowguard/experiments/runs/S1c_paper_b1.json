@@ -1,0 +1,172 @@
+{
+  "protocol": "GFP paper: untrimmed, 60/20/20, batched GFP",
+  "extraction": {
+    "batch_size": 1,
+    "window_days": null,
+    "params": {
+      "num_threads": 8,
+      "time_window": 86400,
+      "vertex_stats": true,
+      "vertex_stats_tw": 86400,
+      "vertex_stats_cols": [
+        3,
+        4
+      ],
+      "vertex_stats_feats": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        8,
+        9,
+        10
+      ],
+      "fan": true,
+      "fan_tw": 86400,
+      "degree": true,
+      "degree_tw": 86400,
+      "scatter-gather": true,
+      "scatter-gather_tw": 21600,
+      "temp-cycle": true,
+      "temp-cycle_tw": 86400,
+      "lc-cycle": true,
+      "lc-cycle_tw": 86400,
+      "lc-cycle_len": 10
+    },
+    "extract_seconds": 9539.117555591001,
+    "tx_per_s": 532.3705227873531
+  },
+  "include_payment_type": true,
+  "behaviour_features": false,
+  "split": {
+    "spec": {
+      "train_frac": 0.6,
+      "val_frac": 0.2,
+      "test_frac": 0.2,
+      "boundary_policy": "hard_cut",
+      "purge_buffer": null,
+      "seed": 42
+    },
+    "boundaries": {
+      "train_end": "2022-09-06T13:36:00+00:00",
+      "val_end": "2022-09-08T16:12:00+00:00"
+    },
+    "sizes": {
+      "train": 3047216,
+      "val": 1015565,
+      "test": 1015564
+    },
+    "patterns_spanning_boundary": 155,
+    "purged_rows": 0,
+    "notes": [
+      "hard cut; 155 pattern(s) truncated at a boundary and may be undetectable in test by construction"
+    ]
+  },
+  "n_features": 205,
+  "params": {
+    "objective": "binary:logistic",
+    "eval_metric": "aucpr",
+    "tree_method": "hist",
+    "max_depth": 8,
+    "learning_rate": 0.03,
+    "subsample": 0.8,
+    "colsample_bytree": 0.75,
+    "min_child_weight": 1,
+    "reg_lambda": 0.01,
+    "n_jobs": 8,
+    "random_state": 42,
+    "scale_pos_weight": 2
+  },
+  "tuning": {
+    "params_from": "/mnt/c/Users/vikam/flowguard_data/runs/S2_tuned_b128.json"
+  },
+  "runs": [
+    {
+      "seed": 42,
+      "val_pr_auc": 0.4435392422481333,
+      "f1_val_threshold": 0.47952639368524913,
+      "f1_oracle": 0.5171743357096565,
+      "pr_auc": 0.47919699651578607,
+      "roc_auc": 0.9750949894285615,
+      "recall_at_1pct": 0.7106288258208124,
+      "best_iteration": 831,
+      "device": "cuda",
+      "fit_seconds": 114.6
+    },
+    {
+      "seed": 7,
+      "val_pr_auc": 0.45295991730276614,
+      "f1_val_threshold": 0.5286103542234333,
+      "f1_oracle": 0.5484076433121019,
+      "pr_auc": 0.5226181577034867,
+      "roc_auc": 0.9767474860298329,
+      "recall_at_1pct": 0.7250973845297718,
+      "best_iteration": 530,
+      "device": "cuda",
+      "fit_seconds": 78.0
+    },
+    {
+      "seed": 123,
+      "val_pr_auc": 0.4582120761821051,
+      "f1_val_threshold": 0.542803970223325,
+      "f1_oracle": 0.545168397859616,
+      "pr_auc": 0.5196362784528517,
+      "roc_auc": 0.9769784773688411,
+      "recall_at_1pct": 0.7212020033388982,
+      "best_iteration": 987,
+      "device": "cuda",
+      "fit_seconds": 111.2
+    },
+    {
+      "seed": 2024,
+      "val_pr_auc": 0.4484981824280025,
+      "f1_val_threshold": 0.5002773155851359,
+      "f1_oracle": 0.515650209745079,
+      "pr_auc": 0.4871484743857899,
+      "roc_auc": 0.9749086954839853,
+      "recall_at_1pct": 0.7039510294936004,
+      "best_iteration": 926,
+      "device": "cuda",
+      "fit_seconds": 108.1
+    },
+    {
+      "seed": 31337,
+      "val_pr_auc": 0.44846280827325996,
+      "f1_val_threshold": 0.5372773920917597,
+      "f1_oracle": 0.5420195439739414,
+      "pr_auc": 0.5127061619607562,
+      "roc_auc": 0.9764178592822902,
+      "recall_at_1pct": 0.7173066221480244,
+      "best_iteration": 999,
+      "device": "cuda",
+      "fit_seconds": 115.4
+    }
+  ],
+  "summary": {
+    "f1_val_threshold": {
+      "mean": 0.5176990851617805,
+      "sd": 0.02689467223483941
+    },
+    "f1_oracle": {
+      "mean": 0.5336840261200789,
+      "sd": 0.015936945801002616
+    },
+    "pr_auc": {
+      "mean": 0.5042612138037341,
+      "sd": 0.019784766806320565
+    },
+    "roc_auc": {
+      "mean": 0.9760295015187023,
+      "sd": 0.000961300900991258
+    },
+    "recall_at_1pct": {
+      "mean": 0.7156371730662215,
+      "sd": 0.008439482964998933
+    },
+    "val_pr_auc": {
+      "mean": 0.4503344452868534,
+      "sd": 0.005522676945174412
+    }
+  }
+}

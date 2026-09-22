@@ -1,0 +1,17 @@
+{
+  "continuous": {
+    "seconds": 1344.2,
+    "tx_per_s": 1488,
+    "rebuilds": 0,
+    "rebuild_seconds": 0.0
+  },
+  "rebuild_100000": {
+    "seconds": 1326.7,
+    "tx_per_s": 1507,
+    "rebuilds": 19,
+    "rebuild_seconds": 54.1
+  },
+  "identical": true,
+  "max_abs_diff": 0.0,
+  "rows": 2000000
+}

@@ -31,6 +31,7 @@ from flowguard.features.gfp import (
     DEFAULT_GFP_PARAMS,
     GFPFeatures,
     read_varying_chunks,
+    timestamp_stat_columns,
     windowed_params,
 )
 from flowguard.features.transaction import TransactionFeatures
@@ -107,10 +108,17 @@ def run(
     paper_params: bool = False,
     params_from: Path | None = None,
     n_estimators_override: int | None = None,
+    drop_timestamp_stats: bool = False,
+    variant: str = "HI-Small",
 ) -> dict:
-    df = pd.read_parquet(processed_dir / "HI-Small_transactions.parquet")
+    df = pd.read_parquet(processed_dir / f"{variant}_transactions.parquet")
     print(f"loaded {len(df):,} transactions, {int(df[S.IS_LAUNDERING].sum()):,} positives")
     gfp, extraction = gfp_block(df, cache, batch_size, window_days, paper_params)
+    if drop_timestamp_stats:
+        dropped = timestamp_stat_columns(gfp.columns, extraction["params"])
+        gfp = gfp.drop(columns=dropped)
+        extraction["timestamp_stats_dropped"] = dropped
+        print(f"dropped {len(dropped)} timestamp-statistic columns", flush=True)
     if behaviour:
         # Whole corpus, before the split: a validation row keeps its history.
         started = time.perf_counter()
@@ -194,6 +202,7 @@ def run(
           f"PR-AUC {summary['pr_auc']['mean']:.4f} ± {summary['pr_auc']['sd']:.4f}")
     return {
         "protocol": "GFP paper: untrimmed, 60/20/20, batched GFP",
+        "variant": variant,
         "extraction": extraction,
         "include_payment_type": include_payment_type,
         "behaviour_features": behaviour,
@@ -209,6 +218,7 @@ def run(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--processed-dir", type=Path, required=True)
+    parser.add_argument("--variant", default="HI-Small", help="corpus, e.g. LI-Small")
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--window-days", type=float, default=None,
@@ -224,6 +234,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--params-from", type=Path, default=None,
                         help="reuse the model params of an earlier run's JSON")
     parser.add_argument("--n-estimators", type=int, default=None)
+    parser.add_argument("--drop-timestamp-stats", action="store_true",
+                        help="drop GFP vertex statistics on the timestamp column")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
 
@@ -233,6 +245,7 @@ def main(argv: list[str] | None = None) -> int:
         include_payment_type=not args.no_payment_type, seeds=tuple(args.seeds),
         tune=args.tune, behaviour=args.behaviour, paper_params=args.paper_params,
         params_from=args.params_from, n_estimators_override=args.n_estimators,
+        drop_timestamp_stats=args.drop_timestamp_stats, variant=args.variant,
     )
     args.out.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
     print(f"wrote {args.out}")

@@ -1,0 +1,186 @@
+
+======================================================================
+FlowGuard validation — HI-Small / V2
+======================================================================
+loaded 5,078,345 transactions
+  192 of 235 GFP features vary; reading only those
+loaded 192 varying GFP features
+added 10 behaviour features
+train=3,047,216 val=1,015,565 test=1,015,564 | test positives 1,797 | features 214
+
+======================================================================
+Training the model under validation
+======================================================================
+  n=1,015,564  positives=1,797  base_rate=0.17695%
+  PR-AUC=0.5587  (lift 315.7x)  ROC-AUC=0.9666  best-F1=0.5991
+  @  0.1% budget: precision=0.8219 recall=0.4647 (835/1016 alerts)
+  @  0.5% budget: precision=0.2355 recall=0.6656 (1196/5078 alerts)
+  @  1.0% budget: precision=0.1277 recall=0.7218 (1297/10156 alerts)
+  @  5.0% budget: precision=0.0288 recall=0.8130 (1461/50778 alerts)
+  device=cuda  120.3s
+
+======================================================================
+C2 / C3 — sanity baselines
+======================================================================
+  random     PR-AUC=0.001772 PASS
+  constant   PR-AUC=0.001769 PASS
+  shuffled   PR-AUC=0.001742 PASS
+
+======================================================================
+C7 — determinism
+======================================================================
+  identical predictions on re-fit: True
+
+======================================================================
+C8 — SHAP interpretation
+======================================================================
+SHAP over 20,000 sampled rows
+  top feature: bh_pair_n_prior at 18.6% of mean |SHAP|
+  gate C8 (<50%): PASS
+  share by family:
+    gfp         67.0%
+    bh          26.8%
+    tx           6.3%
+  top features:
+    bh_pair_n_prior                   18.6%
+    gfp_f186                          15.0%
+    gfp_f225                          13.3%
+    gfp_f185                           8.7%
+    bh_src_secs_since_out              3.2%
+    gfp_f183                           2.8%
+    gfp_f199                           2.7%
+    tx_amount                          2.3%
+    gfp_f217                           1.7%
+    gfp_f184                           1.6%
+    gfp_f212                           1.3%
+    gfp_f224                           1.2%
+
+======================================================================
+C1 — leakage suite
+======================================================================
+  36 passed, 7 deselected, 2 warnings in 11.19s
+
+======================================================================
+P6 — seed stability
+======================================================================
+  seed 42     PR-AUC=0.5587
+  seed 7      PR-AUC=0.5695
+  seed 123    PR-AUC=0.5751
+  seed 2024   PR-AUC=0.5412
+  seed 31337  PR-AUC=0.5505
+  mean=0.5590 sd=0.0137  =>  2 sigma = 0.0275
+
+======================================================================
+P1 / P2 — experiment comparisons
+======================================================================
+  P2: E1 0.0376 vs E0 0.0011 -> delta +0.0364 > 2 sigma (0.0275)
+
+======================================================================
+P7 — temporal stability
+======================================================================
+temporal stability -- P7 PASS: no monotone decline; spread 0.6162
+  2022-09-08 16:13:00+00:00 .. 2022-09-10 16:14:00+00:00  n= 952,348 pos=1,003 PR-AUC=0.3823
+  2022-09-10 16:14:00+00:00 .. 2022-09-12 16:15:00+00:00  n=  62,704 pos=  496 PR-AUC=0.7547
+  2022-09-12 16:15:00+00:00 .. 2022-09-14 16:16:00+00:00  n=     365 pos=  208 PR-AUC=0.9711
+  2022-09-14 16:16:00+00:00 .. 2022-09-16 16:17:00+00:00  n=     109 pos=   65 PR-AUC=0.9731
+  2022-09-16 16:17:00+00:00 .. 2022-09-18 16:18:00+00:00  n=      38 pos=   25 PR-AUC=0.9985
+
+======================================================================
+P8 / P9 — cost
+======================================================================
+  P8: 532 tx/s vs >= 1,000 required
+  P9: 10.88 GB vs <= 10 GB allowed
+  inference: 29.46 ms median (batch=1)
+
+======================================================================
+Error analysis and robustness slices
+======================================================================
+at 1.0% alert budget:
+  TP=1,297  FP=8,859  FN=500  TN=1,004,908
+
+  recall by typology:
+    (unannotated)           14.0% (64/458)
+    BIPARTITE               75.7% (56/74)
+    FAN-IN                  83.2% (114/137)
+    GATHER-SCATTER          92.5% (371/401)
+    STACK                   92.9% (130/140)
+    RANDOM                  93.0% (80/86)
+    SCATTER-GATHER          95.2% (240/252)
+    CYCLE                   95.4% (104/109)
+    FAN-OUT                 98.6% (138/140)
+
+  recall by amount_band:
+    (-0.000999, 138.5]       6.4% (3/47)
+    (138.5, 598.992]        24.6% (16/65)
+    (598.992, 2621.25]      45.2% (114/252)
+    (2621.25, 16868.03]     80.3% (708/882)
+    (16868.03, 626035501453.45]  82.8% (456/551)
+
+  recall by hour_band:
+    18-23                   61.3% (265/432)
+    00-05                   67.5% (193/286)
+    06-11                   75.8% (339/447)
+    12-17                   79.1% (500/632)
+
+  recall by payment_type:
+    Bitcoin                  0.0% (0/13)
+    Credit Card              2.6% (1/38)
+    Cheque                   4.2% (3/71)
+    Cash                     4.5% (1/22)
+    ACH                     78.2% (1292/1653)
+
+  recall by pattern_position:
+    early                   87.3% (455/521)
+    middle                  94.4% (422/447)
+    late                    96.0% (356/371)
+
+hard negatives: 259,435 rows; FP rate 1.51% vs ordinary benign 0.99% (1.5x)
+unseen-pattern split available; held out ['BIPARTITE', 'SCATTER-GATHER']
+feature drift: 22 of 214 features above PSI 0.25
+
+======================================================================
+Gate report
+======================================================================
+CORRECTNESS GATES (a failure voids the result)
+  [PASS  ] C2  Shuffled-label PR-AUC within 2x base rate
+            shuffled-label PR-AUC 0.001742 vs base rate 0.001769
+  [PASS  ] C3  Random-score PR-AUC at base rate
+            random-score PR-AUC 0.001772
+  [PASS  ] C4  Split boundary timestamps strictly ordered and recorded
+            train_end=2022-09-06 13:36:00+00:00, val_end=2022-09-08 16:12:00+00:00; strictly ordered=True
+  [PASS  ] C5  Training and inference feature schemas identical
+            feature schema hash 18878a0601f73409 (train) vs 18878a0601f73409 (test)
+  [PASS  ] C7  Same seed and data produce identical predictions
+            same seed and data reproduce predictions: True
+  [PASS  ] C8  No single feature above 50% of mean |SHAP|
+            top feature bh_pair_n_prior holds 18.6% of mean |SHAP|
+  [PASS  ] C1  Leakage suite passes
+            36 passed, 7 deselected, 2 warnings in 11.19s
+  [PASS  ] C6  One command reproduces the headline PR-AUC
+            `python -m flowguard.pipeline.run_validation` reproduces this report from the cached feature table; headline PR-AUC 0.5587
+
+PERFORMANCE GATES (a failure is a finding, not a defect)
+  [PASS  ] P6  PR-AUC standard deviation across seeds
+            sd 0.0137 vs < 0.02
+  [SKIP  ] P1  E2 beats E1 by > 2 sigma
+            V2 or E1 not in registry
+  [PASS  ] P2  E1 beats E0 by > 2 sigma
+            delta +0.0364 > 2 sigma (0.0275)
+  [SKIP  ] P3  E7 beats E2 by > 2 sigma (or inconclusive)
+            E7 not built; feature research not reached
+  [PASS  ] P4  Recall at 1% alert budget
+            recall 72.2% at 1% budget vs >= 45%
+  [PASS  ] P5  No typology at zero recall
+            all typologies detected
+  [PASS  ] P7  No monotone decline across test sub-windows
+            no monotone decline; spread 0.6162
+  [FAIL  ] P8  Feature extraction throughput
+            532 tx/s vs >= 1,000 required
+  [FAIL  ] P9  Peak resident memory
+            10.88 GB vs <= 10 GB allowed
+
+Correctness gates all pass; result stands.
+logged V2 to the experiment registry
+
+model package -> /mnt/c/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Project/flowguard/models/flowguard_V2_v1
+exit 0

@@ -29,7 +29,7 @@ websites/*_files/
 # Models: only the inference package ships. Research packages stay local.
 Project/flowguard/models/*
 !Project/flowguard/models/.gitkeep
-!Project/flowguard/models/flowguard_A4_v1/
+!Project/flowguard/models/flowguard_V2_v1/
 
 Project/flowguard/experiments/*/
 Project/flowguard/reports/**/*

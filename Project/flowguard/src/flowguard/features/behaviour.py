@@ -21,6 +21,20 @@ from flowguard.data import schema as S
 HOUR = 3_600
 DAY = 86_400
 
+#: What each column means, for evidence-bundle reasons.
+LABELS = {
+    "bh_src_out_n_1h": "transfers the sender made in the previous hour",
+    "bh_src_out_n_24h": "transfers the sender made in the previous 24h",
+    "bh_src_out_amt_24h": "total the sender sent in the previous 24h",
+    "bh_src_in_n_24h": "transfers the sender received in the previous 24h",
+    "bh_src_passthrough_24h": "share of what the sender received in the previous 24h that this transfer moves on",
+    "bh_dst_in_n_24h": "transfers the receiver received in the previous 24h",
+    "bh_dst_out_n_24h": "transfers the receiver made in the previous 24h",
+    "bh_src_secs_since_out": "seconds since the sender's previous transfer (empty if none)",
+    "bh_pair_n_prior": "earlier transfers from this sender to this receiver (0 = first-time counterparty)",
+    "bh_reverse_pair_n_prior": "earlier transfers from this receiver back to this sender",
+}
+
 
 class _Timeline:
     """Events for many keys, answerable as strictly-earlier window queries."""

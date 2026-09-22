@@ -37,7 +37,9 @@ from typing import Any
 import pandas as pd
 
 from flowguard.data import schema as S
+from flowguard.features.behaviour import LABELS as BEHAVIOUR_LABELS
 from flowguard.features.gfp import feature_label
+from flowguard.features.transaction import LABELS as TX_LABELS
 from flowguard.graph.trace import TraceResult
 
 SCHEMA_VERSION = "1.0"
@@ -415,7 +417,8 @@ def build_bundle(
                 str(edges.loc[i, S.TRANSACTION_ID])
                 for i in driving.sort_values(ascending=total < 0).index
             ]
-            label = feature_label(str(feature), gfp_params) if gfp_params else None
+            label = (feature_label(str(feature), gfp_params) if gfp_params else None) \
+                or BEHAVIOUR_LABELS.get(str(feature)) or TX_LABELS.get(str(feature))
             reasons.append(
                 Reason(
                     code=reason_code(feature, total),

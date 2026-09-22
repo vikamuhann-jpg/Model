@@ -1,5 +1,11 @@
 # ADR-012 — A weak proxy label needs an account-disjoint partition
 
+> **Note 2026-09-22:** figures in this record were computed with the extractor that inserted
+> every edge twice. **Re-run with the corrected extractor** on the same 1.25M-row prefix:
+> graph Δ account PR-AUC **+0.0497, 95% CI [0.0186, 0.1079]**, 2,000/2,000 resamples favour
+> the graph arm — the result holds. A third arm adding the behaviour features gains a further
+> +0.0098 (2σ 0.0085). See [ADR-015](ADR-015-gfp-double-insertion.md) and `experiments/runs/P2_eth*`.
+
 **Status:** Accepted
 **Date:** 2026-09-20
 **Decision:** When training on a proxy derived from account-level labels, partition the

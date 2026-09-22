@@ -36,6 +36,7 @@ from flowguard.features.gfp import (
     GFPFeatures,
     read_varying_chunks,
 )
+from flowguard.features.behaviour import behaviour_features
 from flowguard.features.transaction import TransactionFeatures
 from flowguard.models.xgb import XGBModel
 from flowguard.splits.temporal import BoundaryPolicy, SplitSpec, chronological_split
@@ -191,15 +192,24 @@ def run(
     gc.collect()
     print(f"{gfp.shape[1]} varying graph features", flush=True)
 
+    # T3 tests the HI-Small behaviour features (WINNING_PLAN S4) on a real network:
+    # the check that they describe behaviour rather than the synthetic generator.
+    history = behaviour_features(S.feature_view(df))
+
     results: dict = {}
-    for name, use_gfp in (("T1", False), ("T2", True)):
+    for name, use_gfp, use_bh in (("T1", False, False), ("T2", True, False),
+                                  ("T3", True, True)):
         extractor = TransactionFeatures(include_payment_type=False).fit(
             S.feature_view(train_df)
         )
 
-        def build(part: pd.DataFrame, _use_gfp: bool = use_gfp) -> pd.DataFrame:
-            tab = extractor.run(S.feature_view(part))
-            return pd.concat([tab, gfp.loc[part.index]], axis=1) if _use_gfp else tab
+        def build(part: pd.DataFrame, _gfp: bool = use_gfp, _bh: bool = use_bh) -> pd.DataFrame:
+            blocks = [extractor.run(S.feature_view(part))]
+            if _gfp:
+                blocks.append(gfp.loc[part.index])
+            if _bh:
+                blocks.append(history.loc[part.index])
+            return pd.concat(blocks, axis=1)
 
         x_train, x_val, x_test = build(train_df), build(val_df), build(test_df)
         y_train, y_val = proxy(train_df), proxy(val_df)
@@ -238,10 +248,17 @@ def run(
         f"=> {'REAL' if abs(delta) > 2 * sd else 'WITHIN NOISE'}",
         flush=True,
     )
+    sd3 = float(np.mean([results[k]["sd"] for k in ("T2", "T3")]))
+    delta3 = results["T3"]["mean"] - results["T2"]["mean"]
+    print(f"T3 - T2 = {delta3:+.4f}   2 sigma = {2 * sd3:.4f}   "
+          f"=> {'REAL' if abs(delta3) > 2 * sd3 else 'WITHIN NOISE'}", flush=True)
     results["verdict"] = {
         "delta": delta,
         "two_sigma": 2 * sd,
         "real": bool(abs(delta) > 2 * sd),
+        "behaviour_delta_T3_minus_T2": delta3,
+        "behaviour_two_sigma": 2 * sd3,
+        "behaviour_real": bool(abs(delta3) > 2 * sd3),
         "slice": [slice_start, slice_end],
         "rows": int(len(df)),
         "protocol": "chronological split + account-disjoint labels (hash, 30% eval)",

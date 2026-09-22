@@ -1,0 +1,185 @@
+{
+  "accounts": [
+    "20226:80857D940",
+    "241775:810DCEAA0"
+  ],
+  "case_id": "FG-14cf0822",
+  "coverage": {
+    "demonstrated_rails": [
+      "ACH"
+    ],
+    "rails": {
+      "ACH": 3
+    },
+    "unknown_rail_transactions": 0,
+    "warning": null
+  },
+  "created_at": "2026-09-22T12:35:05.051938+00:00",
+  "disposition": null,
+  "investigator_notes": [],
+  "model": {
+    "feature_schema_hash": "7c58a20d069f9985",
+    "git_commit": "d59a1254c41d203119f7264c1d16015c95a84b4c",
+    "model_id": "flowguard_V2_v1",
+    "uses_payment_type": false
+  },
+  "path": [
+    {
+      "amount": 18385.76,
+      "at": "2022-09-08T17:13:00+00:00",
+      "depth": 1,
+      "from": "20226:80857D940",
+      "payment_type": "ACH",
+      "to": "20226:80857D940",
+      "transaction_id": "TX0002860254"
+    },
+    {
+      "amount": 449.85,
+      "at": "2022-09-08T17:13:00+00:00",
+      "depth": 1,
+      "from": "20226:80857D940",
+      "payment_type": "ACH",
+      "to": "241775:810DCEAA0",
+      "transaction_id": "TX0002860255"
+    },
+    {
+      "amount": 15240.55,
+      "at": "2022-09-08T17:13:00+00:00",
+      "depth": 1,
+      "from": "20226:80857D940",
+      "payment_type": "ACH",
+      "to": "241775:810DCEAA0",
+      "transaction_id": "TX0002860256"
+    }
+  ],
+  "reasons": [
+    {
+      "code": "BH_SRC_SECS_SINCE_OUT_RAISED",
+      "contribution": 5.698574066162109,
+      "feature": "bh_src_secs_since_out",
+      "label": "seconds since the sender's previous transfer (empty if none)",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860256",
+        "TX0002860254",
+        "TX0002860255"
+      ]
+    },
+    {
+      "code": "BH_PAIR_N_PRIOR_RAISED",
+      "contribution": 2.681464910507202,
+      "feature": "bh_pair_n_prior",
+      "label": "earlier transfers from this sender to this receiver (0 = first-time counterparty)",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860256",
+        "TX0002860255"
+      ]
+    },
+    {
+      "code": "GFP_F185_LOWERED",
+      "contribution": -1.37258780002594,
+      "feature": "gfp_f185",
+      "label": "sender's outgoing transfers (24h window): fan/degree ratio (GFP 'ratio')",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860254"
+      ]
+    },
+    {
+      "code": "BH_DST_IN_N_24H_RAISED",
+      "contribution": 1.1171596050262451,
+      "feature": "bh_dst_in_n_24h",
+      "label": "transfers the receiver received in the previous 24h",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860256",
+        "TX0002860255",
+        "TX0002860254"
+      ]
+    },
+    {
+      "code": "TX_AMOUNT_RAISED",
+      "contribution": 0.6777440309524536,
+      "feature": "tx_amount",
+      "label": "transaction amount",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860256",
+        "TX0002860254"
+      ]
+    },
+    {
+      "code": "BH_SRC_PASSTHROUGH_24H_LOWERED",
+      "contribution": -0.5597479343414307,
+      "feature": "bh_src_passthrough_24h",
+      "label": "share of what the sender received in the previous 24h that this transfer moves on",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860254",
+        "TX0002860256",
+        "TX0002860255"
+      ]
+    },
+    {
+      "code": "GFP_F233_LOWERED",
+      "contribution": -0.5444408059120178,
+      "feature": "gfp_f233",
+      "label": "receiver's incoming transfers (24h window): skew amount",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860254",
+        "TX0002860256",
+        "TX0002860255"
+      ]
+    },
+    {
+      "code": "TX_AMOUNT_RECEIVED_LOG_RAISED",
+      "contribution": 0.5399165749549866,
+      "feature": "tx_amount_received_log",
+      "label": "amount received (log scale)",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860256",
+        "TX0002860254"
+      ]
+    }
+  ],
+  "risk": {
+    "above_threshold": true,
+    "score": 0.976190447807312,
+    "threshold": 0.01364365965127945,
+    "threshold_source": "validation @ 1.0% alert budget"
+  },
+  "schema_version": "1.0",
+  "subject_account": "20226:80857D940",
+  "trace": {
+    "direction": "forward",
+    "horizon": 3,
+    "is_complete": true,
+    "per_hop": [
+      {
+        "amount": 34076.159999999996,
+        "depth": 1,
+        "n_accounts": 2,
+        "n_transactions": 3
+      }
+    ],
+    "root": "20226:80857D940",
+    "terminals": [
+      "241775:810DCEAA0"
+    ],
+    "truncation": {
+      "budget_exhausted": false,
+      "capped_vertices": 0,
+      "degree_cap": 16,
+      "edge_budget": 200,
+      "reason": null
+    }
+  },
+  "transaction_ids": [
+    "TX0002860254",
+    "TX0002860255",
+    "TX0002860256"
+  ]
+}

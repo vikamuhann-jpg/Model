@@ -1,5 +1,7 @@
 # ADR-013 — Extraction cost is driven by degree skew, not corpus size
 
+> **Note 2026-09-22:** figures in this record were computed with the extractor that inserted every edge twice. See [ADR-015](ADR-015-gfp-double-insertion.md) for what was re-run and the corrected values.
+
 **Status:** Accepted
 **Date:** 2026-09-20
 **Decision:** Treat the P8 throughput gate and the S5 scaling envelope as

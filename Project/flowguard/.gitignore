@@ -5,6 +5,9 @@
 *.parquet
 *.csv
 !tests/**/*.csv
+# The experiment registry is the provenance behind every reported number. The
+# README always said it was tracked; this rule silently kept it out until 2026-09-22.
+!experiments/results.csv
 
 .venv/
 __pycache__/
@@ -19,9 +22,12 @@ models/*
 # The shipped inference model is the one package that goes into git. This file
 # overrides the root .gitignore for everything under Project/flowguard/, so the
 # exception has to live here as well.
-!models/flowguard_A4_v1/
+!models/flowguard_V2_v1/
 experiments/*/
 !experiments/.gitkeep
+# Benchmark run records (JSON + logs, ~50 KB): the provenance of every number in
+# README and STATUS. Indexed in experiments/runs/README.md.
+!experiments/runs/
 reports/**/*
 !reports/**/.gitkeep
 

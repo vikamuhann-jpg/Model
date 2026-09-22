@@ -1,0 +1,37 @@
+  189 of 215 GFP features vary; reading only those
+prefix 1,250,000 rows, 189 graph features
+T1: 16,527 scored accounts, 20 positive
+T2: 16,527 scored accounts, 20 positive
+
+paired bootstrap over 16,527 accounts, 20 positive, 2000 resamples
+{
+  "n_accounts_scored": 16527,
+  "n_positive": 20,
+  "base_rate": 0.0012101409814243359,
+  "n_resamples_used": 2000,
+  "T1": {
+    "point": 0.0032200604061964175,
+    "ci95": [
+      0.0016015971010112152,
+      0.00705921994614413
+    ]
+  },
+  "T2": {
+    "point": 0.05290140673718199,
+    "ci95": [
+      0.021667412039201202,
+      0.11355109351560748
+    ]
+  },
+  "delta": {
+    "point": 0.04968134633098557,
+    "ci95": [
+      0.018644079300534376,
+      0.1079393216020932
+    ],
+    "fraction_of_resamples_favouring_graph": 1.0
+  }
+}
+
+BOOTSTRAP DONE
+exit 0

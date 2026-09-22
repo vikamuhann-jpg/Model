@@ -1,5 +1,7 @@
 # ADR-014 — A cheap tier cannot pre-filter for an expensive one here
 
+> **Note 2026-09-22:** figures in this record were computed with the extractor that inserted every edge twice. See [ADR-015](ADR-015-gfp-double-insertion.md) for what was re-run and the corrected values.
+
 **Status:** Accepted — negative result
 **Date:** 2026-09-21
 **Decision:** Do **not** use two-tier cascading to meet the extraction throughput gate.

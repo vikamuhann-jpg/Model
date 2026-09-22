@@ -1,0 +1,101 @@
+{
+  "T1": {
+    "features": 9,
+    "pr_auc_runs": [
+      0.0032200604061964175,
+      0.002855152941284721,
+      0.0031344734907864115
+    ],
+    "mean": 0.0030698956127558504,
+    "sd": 0.000190832626233744,
+    "n_labelled": 16527,
+    "n_positive": 20,
+    "base_rate": 0.0012101409814243359
+  },
+  "T2": {
+    "features": 198,
+    "pr_auc_runs": [
+      0.05290140673718199,
+      0.055053479194572104,
+      0.052079178017549105
+    ],
+    "mean": 0.05334468798310107,
+    "sd": 0.001535900573001969,
+    "n_labelled": 16527,
+    "n_positive": 20,
+    "base_rate": 0.0012101409814243359
+  },
+  "T3": {
+    "features": 208,
+    "pr_auc_runs": [
+      0.05894901143530201,
+      0.05925706888819462,
+      0.07115425944404967
+    ],
+    "mean": 0.06312011325584876,
+    "sd": 0.006959479404280753,
+    "n_labelled": 16527,
+    "n_positive": 20,
+    "base_rate": 0.0012101409814243359
+  },
+  "verdict": {
+    "delta": 0.05027479237034522,
+    "two_sigma": 0.001726733199235713,
+    "real": true,
+    "behaviour_delta_T3_minus_T2": 0.009775425272747697,
+    "behaviour_two_sigma": 0.008495379977282723,
+    "behaviour_real": true,
+    "slice": [
+      "2018-03-01T00:00:00",
+      "2018-04-30T23:59:59.999999"
+    ],
+    "rows": 1250000,
+    "protocol": "chronological split + account-disjoint labels (hash, 30% eval)",
+    "training_signal": "weak proxy: endpoint in a TRAIN-side illicit account",
+    "truncated_from_rows": 2024455,
+    "capabilities": {
+      "dataset": "ETH-Phishing",
+      "provides": [
+        "account_level_labels",
+        "currency",
+        "self_transfers",
+        "transaction_level_labels"
+      ],
+      "missing": [
+        "account_reference_table",
+        "cross_currency",
+        "payment_type",
+        "typology_annotations"
+      ],
+      "skipped_consumers": {
+        "E0_rule_baseline": [
+          "payment_type"
+        ],
+        "tx_payment_type_feature": [
+          "payment_type"
+        ],
+        "tx_cross_currency_feature": [
+          "cross_currency"
+        ],
+        "unseen_pattern_split": [
+          "typology_annotations"
+        ],
+        "per_typology_recall": [
+          "typology_annotations"
+        ],
+        "purge_boundary_policy": [
+          "typology_annotations"
+        ],
+        "entity_features": [
+          "account_reference_table"
+        ]
+      },
+      "notes": {
+        "currency": "1 distinct",
+        "transaction_level_labels": "base rate 0.0000%",
+        "account_level_labels": "506,613 labelled accounts",
+        "self_transfers": "0.0% of rows"
+      }
+    }
+  }
+}

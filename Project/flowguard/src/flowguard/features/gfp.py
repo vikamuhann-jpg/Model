@@ -131,6 +131,23 @@ def feature_labels(params: dict[str, Any] | None = None) -> list[str]:
     return labels
 
 
+def timestamp_stat_columns(columns, params: dict[str, Any] | None = None) -> list[str]:
+    """GFP vertex statistics computed on the timestamp column.
+
+    They carry large SHAP but no measured lift (WINNING_PLAN S2 vs S1e), and as a
+    reason ("average timestamp of the sender's transfers") they tell an
+    investigator nothing -- so the shipped model drops them.
+    """
+    labels = feature_labels(params)
+    out = []
+    for c in columns:
+        if c.startswith("gfp_f"):
+            i = int(c[len("gfp_f"):])
+            if i < len(labels) and "timestamp" in labels[i]:
+                out.append(c)
+    return out
+
+
 def feature_label(column: str, params: dict[str, Any] | None = None) -> str | None:
     """Label for one ``gfp_fNNN`` column; None for anything else."""
     if not column.startswith("gfp_f"):
