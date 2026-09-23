@@ -16,6 +16,7 @@ RAM, 50 GB disk, no GPU.
 | `01_prepare_and_baseline.ipynb` | Raw CSV → features → XGBoost baselines (E0/E1/E2) → **exports `*_features.h5`** |
 | `02_keras_model.ipynb` | Loads that HDF5 → trains a Keras/TensorFlow DNN → compares against the trees |
 | `data/` | Where the generated `*_features.h5` can live (outputs default to `~/flowguard_outputs/`) |
+| `STATUS.md` | **Current deployment state** — what is on the VM, what has been measured there, what does not work |
 
 Run them in order. `01` is the expensive one (feature extraction dominates);
 `02` reuses its output, so model iteration costs minutes rather than a full
