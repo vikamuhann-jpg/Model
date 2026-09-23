@@ -64,18 +64,63 @@ import time that the source tree is the copy actually in use.
 
 ---
 
-## First run
+## Validated on the VM, 2026-09-23
 
-Set `SAMPLE_ROWS = 300_000` in the paths cell of `01` for a fast end-to-end
-proof before committing to the full ~5.08M-row run. Peak RSS is printed at
-every stage against the 6 GB budget.
+`01` was run end to end on the target machine with its shipped defaults:
 
-Afterwards, check `results["E2"]["feature_source"]`:
+```
+s390x big-endian · Ubuntu 22.04 userspace on el9_6 kernel · Python 3.10.12
+2 vCPUs · 5.62 GB RAM (3.90 GB available) · no swap
+654,467 rows · 2.5 min · 2.55 GB peak
+```
 
-- `"gfp"` — snapml's Graph Feature Preprocessor worked
-- `"graph_lite_fallback"` — it did not, and E2 used weaker pandas-only
-  substitute features. The run is still valid, but it is **not** the
-  pre-registered GFP feature set, so say so in any write-up.
+| | PR-AUC | lift | recall@1% |
+|---|---|---|---|
+| E0 rules | 0.0008 | 1.0x | 1.6% |
+| E1 transaction-only | 0.0095 | 13.7x | — |
+| **E2 GFP + behaviour** | **0.0218** | **31.4x** | **39.7%** |
+
+All three leakage checks pass. **snapml 1.16.0's GraphFeaturePreprocessor
+works on s390x** — 215 engineered features, 153 of which vary on this window,
+at ~8,000 tx/s. ADR-001 only ever showed the *Windows* wheel lacks the
+backend; s390x had never been tested.
+
+After a run, check `results["E2"]["feature_source"]`. It should say `"gfp"`.
+`"graph_lite_fallback"` means snapml stopped being available and E2 used
+weaker substitute features — still a valid run, but not the pre-registered
+feature set, so say so in any write-up.
+
+## Do not widen WINDOW_DAYS without measuring
+
+`09/08-09/09` (1,137,240 rows) was **OOM-killed** during the E2 assembly.
+There is no swap on this box, so the kernel dies outright. The assembly
+briefly holds the graph block, all three feature matrices and a concat copy
+at once — about 4,000 B/row, because 153 of GFP's 215 columns survive the
+constant-prune rather than the ~80 first assumed. The real ceiling is near
+**790k rows** for this design.
+
+Going bigger needs the streaming rework: write features to HDF5 chunk-wise
+and train through `xgb.QuantileDMatrix` over a `DataIter`. That lifts the
+ceiling to roughly 30M rows, because RAM stops scaling with the corpus.
+
+## TensorFlow / Keras does not work on this machine
+
+`02_keras_model.ipynb` **cannot run here**, and this is an environment
+problem rather than a defect in the notebook. `tensorflow 2.9.3` requires
+`protobuf < 3.20`; the image carries `protobuf 7.35.1`. Setting
+`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` gets the import through, but
+constructing any Keras layer then fails with *"RepeatedCompositeFieldContainer
+object does not support item assignment"*. Nothing can be installed to fix
+it. The datathon's own `Fraud_LSTM_Keras_TF.ipynb` and
+`Digit_Class_TensorFlow.ipynb` carry no saved outputs, consistent with TF
+never having run on this image.
+
+`02` now fails immediately with that explanation instead of a protobuf
+traceback thirty cells deep.
+
+**`torch 2.1.0a0` does work** (source-built for s390x, 2 threads), with the
+same protobuf environment variable set before importing. A neural model is
+viable here — `02` would need porting from Keras to PyTorch.
 
 ---
 
