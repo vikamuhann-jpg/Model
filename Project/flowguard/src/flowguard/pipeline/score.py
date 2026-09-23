@@ -4,10 +4,10 @@ This is the boundary between the AI repository and the product repository. The
 product side never loads a model; it reads what this writes::
 
     python -m flowguard.pipeline.score \\
-        --package models/flowguard_A4_v1 \\
+        --package models/flowguard_V2_v1 \\
         --transactions transactions.parquet \\
         --out outputs/ \\
-        [--graph-cache <parts dir>] [--cases 25]
+        [--emit-from <timestamp>] [--graph-cache <parts dir>] [--cases 25]
 
 Writes three things, each shaped by a schema in ``contracts/``:
 
@@ -17,12 +17,12 @@ Writes three things, each shaped by a schema in ``contracts/``:
 ``run.json``               what produced this output             ``run.schema.json``
 =========================  ====================================  ==============================
 
-**Why batch, not a live API.** 155 of the model's inputs are graph features from
-IBM Snap ML's Graph Feature Preprocessor. It runs only on Linux and must replay
-transaction history in time order, at roughly 450 transactions a second on the
-synthetic corpus and less on real networks (ADR-013). One transaction cannot be
-scored in isolation; a window of history can. So scoring runs as a job and the
-product reads its results from a database.
+**Why batch, not a live API.** Most of the model's inputs are graph and account-
+history features. GFP runs only on Linux and must replay transaction history in
+time order -- ~530 transactions a second strictly one at a time over the full
+synthetic corpus, less on real networks (ADR-013). One transaction cannot be
+scored in isolation; a window with its history can (``--emit-from``). So scoring
+runs as a job and the product reads its results from a database.
 
 The package's pickles are loaded as trusted local files. Do not point
 ``--package`` at a model directory from an untrusted source.
@@ -43,6 +43,7 @@ import pandas as pd
 from flowguard.data import schema as S
 from flowguard.evaluation.interpretation import local_contributions
 from flowguard.evidence import build_bundle
+from flowguard.features.behaviour import behaviour_features
 from flowguard.features.gfp import GFPFeatures, read_varying_chunks, windowed_params
 from flowguard.features.transaction import TransactionFeatures
 from flowguard.graph.trace import TraceIndex, TraceLimits
@@ -71,6 +72,10 @@ class Package:
     threshold: float
     threshold_source: str
     provenance: dict
+    #: How the graph features were built: GFP ``params``, ``batch_size``, and
+    #: whether ``behaviour`` features are included. Scoring must rebuild them
+    #: identically, so it reads them from the package rather than a default.
+    graph: dict
 
     @property
     def model_id(self) -> str:
@@ -110,6 +115,13 @@ def load_package(path: Path, budget: str = DEFAULT_BUDGET) -> Package:
             f"available: {sorted(thresholds['thresholds'])}"
         )
     chosen = thresholds["thresholds"][budget]
+    graph_file = path / "graph.json"
+    graph = (
+        json.loads(graph_file.read_text(encoding="utf-8"))
+        if graph_file.exists()
+        # Packages before v2 carried no graph.json; they were built this way.
+        else {"params": windowed_params(2.0), "batch_size": 1, "behaviour": False}
+    )
     return Package(
         path=path,
         model=model,
@@ -119,6 +131,7 @@ def load_package(path: Path, budget: str = DEFAULT_BUDGET) -> Package:
         threshold=float(chosen["value"]),
         threshold_source=f"{chosen['source']} @ {float(budget):.1%} alert budget",
         provenance=json.loads((path / "PROVENANCE.json").read_text(encoding="utf-8")),
+        graph=graph,
     )
 
 
@@ -151,7 +164,7 @@ def read_transactions(path: Path) -> pd.DataFrame:
 
 
 def graph_features(
-    tx: pd.DataFrame, cache: Path | None = None, window_days: float = 2.0
+    tx: pd.DataFrame, cache: Path | None = None, params: dict | None = None
 ) -> pd.DataFrame:
     """Graph features for every row of ``tx``, indexed like ``tx``.
 
@@ -168,7 +181,7 @@ def graph_features(
                 "it must have been extracted over this exact transaction frame"
             )
         return graph.loc[tx.index]
-    return GFPFeatures(params=windowed_params(window_days)).run_streaming(
+    return GFPFeatures(params=dict(params or windowed_params(2.0))).run_streaming(
         S.feature_view(tx)
     )
 
@@ -177,7 +190,10 @@ def feature_matrix(
     pkg: Package, tx: pd.DataFrame, graph: pd.DataFrame
 ) -> pd.DataFrame:
     tabular = pkg.extractor.run(S.feature_view(tx))
-    X = pd.concat([tabular, graph], axis=1)
+    parts = [tabular, graph]
+    if pkg.graph.get("behaviour"):
+        parts.append(behaviour_features(S.feature_view(tx)))
+    X = pd.concat(parts, axis=1)
     missing = [c for c in pkg.columns if c not in X.columns]
     if missing:
         # Never fill with zeros: a model scored on inputs it never saw returns
@@ -257,6 +273,7 @@ def export_cases(
             # By index, not position: edges keep the source frame's index.
             contributions=local_contributions(pkg.model, X.loc[result.edges.index]),
             transactions=tx,
+            gfp_params=pkg.graph["params"],
         )
         bundle.write(out_dir / "cases" / f"{bundle.case_id}.json")
         written.append(bundle.case_id)
@@ -271,16 +288,30 @@ def run(
     graph_cache: Path | None = None,
     n_cases: int = 25,
     budget: str = DEFAULT_BUDGET,
+    emit_from: pd.Timestamp | None = None,
+    emit_until: pd.Timestamp | None = None,
 ) -> dict:
+    """Score ``transactions``; with ``emit_from``/``emit_until``, rows outside that
+    window are **history**: they build graph and behaviour features and can be traced
+    through, but are not scored. A window scored without history starts cold -- every
+    counterparty looks new and every sender dormant -- and alerts far above budget.
+    """
     started = time.perf_counter()
     pkg = load_package(package, budget)
     tx = read_transactions(transactions)
-    X = feature_matrix(pkg, tx, graph_features(tx, graph_cache))
-    scores = score_frame(pkg, tx, X)
+    X = feature_matrix(pkg, tx, graph_features(tx, graph_cache, pkg.graph["params"]))
+
+    emit = pd.Series(True, index=tx.index)
+    if emit_from is not None:
+        emit &= tx[S.TIMESTAMP] >= pd.Timestamp(emit_from)
+    if emit_until is not None:
+        emit &= tx[S.TIMESTAMP] <= pd.Timestamp(emit_until)
+    scores = score_frame(pkg, tx[emit], X[emit])
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     scores.sort_values("rank").to_csv(out_dir / "scores.csv", index=False)
+    # Full frames: a case's trace may run back into the history rows.
     cases = export_cases(pkg, tx, X, scores, out_dir, n_cases)
 
     summary = {
@@ -292,6 +323,7 @@ def run(
         "threshold_source": pkg.threshold_source,
         "n_transactions": int(len(scores)),
         "n_alerts": int(scores["alert"].sum()),
+        "history_transactions": int((~emit).sum()),
         "case_ids": cases,
         "scored_at": pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%dT%H:%M:%SZ"),
         "seconds": round(time.perf_counter() - started, 1),
@@ -308,6 +340,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--graph-cache", type=Path, default=None)
     parser.add_argument("--cases", type=int, default=25)
     parser.add_argument("--budget", default=DEFAULT_BUDGET)
+    parser.add_argument("--emit-from", default=None,
+                        help="score only rows at/after this timestamp; earlier rows "
+                             "are history (recommended: at least 2 days of it)")
+    parser.add_argument("--emit-until", default=None)
     args = parser.parse_args(argv)
     summary = run(
         args.package,
@@ -316,6 +352,8 @@ def main(argv: list[str] | None = None) -> int:
         graph_cache=args.graph_cache,
         n_cases=args.cases,
         budget=args.budget,
+        emit_from=pd.Timestamp(args.emit_from, tz="UTC") if args.emit_from else None,
+        emit_until=pd.Timestamp(args.emit_until, tz="UTC") if args.emit_until else None,
     )
     print(json.dumps(summary, indent=2))
     return 0

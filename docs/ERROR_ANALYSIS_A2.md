@@ -1,5 +1,7 @@
 # Error analysis — artifact-free tabular baseline (A2)
 
+> **Note 2026-09-22:** figures in this record were computed with the extractor that inserted every edge twice. See [ADR-015](ADR-015-gfp-double-insertion.md) for what was re-run and the corrected values.
+
 **Date:** 2026-09-18
 **Model:** transaction-only XGBoost, `payment_type` removed ([ADR-007](ADR-007-payment-type-artifact.md))
 **Budget:** 1% alert budget, 761,422 test transactions, 906 positives

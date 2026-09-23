@@ -1,6 +1,13 @@
 # ADR-008 — Periodic preprocessor reconstruction: tried, measured, rejected
 
-**Status:** Rejected — negative result, recorded so it is not retried blindly
+> **SUPERSEDED 2026-09-22 by [ADR-015](ADR-015-gfp-double-insertion.md). The conclusion
+> below is wrong.** The feature difference it measured came from our own extractor, which
+> inserted every edge twice (`transform` + `partial_fit`); the rebuild replayed each edge
+> once. With the extractor fixed, rebuilt features are identical at every cadence and the
+> four reconstruction tests pass. GFP does not retain hidden state. Kept unedited below as
+> the record of what was believed and why.
+
+**Status:** ~~Rejected~~ **Superseded by ADR-015**
 **Date:** 2026-09-18
 **Decision:** Do **not** rebuild the Graph Feature Preprocessor from the windowed edge
 set. It changes the extracted features, so it is unsound regardless of how much time it

@@ -90,7 +90,8 @@
           "code": {"type": "string", "description": "FEATURE_RAISED or FEATURE_LOWERED."},
           "feature": {"type": "string"},
           "contribution": {"type": "number", "description": "Signed SHAP value summed over the cited transactions. Positive raised the score."},
-          "opaque": {"type": "boolean", "description": "True for graph features (gfp_f*): the library exposes no feature names, so the reason is a position, not a concept. Show it as such."},
+          "label": {"type": ["string", "null"], "description": "Plain-language meaning of the feature, e.g. 'count of fan-in patterns of size 4 containing this transaction (24h window)'. Show this instead of `feature` when present. Optional: bundles from before 2026-09-21 omit it."},
+          "opaque": {"type": "boolean", "description": "True when the feature's meaning is unknown (a graph feature without a label). Show it as a graph pattern, not a named behaviour."},
           "transaction_ids": {"type": "array", "items": {"type": "string"}, "description": "Always a subset of the bundle's transaction_ids."}
         }
       }

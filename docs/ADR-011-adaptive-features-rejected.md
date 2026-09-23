@@ -1,5 +1,7 @@
 # ADR-011 — Adaptive neighbourhood features: built, measured, rejected
 
+> **Note 2026-09-22:** figures in this record were computed with the extractor that inserted every edge twice. See [ADR-015](ADR-015-gfp-double-insertion.md) for what was re-run and the corrected values.
+
 **Status:** Rejected — negative result
 **Date:** 2026-09-20
 **Decision:** Do **not** include the degree-normalised neighbourhood family in the model.

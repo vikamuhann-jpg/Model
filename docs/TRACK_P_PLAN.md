@@ -199,6 +199,13 @@ hash, and the §1 coverage caveat.
 > FR-09**: per-case explainability is quantitative for the dominant signal and semantic only
 > for the row-local minority.
 >
+> **Correction 2026-09-22:** the "ceiling" was ours, not the library's. GFP's documentation
+> defines its output layout (pattern histograms in a fixed order, then vertex statistics),
+> so every `gfp_f*` column can be named from the extraction parameters.
+> `features/gfp.py: feature_labels` now does so for all 215 columns, verified against real
+> GFP output, and bundles carry the name in `reason.label`. The A4 figures above also came
+> from the double-insertion extractor ([ADR-015](ADR-015-gfp-double-insertion.md)).
+>
 > **Calibrated scores saturate.** The top true positive scores exactly `1.000000` against a
 > threshold of `0.009975`. Isotonic calibration pins its top bin, so the score cannot rank
 > the most severe cases against one another — which P5's queue ordering has to account for.

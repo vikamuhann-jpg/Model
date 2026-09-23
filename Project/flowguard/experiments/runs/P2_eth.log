@@ -1,0 +1,31 @@
+slice 2018-03-01..2018-04-30  2,024,455 rows  506,613 accounts  366 illicit
+
+capabilities — ETH-Phishing
+  [yes] account_level_labels       506,613 labelled accounts
+  [NO ] account_reference_table
+  [NO ] cross_currency
+  [yes] currency                   1 distinct
+  [NO ] payment_type
+  [yes] self_transfers             0.0% of rows
+  [yes] transaction_level_labels   base rate 0.0000%
+  [NO ] typology_annotations
+  disabled here:
+    E0_rule_baseline             needs payment_type
+    entity_features              needs account_reference_table
+    per_typology_recall          needs typology_annotations
+    purge_boundary_policy        needs typology_annotations
+    tx_cross_currency_feature    needs cross_currency
+    tx_payment_type_feature      needs payment_type
+    unseen_pattern_split         needs typology_annotations
+
+account partition: 247 illicit usable for training, 119 held out for evaluation (151,586 eval accounts)
+train=1,417,118 val=303,670 test=303,667
+
+=== GFP extraction ===
+      250,000/2,024,455 (12.3%)     1,358 tx/s  ~21.8 min left
+      500,000/2,024,455 (24.7%)       989 tx/s  ~25.7 min left
+      750,000/2,024,455 (37.0%)       454 tx/s  ~46.8 min left
+    1,000,000/2,024,455 (49.4%)       228 tx/s  ~74.8 min left
+    1,250,000/2,024,455 (61.7%)       135 tx/s  ~95.7 min left
+exit 143
+stopped at 5 parts

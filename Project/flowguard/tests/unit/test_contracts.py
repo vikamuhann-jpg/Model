@@ -23,7 +23,7 @@ from flowguard.evidence import EvidenceBundle
 REPO = Path(__file__).resolve().parents[4]
 CONTRACTS = REPO / "contracts"
 SAMPLES = REPO / "sample_outputs"
-PACKAGE = REPO / "Project" / "flowguard" / "models" / "flowguard_A4_v1"
+PACKAGE = REPO / "Project" / "flowguard" / "models" / "flowguard_V2_v1"
 
 
 def _is(value, kind: str) -> bool:
@@ -150,6 +150,56 @@ def test_the_shipped_model_does_not_use_the_simulator_artifact():
     assert not [c for c in columns if "payment_type" in c]
     run = json.loads((SAMPLES / "run.json").read_text(encoding="utf-8"))
     assert run["uses_payment_type"] is False
+
+
+def test_the_shipped_package_records_how_its_graph_features_were_built():
+    """score.py rebuilds graph features from graph.json; without it training and
+    scoring could silently use different GFP settings (ADR-015 era packages did)."""
+    graph = json.loads((PACKAGE / "graph.json").read_text(encoding="utf-8"))
+    assert graph["insertion_convention"] == "transform inserts once"
+    assert {"params", "batch_size", "behaviour"} <= set(graph)
+
+
+def test_every_feature_of_the_shipped_model_has_a_plain_language_label():
+    """An investigator never sees a bare column name as a reason."""
+    from flowguard.features.behaviour import LABELS as BH
+    from flowguard.features.gfp import feature_label
+    from flowguard.features.transaction import LABELS as TX
+
+    params = json.loads((PACKAGE / "graph.json").read_text(encoding="utf-8"))["params"]
+    columns = json.loads((PACKAGE / "feature_schema.json").read_text())["columns"]
+    unnamed = [c for c in columns if not (feature_label(c, params) or BH.get(c) or TX.get(c))]
+    assert not unnamed, unnamed
+
+
+def test_sample_cases_name_their_graph_reasons():
+    """Graph reasons carry a plain-language label and are not flagged opaque."""
+    reasons = [
+        r
+        for path in (SAMPLES / "cases").glob("*.json")
+        for r in json.loads(path.read_text(encoding="utf-8"))["reasons"]
+        if r["feature"].startswith("gfp_f")
+    ]
+    assert reasons, "expected graph reasons in the sample cases"
+    assert all(r["label"] and not r["opaque"] for r in reasons)
+
+
+def test_history_rows_build_features_but_are_not_scored(tmp_path):
+    """Scored cold, a window alerts far above budget (every counterparty looks
+    new). Rows before emit_from are history: used for features, never emitted."""
+    pytest.importorskip("snapml")
+    from flowguard.pipeline import score
+
+    source = pd.read_csv(SAMPLES / "transactions_sample.csv").head(2_000)
+    source.to_csv(tmp_path / "tx.csv", index=False)
+    cutoff = pd.Timestamp(sorted(source["timestamp"])[1_500], tz="UTC")
+    summary = score.run(PACKAGE, tmp_path / "tx.csv", tmp_path / "out", n_cases=0,
+                        emit_from=cutoff)
+    emitted = pd.read_csv(tmp_path / "out" / "scores.csv")
+    assert summary["n_transactions"] == len(emitted) == int(
+        (pd.to_datetime(source["timestamp"], utc=True) >= cutoff).sum())
+    assert summary["history_transactions"] == 2_000 - len(emitted)
+    assert (pd.to_datetime(emitted["timestamp"], utc=True) >= cutoff).all()
 
 
 def test_live_scoring_writes_outputs_that_match_every_contract(tmp_path):

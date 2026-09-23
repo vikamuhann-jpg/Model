@@ -63,12 +63,9 @@ def _params(window_days: float = 2.0) -> dict:
     return params
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="MEASURED DEFECT: GFP retains state beyond the windowed edge set, so "
-    "rebuilding changes features. Strict, so a future snapml that fixes this "
-    "flips to XPASS and tells us. See docs/ADR-008.",
-)
+# Was xfail(strict) until 2026-09-21: the "retained state" ADR-008 measured was
+# our own double insertion (transform + partial_fit). With each edge inserted
+# once, rebuilding is feature-identical. See WINNING_PLAN.md, S1 log.
 def test_reconstruction_is_feature_identical():
     """The decisive test: rebuilding mid-stream must change nothing.
 
@@ -106,10 +103,6 @@ def test_reconstruction_actually_happened():
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="MEASURED DEFECT -- see test_reconstruction_is_feature_identical",
-)
 @pytest.mark.parametrize("rebuild_every", [50, 137, 250])
 def test_identical_at_several_rebuild_cadences(rebuild_every):
     """The result must not depend on how often the rebuild happens."""

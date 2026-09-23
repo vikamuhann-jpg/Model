@@ -29,8 +29,12 @@ websites/*_files/
 # Models: only the inference package ships. Research packages stay local.
 Project/flowguard/models/*
 !Project/flowguard/models/.gitkeep
-!Project/flowguard/models/flowguard_A4_v1/
+!Project/flowguard/models/flowguard_V2_v1/
 
 Project/flowguard/experiments/*/
 Project/flowguard/reports/**/*
 !Project/flowguard/reports/**/.gitkeep
+
+# Self-contained LinuxONE bundle (~100 MB, contains the corpus). Never commit:
+# GitHub rejects >100 MB blobs, and a 310 MB archive already reached a commit once.
+Project/flowguard/linuxone_with_data.zip

@@ -1,0 +1,14 @@
+loaded 5,078,345 transactions, 5,177 positives
+reusing GFP parts in /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_b128v2
+  184 of 215 GFP features vary; reading only those
+split {'train': 3047216, 'val': 1015565, 'test': 1015564}; 197 features; test positives 1,797
+tuned in 2082s: {'max_depth': 8, 'learning_rate': 0.03, 'subsample': 0.8, 'colsample_bytree': 0.75, 'min_child_weight': 1, 'reg_lambda': 0.01, 'scale_pos_weight': 2} (fold PR-AUC 0.1839)
+  seed 42: F1 0.5151 (oracle 0.5271)  PR-AUC 0.5101
+  seed 7: F1 0.5179 (oracle 0.5275)  PR-AUC 0.5168
+  seed 123: F1 0.5243 (oracle 0.5255)  PR-AUC 0.5136
+  seed 2024: F1 0.5251 (oracle 0.5314)  PR-AUC 0.5135
+  seed 31337: F1 0.5201 (oracle 0.5234)  PR-AUC 0.5129
+
+F1 0.5205 ± 0.0042  PR-AUC 0.5134 ± 0.0024
+wrote /mnt/c/Users/vikam/flowguard_data/s1_b128v2.json
+exit 0

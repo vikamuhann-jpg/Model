@@ -10,6 +10,7 @@ So: refit both arms once, keep the per-account scores, and bootstrap over the
 scored accounts to get an interval on the delta that reflects the sample size.
 """
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -36,7 +37,10 @@ df = df[
     & (df[S.TIMESTAMP] < pd.Timestamp(HI, tz="UTC"))
 ].reset_index(drop=True)
 
-gfp = read_varying_chunks(P / "ETH_gfp_parts")
+# ETH_gfp_parts (the default until 2026-09-22) was extracted with the
+# double-insertion defect (ADR-015); ETH_gfp_parts_v2 is the corrected extraction.
+PARTS = sys.argv[1] if len(sys.argv) > 1 else "ETH_gfp_parts_v2"
+gfp = read_varying_chunks(P / PARTS)
 df = df.loc[df.index.intersection(gfp.index)].sort_index()
 gfp = gfp.loc[df.index]
 gfp = gfp[[c for c in gfp.columns if gfp[c].std() > 0]]
@@ -127,7 +131,7 @@ result = {
     },
 }
 print(json.dumps(result, indent=2))
-(DATA / "tier_c_bootstrap.json").write_text(
+(DATA / "runs" / f"P2_eth_bootstrap_{PARTS}.json").write_text(
     json.dumps(result, indent=2)
 )
 print("\nBOOTSTRAP DONE", flush=True)

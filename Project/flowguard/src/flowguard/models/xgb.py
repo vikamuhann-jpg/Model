@@ -112,7 +112,11 @@ class XGBModel:
                 self.resolved_device_ = "cpu"
         params["device"] = self.resolved_device_
 
-        if self.use_scale_pos_weight:
+        if "scale_pos_weight" in params:
+            # An explicit weight (e.g. from a tuning search) wins over the
+            # automatic negatives/positives ratio.
+            self.scale_pos_weight_ = float(params["scale_pos_weight"])
+        elif self.use_scale_pos_weight:
             positives = int(y_train.sum())
             negatives = len(y_train) - positives
             self.scale_pos_weight_ = (

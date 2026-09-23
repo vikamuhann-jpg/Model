@@ -97,14 +97,13 @@ def test_default_batch_size_is_leakage_safe():
     assert GFPFeatures().batch_size == 1
 
 
-def test_transaction_does_not_inflate_its_own_features():
-    """Inserting before transforming would let an edge count itself."""
-    frame = _frame(ROWS)
-    correct = GFPFeatures(batch_size=1).run_streaming(frame)
-
-    # Simulate the wrong order: insert everything, then transform.
-    wrong = GFPFeatures(batch_size=1)
-    preproc = wrong._new_preprocessor()
+def test_each_edge_enters_the_graph_once():
+    """transform() inserts its batch (Snap ML docs). A following partial_fit
+    inserted every edge a second time: on this fan-in the last edge's target
+    in-degree read 7 instead of 4. Streamed features must equal a reference in
+    which each earlier edge was inserted exactly once."""
+    frame = _frame(ROWS[:4])
+    streamed = GFPFeatures(batch_size=1).run_streaming(frame).iloc[-1].to_numpy()
 
     from flowguard.features.gfp import VertexIndex
 
@@ -118,13 +117,11 @@ def test_transaction_does_not_inflate_its_own_features():
         [np.arange(len(frame), dtype="float64"), src, dst, ts,
          frame[S.AMOUNT].to_numpy(dtype="float64")]
     )
-    preproc.partial_fit(edges)
-    inflated = preproc.transform(edges)[:, edges.shape[1]:]
+    preproc = GFPFeatures()._new_preprocessor()
+    preproc.partial_fit(edges[:3])
+    reference = preproc.transform(edges[3:])[0, edges.shape[1]:]
 
-    assert inflated.sum() > correct.to_numpy().sum(), (
-        "inserting before transforming did not inflate features; the ordering "
-        "test is not actually exercising the convention"
-    )
+    np.testing.assert_array_equal(streamed, reference.astype("float32"))
 
 
 def test_self_transfers_are_kept_out_of_the_graph():

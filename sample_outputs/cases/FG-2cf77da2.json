@@ -1,0 +1,244 @@
+{
+  "accounts": [
+    "15863:8056D7330",
+    "3:8038059D0",
+    "8771:80C6F48A0",
+    "9608:80B0F3C10"
+  ],
+  "case_id": "FG-2cf77da2",
+  "coverage": {
+    "demonstrated_rails": [
+      "ACH"
+    ],
+    "rails": {
+      "ACH": 4,
+      "Cash": 1,
+      "Cheque": 1
+    },
+    "unknown_rail_transactions": 0,
+    "warning": "This case involves payment rails on which the model has NOT demonstrated recall. On the validation corpus it caught 599 of 796 ACH laundering transactions and 1 of 100 across all other rails combined (ADR-007). Absence of an alert on these transactions is not evidence of absence."
+  },
+  "created_at": "2026-09-22T12:34:16.572479+00:00",
+  "disposition": null,
+  "investigator_notes": [],
+  "model": {
+    "feature_schema_hash": "7c58a20d069f9985",
+    "git_commit": "d59a1254c41d203119f7264c1d16015c95a84b4c",
+    "model_id": "flowguard_V2_v1",
+    "uses_payment_type": false
+  },
+  "path": [
+    {
+      "amount": 10741.55,
+      "at": "2022-09-08T17:13:00+00:00",
+      "depth": 1,
+      "from": "8771:80C6F48A0",
+      "payment_type": "ACH",
+      "to": "8771:80C6F48A0",
+      "transaction_id": "TX0001936579"
+    },
+    {
+      "amount": 9166.84,
+      "at": "2022-09-08T17:13:00+00:00",
+      "depth": 1,
+      "from": "8771:80C6F48A0",
+      "payment_type": "ACH",
+      "to": "15863:8056D7330",
+      "transaction_id": "TX0001936580"
+    },
+    {
+      "amount": 1326.84,
+      "at": "2022-09-09T04:19:00+00:00",
+      "depth": 1,
+      "from": "8771:80C6F48A0",
+      "payment_type": "ACH",
+      "to": "8771:80C6F48A0",
+      "transaction_id": "TX0001936581"
+    },
+    {
+      "amount": 8886.65,
+      "at": "2022-09-09T04:19:00+00:00",
+      "depth": 1,
+      "from": "8771:80C6F48A0",
+      "payment_type": "ACH",
+      "to": "3:8038059D0",
+      "transaction_id": "TX0001936582"
+    },
+    {
+      "amount": 16619.8,
+      "at": "2022-09-09T07:13:00+00:00",
+      "depth": 2,
+      "from": "3:8038059D0",
+      "payment_type": "Cheque",
+      "to": "9608:80B0F3C10",
+      "transaction_id": "TX0004425028"
+    },
+    {
+      "amount": 2108.1,
+      "at": "2022-09-09T07:19:00+00:00",
+      "depth": 2,
+      "from": "3:8038059D0",
+      "payment_type": "Cash",
+      "to": "9608:80B0F3C10",
+      "transaction_id": "TX0004425029"
+    }
+  ],
+  "reasons": [
+    {
+      "code": "BH_PAIR_N_PRIOR_LOWERED",
+      "contribution": -5.573909282684326,
+      "feature": "bh_pair_n_prior",
+      "label": "earlier transfers from this sender to this receiver (0 = first-time counterparty)",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0004425028",
+        "TX0004425029",
+        "TX0001936579",
+        "TX0001936581"
+      ]
+    },
+    {
+      "code": "GFP_F197_RAISED",
+      "contribution": 3.7851979732513428,
+      "feature": "gfp_f197",
+      "label": "sender's incoming transfers (24h window): transaction count",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0001936580",
+        "TX0001936582",
+        "TX0004425028",
+        "TX0004425029",
+        "TX0001936581",
+        "TX0001936579"
+      ]
+    },
+    {
+      "code": "GFP_F223_RAISED",
+      "contribution": 2.0619733333587646,
+      "feature": "gfp_f223",
+      "label": "receiver's incoming transfers (24h window): transaction count",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0001936582",
+        "TX0004425029",
+        "TX0004425028"
+      ]
+    },
+    {
+      "code": "GFP_F196_RAISED",
+      "contribution": 1.759933590888977,
+      "feature": "gfp_f196",
+      "label": "sender's incoming transfers (24h window): distinct counterparties",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0001936580",
+        "TX0001936582",
+        "TX0001936579",
+        "TX0001936581",
+        "TX0004425028",
+        "TX0004425029"
+      ]
+    },
+    {
+      "code": "BH_SRC_OUT_N_24H_RAISED",
+      "contribution": 1.714491605758667,
+      "feature": "bh_src_out_n_24h",
+      "label": "transfers the sender made in the previous 24h",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0001936582",
+        "TX0001936580",
+        "TX0001936581",
+        "TX0001936579"
+      ]
+    },
+    {
+      "code": "GFP_F204_LOWERED",
+      "contribution": -1.3179171085357666,
+      "feature": "gfp_f204",
+      "label": "sender's incoming transfers (24h window): average amount",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0001936581",
+        "TX0001936579",
+        "TX0004425029",
+        "TX0004425028"
+      ]
+    },
+    {
+      "code": "TX_CURRENCY_CODE_LOWERED",
+      "contribution": -1.2925045490264893,
+      "feature": "tx_currency_code",
+      "label": "payment currency",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0001936582",
+        "TX0001936579",
+        "TX0001936581",
+        "TX0004425028",
+        "TX0004425029"
+      ]
+    },
+    {
+      "code": "GFP_F233_LOWERED",
+      "contribution": -1.2886056900024414,
+      "feature": "gfp_f233",
+      "label": "receiver's incoming transfers (24h window): skew amount",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0001936582",
+        "TX0001936581",
+        "TX0001936579",
+        "TX0004425028",
+        "TX0004425029"
+      ]
+    }
+  ],
+  "risk": {
+    "above_threshold": true,
+    "score": 1.0,
+    "threshold": 0.01364365965127945,
+    "threshold_source": "validation @ 1.0% alert budget"
+  },
+  "schema_version": "1.0",
+  "subject_account": "8771:80C6F48A0",
+  "trace": {
+    "direction": "forward",
+    "horizon": 3,
+    "is_complete": true,
+    "per_hop": [
+      {
+        "amount": 30121.879999999997,
+        "depth": 1,
+        "n_accounts": 3,
+        "n_transactions": 4
+      },
+      {
+        "amount": 18727.899999999998,
+        "depth": 2,
+        "n_accounts": 1,
+        "n_transactions": 2
+      }
+    ],
+    "root": "8771:80C6F48A0",
+    "terminals": [
+      "15863:8056D7330",
+      "9608:80B0F3C10"
+    ],
+    "truncation": {
+      "budget_exhausted": false,
+      "capped_vertices": 0,
+      "degree_cap": 16,
+      "edge_budget": 200,
+      "reason": null
+    }
+  },
+  "transaction_ids": [
+    "TX0001936579",
+    "TX0001936580",
+    "TX0001936581",
+    "TX0001936582",
+    "TX0004425028",
+    "TX0004425029"
+  ]
+}

@@ -43,8 +43,13 @@ class CategoricalEncoder:
             raise RuntimeError("encoder used before fit")
         out = {}
         for col, mapping in self.categories_.items():
+            # astype(object) first: mapping a *categorical* column returns a
+            # categorical, and filling that with -1 then raises, because -1 is
+            # not one of its categories. Memory-slimmed frames store these
+            # columns as categoricals, so this is a real path rather than a
+            # hypothetical one. String and object input are unaffected.
             out[f"{col}_code"] = (
-                df[col].map(mapping).fillna(-1).astype("int32").to_numpy()
+                df[col].astype(object).map(mapping).fillna(-1).astype("int32").to_numpy()
             )
         return pd.DataFrame(out, index=df.index)
 
@@ -54,6 +59,24 @@ class CategoricalEncoder:
             "fit_scope": "train",
             "columns": {c: len(m) for c, m in self.categories_.items()},
         }
+
+
+#: What each column means, for evidence-bundle reasons (columns carry a ``tx_`` prefix).
+LABELS = {
+    "tx_amount": "transaction amount",
+    "tx_amount_log": "transaction amount (log scale)",
+    "tx_amount_is_round_1k": "amount is a round thousand",
+    "tx_amount_is_round_100": "amount is a round hundred",
+    "tx_amount_decimals": "cents part of the amount",
+    "tx_hour": "hour of day",
+    "tx_minute_of_day": "minute of day",
+    "tx_is_self_transfer": "transfer between the same account",
+    "tx_amount_received_log": "amount received (log scale)",
+    "tx_amount_ratio": "amount received ÷ amount paid",
+    "tx_is_cross_currency": "paid and received in different currencies",
+    "tx_currency_code": "payment currency",
+    "tx_payment_type_code": "payment rail",
+}
 
 
 class TransactionFeatures(FeatureExtractor):

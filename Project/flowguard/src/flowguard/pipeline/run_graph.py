@@ -79,7 +79,7 @@ def run(
         extraction_platform: str | None = platform.platform()
     else:
         extraction_platform = None  # extraction and training on the same machine
-        print("extracting -- transform before partial_fit, one edge at a time")
+        print("extracting -- transform inserts each edge once, one edge at a time")
         started = time.perf_counter()
         gfp_features = gfp.run_streaming(view)
         print(

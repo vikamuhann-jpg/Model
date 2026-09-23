@@ -57,6 +57,12 @@ carrying real signal on ETH; what fails to transfer is the cost model, not the f
 
 ### 1.4 Two performance gates fail
 
+> **Correction 2026-09-22:** every figure in this section was measured with an extractor
+> that inserted each edge twice, and the ADR-008 conclusion cited below is wrong — see
+> [ADR-015](ADR-015-gfp-double-insertion.md). Corrected throughput is in
+> [STATUS.md](STATUS.md). Note also that GFP does expose `max_no_edges`, a cap on graph
+> size (not on degree).
+
 * **P8 — extraction ≥ 1,000 tx/s.** Measured ~450 tx/s on HI-Small. Throughput decays
   as the graph fills; [ADR-008](ADR-008-reconstruction-rejected.md) established this is
   a property of the method after periodic reconstruction was tried and failed its
@@ -91,7 +97,7 @@ Both are reported as failures rather than rescoped.
 
 * **Track P** — API, dashboard, evidence packages, typology layer. Out of scope by the
   Track R decision recorded in [`README.md`](README.md); v2 §§29–33 retain the design.
-* **Research Track B** ([`NEED_TO_RESEARCH.txt`](NEED_TO_RESEARCH.txt)) — briefed for a
+* **Research Track B** ([`NEED_TO_RESEARCH.txt`](archive/planning/NEED_TO_RESEARCH.txt)) — briefed for a
   second researcher, never staffed, off the critical path.
 * **Extraction resume** — a mid-extraction crash still costs the run. Chunked parts
   survive, but the graph state does not, and rebuilding it is the cost being avoided

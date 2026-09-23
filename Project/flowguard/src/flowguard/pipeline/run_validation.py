@@ -32,6 +32,8 @@ from flowguard.evaluation.profiling import CostProfile, inference_latency, peak_
 from flowguard.evaluation.sanity import run_null_baselines, shuffled_label_test
 from flowguard.evaluation.stability import feature_drift, temporal_subwindows
 from flowguard.evaluation.thresholds import ThresholdSource, select_thresholds
+from flowguard.features.behaviour import behaviour_features
+from flowguard.features.gfp import timestamp_stat_columns
 from flowguard.features.transaction import TransactionFeatures
 from flowguard.models.xgb import XGBModel
 from flowguard.registry.experiments import ExperimentRecord, Registry
@@ -112,11 +114,14 @@ def build_inputs(
     gfp_cache: Path | None,
     seed: int,
     include_payment_type: bool = True,
+    behaviour: bool = False,
+    split_spec: SplitSpec | None = None,
+    drop_timestamp_stats_for: dict | None = None,
 ) -> ValidationInputs:
     df = pd.read_parquet(processed_dir / f"{variant}_transactions.parquet")
     print(f"loaded {len(df):,} transactions", flush=True)
 
-    split = chronological_split(df, SplitSpec(seed=seed))
+    split = chronological_split(df, split_spec or SplitSpec(seed=seed))
     train_df, val_df, test_df = split.apply(df)
 
     # payment_type is a simulator artifact (ADR-007): it nearly identifies an
@@ -142,6 +147,18 @@ def build_inputs(
             keep = [c for c in gfp_features.columns if gfp_features[c].std() > 0]
             gfp_features = gfp_features[keep]
         print(f"loaded {gfp_features.shape[1]} varying GFP features", flush=True)
+
+    if drop_timestamp_stats_for is not None and gfp_features is not None:
+        # The GFP params decide which output columns are timestamp statistics.
+        dropped = timestamp_stat_columns(gfp_features.columns, drop_timestamp_stats_for)
+        gfp_features = gfp_features.drop(columns=dropped)
+        print(f"dropped {len(dropped)} timestamp-statistic columns", flush=True)
+
+    if behaviour:
+        # Whole corpus before slicing, so a validation row keeps its history.
+        history = behaviour_features(S.feature_view(df))
+        gfp_features = history if gfp_features is None else gfp_features.join(history)
+        print(f"added {history.shape[1]} behaviour features", flush=True)
 
     def build(part: pd.DataFrame) -> pd.DataFrame:
         tabular = extractor.run(S.feature_view(part))
@@ -172,13 +189,30 @@ def run(
     out_root: Path | None = None,
     n_seeds: int = len(SEEDS),
     include_payment_type: bool = True,
+    model_params: dict | None = None,
+    n_estimators: int = 300,
+    behaviour: bool = False,
+    split_spec: SplitSpec | None = None,
+    graph: dict | None = None,
 ) -> dict:
     registry = Registry()
     report = G.GateReport()
     started = time.perf_counter()
 
+    def make_model(random_state: int | None = None) -> XGBModel:
+        # Every gate evaluates the same model configuration as the package.
+        params = dict(model_params or XGBModel().params)
+        if random_state is not None:
+            params["random_state"] = random_state
+        return XGBModel(params=params, n_estimators=n_estimators)
+
     _header(f"FlowGuard validation — {variant} / {model_id}")
-    inputs = build_inputs(variant, processed_dir, gfp_cache, seed, include_payment_type)
+    inputs = build_inputs(
+        variant, processed_dir, gfp_cache, seed, include_payment_type,
+        behaviour=behaviour, split_spec=split_spec,
+        drop_timestamp_stats_for=(graph or {}).get("params")
+        if (graph or {}).get("timestamp_stats_dropped") else None,
+    )
     y_train = inputs.train_df[S.IS_LAUNDERING].to_numpy().astype(int)
     y_val = inputs.val_df[S.IS_LAUNDERING].to_numpy().astype(int)
     y_test = inputs.test_df[S.IS_LAUNDERING].to_numpy().astype(int)
@@ -190,7 +224,7 @@ def run(
 
     # ------------------------------------------------------------ main model
     _header("Training the model under validation")
-    model = XGBModel()
+    model = make_model()
     model.fit(inputs.X_train, y_train, inputs.X_val, y_val)
     model.calibrate(inputs.X_val, y_val)
     test_scores = model.predict(inputs.X_test)
@@ -248,7 +282,7 @@ def run(
 
     # --------------------------------------------------------- C7 determinism
     _header("C7 — determinism")
-    repeat = XGBModel()
+    repeat = make_model()
     repeat.fit(inputs.X_train, y_train, inputs.X_val, y_val)
     repeat.calibrate(inputs.X_val, y_val)
     identical = bool(np.allclose(repeat.predict(inputs.X_test), test_scores, atol=1e-9))
@@ -290,7 +324,7 @@ def run(
     _header("P6 — seed stability")
     seed_scores, interps = [], []
     for s in SEEDS[:n_seeds]:
-        m = XGBModel(params={**XGBModel().params, "random_state": s})
+        m = make_model(s)
         m.fit(inputs.X_train, y_train, inputs.X_val, y_val)
         m.calibrate(inputs.X_val, y_val)
         pr = evaluate(y_test, m.predict(inputs.X_test)).pr_auc
@@ -365,7 +399,15 @@ def run(
     except FileNotFoundError:
         pass
     throughput = gfp_meta.get("throughput_tx_per_s")
-    if throughput is None:
+    if graph is not None:
+        # Measured by the run that extracted this cache -- or NOT_RUN. Never
+        # the log fallback below: it parses a fixed, older extraction log and
+        # once reported that run's throughput for a different cache.
+        throughput = graph.get("tx_per_s")
+        gfp_meta = {"throughput_tx_per_s": throughput,
+                    "extract_seconds": graph.get("extract_seconds"),
+                    "throughput_source": graph.get("extraction_source")}
+    elif throughput is None:
         # Extraction runs in its own process, so its cost block never reaches
         # this registry entry. Recover the measured rate from the extraction
         # log rather than reporting nan -- the gate should fail with a number.
@@ -493,6 +535,7 @@ def run(
         seed_scores=seed_scores,
         latency=latency,
         elapsed=time.perf_counter() - started,
+        graph=graph,
     )
     print(f"\nmodel package -> {package}", flush=True)
     return {"gates": report.to_metadata(), "package": str(package)}
@@ -510,6 +553,11 @@ def write_package(root: Path, **kw) -> Path:
     (target / "encoders").mkdir(parents=True, exist_ok=True)
 
     model.booster_.save_model(str(target / "model.json"))
+    if kw.get("graph"):
+        # score.py rebuilds graph features from exactly this; see Package.graph.
+        (target / "graph.json").write_text(
+            json.dumps(kw["graph"], indent=2), encoding="utf-8"
+        )
 
     import pickle
 
@@ -627,6 +675,26 @@ def _model_card(model_id, metrics, model, kw) -> str:
         f"| {k} | {v['recall']:.1%} | {v['caught']}/{v['positives']} |"
         for k, v in sorted(kw["typology"].items())
     )
+    # Measured from the inputs, never typed in: an earlier card hardcoded A4's
+    # corpus and split, which would have been false for any other package.
+    df, spec = kw["inputs"].df, kw["inputs"].split.spec
+    positives = int(df[S.IS_LAUNDERING].sum())
+    graph = kw.get("graph") or {}
+    gp = graph.get("params", {})
+    graph_block = (
+        f"GFP `time_window` {gp.get('time_window', 0) / 3600:g} h, scatter-gather "
+        f"{gp.get('scatter-gather_tw', 0) / 3600:g} h, vertex statistics on columns "
+        f"{gp.get('vertex_stats_cols')}"
+        f"{' (timestamp statistics dropped)' if graph.get('timestamp_stats_dropped') else ''}; "
+        f"batch size {graph.get('batch_size')}; "
+        f"{graph.get('insertion_convention', 'insertion convention not recorded')}; "
+        f"behaviour features {'on' if graph.get('behaviour') else 'off'}. "
+        "Stored in `graph.json`; `score.py` rebuilds features from it."
+        if graph else "Not recorded (package predates `graph.json`)."
+    )
+    params = {k: v for k, v in model.params.items()
+              if k in ("max_depth", "learning_rate", "subsample", "colsample_bytree",
+                       "min_child_weight", "reg_lambda", "scale_pos_weight")}
     return f"""# Model card — FlowGuard {model_id}
 
 ## Intended use
@@ -648,10 +716,18 @@ anything.
 | | |
 |---|---|
 | Dataset | IBM AML HI-Small |
-| Rows | 5,077,237 (after trimming the generator's sparse tail — ADR-003) |
-| Positives | 4,522 (0.089%) |
-| Span | 2022-09-01 to 2022-09-10 |
-| Split | chronological 70/15/15, `HARD_CUT` boundary policy (ADR-002) |
+| Rows | {len(df):,} |
+| Positives | {positives:,} ({positives / len(df):.3%}) |
+| Span | {df[S.TIMESTAMP].min():%Y-%m-%d} to {df[S.TIMESTAMP].max():%Y-%m-%d} |
+| Split | chronological {spec.train_frac:.0%}/{spec.val_frac:.0%}/{spec.test_frac:.0%}, `{spec.boundary_policy.value}` boundary policy (ADR-002) |
+
+## Features and model
+
+| | |
+|---|---|
+| Features | {len(kw['inputs'].X_train.columns)} |
+| Graph | {graph_block} |
+| XGBoost | {params}; up to {model.n_estimators} rounds, best {model.best_iteration_} |
 
 ## Performance
 
@@ -698,7 +774,7 @@ validation has been performed, so generalisation beyond this generator is
   bar of 0.0059: a real regression at more than five times the noise threshold,
   costing 23% of the graph model's PR-AUC. Alone (A5) it scores 0.0041, below the
   12-feature tabular baseline. The code stays in the tree and is not wired into any
-  reported model (ADR-011).
+  reported model (ADR-011). These figures predate the extractor fix (ADR-015).
 * **Value-flow family** — never built. Gate A falsified the low-band concentration
   prediction the hypothesis depended on, so it was ruled out before implementation.
 
@@ -729,12 +805,49 @@ def main(argv: list[str] | None = None) -> int:
         help="Drop the payment_type feature, a simulator artifact (ADR-007). "
         "Use this for any model meant for inference.",
     )
+    parser.add_argument("--from-run", type=Path, default=None,
+                        help="a run_benchmark JSON: reuse its model params, split "
+                             "fractions and GFP extraction record (v2 packaging)")
+    parser.add_argument("--extraction-from", type=Path, default=None,
+                        help="the run_benchmark JSON that EXTRACTED the GFP cache, for "
+                             "its measured throughput (defaults to --from-run)")
+    parser.add_argument("--n-estimators", type=int, default=None)
+    parser.add_argument("--behaviour", action="store_true",
+                        help="add the account-history features (WINNING_PLAN S4)")
+    parser.add_argument("--drop-timestamp-stats", action="store_true",
+                        help="drop GFP vertex statistics on the timestamp column")
     args = parser.parse_args(argv)
 
+    extra: dict = {}
+    if args.from_run:
+        record = json.loads(args.from_run.read_text(encoding="utf-8"))
+        spec = record["split"]["spec"]
+        extraction_file = args.extraction_from or args.from_run
+        extraction = json.loads(extraction_file.read_text(encoding="utf-8"))["extraction"]
+        if extraction["params"] != record["extraction"]["params"]:
+            raise SystemExit("--extraction-from used different GFP params than --from-run")
+        extra = {
+            "model_params": record["params"],
+            "n_estimators": args.n_estimators or 1000,
+            "split_spec": SplitSpec(train_frac=spec["train_frac"],
+                                    val_frac=spec["val_frac"], seed=args.seed),
+            "graph": {
+                "params": extraction["params"],
+                "batch_size": extraction["batch_size"],
+                "behaviour": args.behaviour,
+                "timestamp_stats_dropped": args.drop_timestamp_stats,
+                "insertion_convention": "transform inserts once",
+                "tx_per_s": extraction.get("tx_per_s"),
+                "extract_seconds": extraction.get("extract_seconds"),
+                "model_source": str(args.from_run),
+                "extraction_source": str(extraction_file),
+            },
+        }
     run(
         args.variant, args.processed_dir, gfp_cache=args.gfp_cache,
         model_id=args.model_id, seed=args.seed, out_root=args.out_root,
         n_seeds=args.n_seeds, include_payment_type=not args.artifact_free,
+        behaviour=args.behaviour, **extra,
     )
     return 0
 

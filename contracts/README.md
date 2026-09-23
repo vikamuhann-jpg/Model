@@ -82,9 +82,11 @@ the model does not support.
    hop. Money entering an account mixes with the balance already there; transaction data
    cannot say which funds moved on.
 
-7. **Show `opaque` reasons as graph patterns, not named behaviours.** `gfp_f*` features carry
-   most of the model's signal, but the library that computes them exposes no names. Display
-   them as "graph structure feature" rather than inventing a meaning.
+7. **Show a reason's `label` when it has one; show `opaque` reasons as graph patterns.**
+   `gfp_f*` features carry most of the model's signal. From 2026-09-21 bundles name them
+   from the graph library's documented layout (e.g. "count of fan-in patterns of size 4
+   containing this transaction (24h window)"). A reason with `opaque: true` has no label —
+   display it as "graph structure feature" rather than inventing a meaning.
 
 8. **Write `disposition` and `investigator_notes` back into the bundle.** Analyst outcomes are
    the only route this project has to real labels — and to measuring its false-positive rate.
@@ -96,5 +98,8 @@ the model does not support.
 - `run.json` carries `model_id` and `feature_schema_hash`. Store them with every run; a change
   in either means scores from different runs are not directly comparable.
 - Every bundle carries `schema_version`. A breaking change to these contracts bumps it.
-- The shipped model is `flowguard_A4_v1`. Its `uses_payment_type` is `false`, and a test fails
-  if a model that uses the payment-type artifact is ever committed.
+- The shipped model is `flowguard_V2_v1` (A4 is retired, [ADR-015](../docs/ADR-015-gfp-double-insertion.md)).
+  Its `uses_payment_type` is `false`, and a test fails if a model that uses the payment-type
+  artifact is ever committed.
+- `run.json` may carry `history_transactions`: rows used as history for features but not
+  scored (`score.py --emit-from`). Store it; a run with little history alerts above budget.

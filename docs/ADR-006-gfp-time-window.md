@@ -1,5 +1,7 @@
 # ADR-006 — GFP `time_window` must bound the graph
 
+> **Note 2026-09-22:** figures in this record were computed with the extractor that inserted every edge twice. See [ADR-015](ADR-015-gfp-double-insertion.md) for what was re-run and the corrected values.
+
 **Status:** Accepted — hypothesis confirmed, with one correction
 **Date:** 2026-09-18
 **Decision:** Set GFP's `time_window` to **2 days**, not the 10-day corpus span. A window
