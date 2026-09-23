@@ -38,3 +38,10 @@ Project/flowguard/reports/**/*
 # Self-contained LinuxONE bundle (~100 MB, contains the corpus). Never commit:
 # GitHub rejects >100 MB blobs, and a 310 MB archive already reached a commit once.
 Project/flowguard/linuxone_with_data.zip
+
+# The corpus may sit in linuxone/data/ so the folder is self-contained on disk
+# for zipping and handover. It must never reach git: HI-Small_Trans.csv.gz is
+# 89.8 MB, history is forever, and the IBM AML-World corpus carries its own
+# licence -- point people at Kaggle instead of redistributing it.
+Project/flowguard/linuxone/data/*
+!Project/flowguard/linuxone/data/.gitkeep
