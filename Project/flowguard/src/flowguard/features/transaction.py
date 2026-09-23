@@ -43,8 +43,13 @@ class CategoricalEncoder:
             raise RuntimeError("encoder used before fit")
         out = {}
         for col, mapping in self.categories_.items():
+            # astype(object) first: mapping a *categorical* column returns a
+            # categorical, and filling that with -1 then raises, because -1 is
+            # not one of its categories. Memory-slimmed frames store these
+            # columns as categoricals, so this is a real path rather than a
+            # hypothetical one. String and object input are unaffected.
             out[f"{col}_code"] = (
-                df[col].map(mapping).fillna(-1).astype("int32").to_numpy()
+                df[col].astype(object).map(mapping).fillna(-1).astype("int32").to_numpy()
             )
         return pd.DataFrame(out, index=df.index)
 
