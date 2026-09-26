@@ -22,6 +22,46 @@ import numpy as np
 import pandas as pd
 from sklearn.calibration import IsotonicRegression
 
+@dataclass
+class PiecewiseCalibrator:
+    """An isotonic calibrator as two arrays, restorable without pickle.
+
+    ``IsotonicRegression(out_of_bounds="clip")`` is a piecewise-linear function
+    through ``(X_thresholds_, y_thresholds_)``, held flat outside the fitted
+    range -- which is exactly what :func:`numpy.interp` computes. Storing the
+    two arrays as JSON therefore reproduces the calibrator to floating-point
+    noise, with no pickle, no scikit-learn version to match, and no import of
+    this package on the reading side.
+    """
+
+    x: np.ndarray
+    y: np.ndarray
+
+    def predict(self, raw: np.ndarray) -> np.ndarray:
+        return np.interp(np.asarray(raw, dtype=float), self.x, self.y)
+
+    @classmethod
+    def from_isotonic(cls, calibrator: IsotonicRegression) -> PiecewiseCalibrator:
+        return cls(
+            np.asarray(calibrator.X_thresholds_, dtype=float),
+            np.asarray(calibrator.y_thresholds_, dtype=float),
+        )
+
+    def to_json(self) -> dict:
+        return {
+            "kind": "isotonic-piecewise",
+            "note": "score = numpy.interp(raw, x, y); flat outside [x[0], x[-1]]",
+            "x": [float(v) for v in self.x],
+            "y": [float(v) for v in self.y],
+        }
+
+    @classmethod
+    def from_json(cls, payload: dict) -> PiecewiseCalibrator:
+        return cls(
+            np.asarray(payload["x"], dtype=float), np.asarray(payload["y"], dtype=float)
+        )
+
+
 DEFAULT_PARAMS: dict[str, Any] = {
     "objective": "binary:logistic",
     "eval_metric": "aucpr",

@@ -22,7 +22,7 @@
     "unknown_rail_transactions": 0,
     "warning": "This case involves payment rails on which the model has NOT demonstrated recall. On the validation corpus it caught 599 of 796 ACH laundering transactions and 1 of 100 across all other rails combined (ADR-007). Absence of an alert on these transactions is not evidence of absence."
   },
-  "created_at": "2026-09-22T12:33:45.683348+00:00",
+  "created_at": "2026-09-26T10:04:36.101808+00:00",
   "disposition": null,
   "investigator_notes": [],
   "model": {
@@ -126,7 +126,7 @@
   "reasons": [
     {
       "code": "GFP_F185_RAISED",
-      "contribution": 8.653579711914062,
+      "contribution": 9.03480339050293,
       "feature": "gfp_f185",
       "label": "sender's outgoing transfers (24h window): fan/degree ratio (GFP 'ratio')",
       "opaque": false,
@@ -140,7 +140,7 @@
     },
     {
       "code": "GFP_F197_RAISED",
-      "contribution": 7.868983268737793,
+      "contribution": 7.99938440322876,
       "feature": "gfp_f197",
       "label": "sender's incoming transfers (24h window): transaction count",
       "opaque": false,
@@ -150,8 +150,8 @@
         "TX0000812709",
         "TX0000812705",
         "TX0000812707",
-        "TX0004446870",
         "TX0004223551",
+        "TX0004446870",
         "TX0004223552",
         "TX0004446869",
         "TX0000812708"
@@ -159,7 +159,7 @@
     },
     {
       "code": "BH_PAIR_N_PRIOR_LOWERED",
-      "contribution": -5.820620536804199,
+      "contribution": -6.187189102172852,
       "feature": "bh_pair_n_prior",
       "label": "earlier transfers from this sender to this receiver (0 = first-time counterparty)",
       "opaque": false,
@@ -173,7 +173,7 @@
     },
     {
       "code": "GFP_F183_RAISED",
-      "contribution": 3.4228010177612305,
+      "contribution": 3.6714887619018555,
       "feature": "gfp_f183",
       "label": "sender's outgoing transfers (24h window): distinct counterparties",
       "opaque": false,
@@ -187,7 +187,7 @@
     },
     {
       "code": "BH_SRC_OUT_N_24H_RAISED",
-      "contribution": 3.2104010581970215,
+      "contribution": 3.329770088195801,
       "feature": "bh_src_out_n_24h",
       "label": "transfers the sender made in the previous 24h",
       "opaque": false,
@@ -202,7 +202,7 @@
     },
     {
       "code": "GFP_F223_RAISED",
-      "contribution": 3.085634231567383,
+      "contribution": 3.1820404529571533,
       "feature": "gfp_f223",
       "label": "receiver's incoming transfers (24h window): transaction count",
       "opaque": false,
@@ -217,7 +217,7 @@
     },
     {
       "code": "GFP_F196_RAISED",
-      "contribution": 3.05621337890625,
+      "contribution": 3.116799831390381,
       "feature": "gfp_f196",
       "label": "sender's incoming transfers (24h window): distinct counterparties",
       "opaque": false,
@@ -227,14 +227,14 @@
         "TX0000812706",
         "TX0000812705",
         "TX0000812707",
-        "TX0000812708",
         "TX0004446869",
-        "TX0004446870"
+        "TX0004446870",
+        "TX0000812708"
       ]
     },
     {
       "code": "BH_DST_IN_N_24H_RAISED",
-      "contribution": 1.5648669004440308,
+      "contribution": 1.5795263051986694,
       "feature": "bh_dst_in_n_24h",
       "label": "transfers the receiver received in the previous 24h",
       "opaque": false,

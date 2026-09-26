@@ -6,7 +6,7 @@
   "threshold": 0.01364365965127945,
   "threshold_source": "validation @ 1.0% alert budget",
   "n_transactions": 50263,
-  "n_alerts": 630,
+  "n_alerts": 631,
   "history_transactions": 5028082,
   "case_ids": [
     "FG-06436b78",
@@ -20,6 +20,6 @@
     "FG-82b960dd",
     "FG-b21ffd83"
   ],
-  "scored_at": "2026-09-22T12:35:51Z",
-  "seconds": 449.5
+  "scored_at": "2026-09-26T10:05:52Z",
+  "seconds": 206.1
 }

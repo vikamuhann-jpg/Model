@@ -14,7 +14,7 @@
     "unknown_rail_transactions": 0,
     "warning": null
   },
-  "created_at": "2026-09-22T12:35:05.051938+00:00",
+  "created_at": "2026-09-26T10:05:24.056462+00:00",
   "disposition": null,
   "investigator_notes": [],
   "model": {
@@ -55,7 +55,7 @@
   "reasons": [
     {
       "code": "BH_SRC_SECS_SINCE_OUT_RAISED",
-      "contribution": 5.698574066162109,
+      "contribution": 5.664050102233887,
       "feature": "bh_src_secs_since_out",
       "label": "seconds since the sender's previous transfer (empty if none)",
       "opaque": false,
@@ -67,7 +67,7 @@
     },
     {
       "code": "BH_PAIR_N_PRIOR_RAISED",
-      "contribution": 2.681464910507202,
+      "contribution": 2.677793502807617,
       "feature": "bh_pair_n_prior",
       "label": "earlier transfers from this sender to this receiver (0 = first-time counterparty)",
       "opaque": false,
@@ -78,7 +78,7 @@
     },
     {
       "code": "GFP_F185_LOWERED",
-      "contribution": -1.37258780002594,
+      "contribution": -1.366607666015625,
       "feature": "gfp_f185",
       "label": "sender's outgoing transfers (24h window): fan/degree ratio (GFP 'ratio')",
       "opaque": false,
@@ -88,7 +88,7 @@
     },
     {
       "code": "BH_DST_IN_N_24H_RAISED",
-      "contribution": 1.1171596050262451,
+      "contribution": 1.1291546821594238,
       "feature": "bh_dst_in_n_24h",
       "label": "transfers the receiver received in the previous 24h",
       "opaque": false,
@@ -100,7 +100,7 @@
     },
     {
       "code": "TX_AMOUNT_RAISED",
-      "contribution": 0.6777440309524536,
+      "contribution": 0.679239809513092,
       "feature": "tx_amount",
       "label": "transaction amount",
       "opaque": false,
@@ -110,20 +110,8 @@
       ]
     },
     {
-      "code": "BH_SRC_PASSTHROUGH_24H_LOWERED",
-      "contribution": -0.5597479343414307,
-      "feature": "bh_src_passthrough_24h",
-      "label": "share of what the sender received in the previous 24h that this transfer moves on",
-      "opaque": false,
-      "transaction_ids": [
-        "TX0002860254",
-        "TX0002860256",
-        "TX0002860255"
-      ]
-    },
-    {
       "code": "GFP_F233_LOWERED",
-      "contribution": -0.5444408059120178,
+      "contribution": -0.6176475286483765,
       "feature": "gfp_f233",
       "label": "receiver's incoming transfers (24h window): skew amount",
       "opaque": false,
@@ -134,8 +122,20 @@
       ]
     },
     {
+      "code": "BH_SRC_PASSTHROUGH_24H_LOWERED",
+      "contribution": -0.5558399558067322,
+      "feature": "bh_src_passthrough_24h",
+      "label": "share of what the sender received in the previous 24h that this transfer moves on",
+      "opaque": false,
+      "transaction_ids": [
+        "TX0002860254",
+        "TX0002860256",
+        "TX0002860255"
+      ]
+    },
+    {
       "code": "TX_AMOUNT_RECEIVED_LOG_RAISED",
-      "contribution": 0.5399165749549866,
+      "contribution": 0.5329037308692932,
       "feature": "tx_amount_received_log",
       "label": "amount received (log scale)",
       "opaque": false,

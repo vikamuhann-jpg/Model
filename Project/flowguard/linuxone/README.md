@@ -14,7 +14,7 @@ RAM, 50 GB disk, no GPU.
 | File | Purpose |
 |---|---|
 | `01_prepare_and_baseline.ipynb` | Raw CSV → features → XGBoost baselines (E0/E1/E2) → **exports `*_features.h5`** |
-| `02_neural_model.ipynb` | Loads that HDF5 → trains a **PyTorch** DNN → compares against the trees |
+| `02_keras_model.ipynb` | Loads that HDF5 → trains a **Keras/TensorFlow** DNN → compares against the trees |
 | `data/IBM_Dataset/` | The corpus, gzipped. **Gitignored** — present on disk, never committed |
 | `STATUS.md` | **Current deployment state** — what is on the VM, what has been measured there, what does not work |
 
@@ -56,7 +56,7 @@ are fetched.
     cd ~/flowguard/linuxone
     jupyter lab --no-browser --port 8888
 
-Open `01_prepare_and_baseline.ipynb` and Run All, then `02_neural_model.ipynb`.
+Open `01_prepare_and_baseline.ipynb` and Run All, then `02_keras_model.ipynb`.
 
 ---
 
@@ -112,20 +112,29 @@ Going bigger needs the streaming rework: write features to HDF5 chunk-wise
 and train through `xgb.QuantileDMatrix` over a `DataIter`. That lifts the
 ceiling to roughly 30M rows, because RAM stops scaling with the corpus.
 
-## The neural model is PyTorch, not Keras
+## The neural model is Keras, and its first cell is load-bearing
 
-`tensorflow 2.9.3` **cannot run on this image**, and it is an environment
-problem rather than a defect. TF 2.9 requires `protobuf < 3.20`; the image
-carries `7.35.1`. Setting `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` gets
-the import through, but constructing any Keras layer then fails with
-*"RepeatedCompositeFieldContainer object does not support item assignment"*,
-and nothing installable fixes it on s390x. The datathon's own
-`Fraud_LSTM_Keras_TF.ipynb` and `Digit_Class_TensorFlow.ipynb` carry no saved
-outputs, consistent with TF never having worked here.
+`02_keras_model.ipynb` uses `tensorflow 2.9.3`. An earlier version of this file
+said TensorFlow could not run here at all; that was wrong, and
+[`STATUS.md`](STATUS.md) records the correction.
 
-`torch 2.1.0a0` — built from source for s390x — does work, so
-`02_neural_model.ipynb` uses PyTorch. It needs the same environment variable
-set before importing torch, which the notebook does for you.
+The image holds **two protobufs**: `7.35.1` in `~/.local`, which shadows
+everything and which TF 2.9.3 cannot use, and `3.13.0` in the system
+`site-packages` beside TensorFlow, which it can. Cell 1 puts the system path
+first *for that one import*, so TensorFlow gets the older protobuf while
+everything imported afterwards keeps its usual version. **Nothing is installed.**
+
+Two ordering rules in that cell are easy to break and expensive to debug:
+
+1. `PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` must be set before any
+   protobuf import.
+2. `tf.config.threading.*` must be called immediately after `import tensorflow`.
+   TensorFlow fixes its thread pools on initialisation and raises `RuntimeError`
+   if they are set afterwards.
+
+A PyTorch port exists in git history (`02_neural_model.ipynb`, removed
+2026-09-26) and needs no protobuf handling, should TensorFlow become unusable
+here again.
 
 It mirrors the Keras design it replaces: `StandardScaler` fitted on train only,
 NaNs imputed after scaling (GFP leaves self-transfer rows NaN by design, and a
@@ -157,8 +166,8 @@ Attributes carry `n_train` / `n_val` / `n_test`, `n_features`,
 
 **NaNs are preserved on purpose.** XGBoost handles them natively and uses them
 as signal — GFP leaves self-transfer rows NaN by design. `02` imputes them
-(after scaling) because Keras cannot: a single NaN gives a NaN loss and a dead
-model on epoch 1.
+(after scaling) because a network cannot use them: one NaN gives a NaN loss and
+a dead model on epoch 1.
 
 HDF5 rather than `.npy` or pickle: one self-describing file, streams in bounded
 RAM via h5py, and is endian-safe on s390x. Nothing in this directory writes a
@@ -169,8 +178,9 @@ on a big-endian machine is a portability problem waiting to happen.
 
 ## Outputs
 
-Both notebooks write to `~/flowguard_outputs/` (override with
-`FLOWGUARD_OUTPUT_DIR`).
+Both notebooks write to `~/flowguard_outputs/<VARIANT>/` — one directory per
+corpus, so an LI-Small run cannot overwrite the HI-Small results (override the
+base with `FLOWGUARD_OUTPUT_DIR`, the corpus with `FLOWGUARD_VARIANT`).
 
 **Models:** `e1_model.json`, `e2_model.json` (XGBoost native JSON),
 `dnn_model.h5` (Keras 2.9 predates the `.keras` format), plus
@@ -195,9 +205,9 @@ reported at alert budgets (0.1% / 0.5% / 1% / 5%) — the fraction of
 transactions an investigation team could actually review.
 
 Both notebooks score through the same `flowguard.evaluation.metrics.evaluate()`
-so the DNN and the tree models are directly comparable. Keras' own
-`AUC(curve="PR")` is used only for early stopping: it approximates over ~200
-histogram buckets, which at this base rate is too coarse to report.
+so the DNN and the tree models are directly comparable. The training loop
+watches that same PR-AUC for early stopping, rather than a framework's bucketed
+approximation, which at this base rate is too coarse to trust.
 
 Disk budget: ~510 MB dataset + ~4.6 GB transient GFP cache + ~2 GB HDF5 +
 ~50 MB outputs ≈ 7 GB of the 50 GB available.

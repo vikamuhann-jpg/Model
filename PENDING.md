@@ -11,6 +11,12 @@
 | [B. Reproducibility and hygiene](#b-reproducibility-and-hygiene) | 3 |
 | [C. Functional requirements](#c-functional-requirements-ps9) | 5 partial |
 | [D. Toward production](#d-toward-production) | 3 stages |
+| [E. From the LinuxONE handoff (2026-09-24)](#e-from-the-linuxone-handoff-2026-09-24) | 3 |
+
+**Sorted by who can act:** [`docs/PROBLEMS_1_FIXABLE.md`](docs/PROBLEMS_1_FIXABLE.md) (ours),
+[`docs/PROBLEMS_2_BLOCKED.md`](docs/PROBLEMS_2_BLOCKED.md) (blocked on someone else),
+[`docs/PROBLEMS_3_LIMITS.md`](docs/PROBLEMS_3_LIMITS.md) (cannot be fixed, only stated).
+This page stays the record of the findings themselves.
 
 Closed since 2026-09-21: the push to GitHub; the GFP double-insertion defect
 ([ADR-015](docs/ADR-015-gfp-double-insertion.md)); tuning (F1 0.280 → 0.521); the benchmark
@@ -74,3 +80,53 @@ FR-09 (explainability) closed 2026-09-22: graph reasons are named from GFP's doc
    volume (A4); model governance — validation on real data, drift monitoring, retraining.
 
 Stage 3 is blocked on data, not code.
+
+---
+
+## E. From the LinuxONE handoff (2026-09-24)
+
+Shivraj ran the deployment notebooks on the datathon VM and sent
+`HANDOFF_VIKA_2026-09-24.md`. The code items are done (see
+[`WINNING_PLAN.md`](WINNING_PLAN.md)); these four are decisions, not patches.
+
+- [x] **E1. Keras ships.** Decided 2026-09-26. `02_keras_model.ipynb` is restored as the
+  neural notebook and carries the protobuf import order, the corpus setting, the raised
+  epoch cap and the P5 report. The PyTorch port (`02_neural_model.ipynb`) is removed; it
+  stays in git history at `136c07a^` and needs no protobuf handling, should TensorFlow
+  become unusable here again.
+- [ ] **E2. BIPARTITE at zero recall fails our own gate P5.** Measured on the Keras DNN
+  across all four seeds; the tree models do catch it. **State it either way** — the
+  notebook now names the failing typology instead of averaging it away. What can fix it,
+  cheapest first:
+  1. **Diagnose before treating** (in the notebook, section 7b, no training): if the missed
+     positives' *best percentile* is near 100 the pattern is visible and the 1% budget is
+     the binding constraint; a median near 50 means the network cannot see it at all. The
+     two cases need different fixes, and we have never checked which one this is.
+  2. **Blend with E2 by rank** (section 7b, no retraining, minutes): a rank-average of the
+     two models keeps the extra alerts the network finds while restoring a typology the
+     trees already catch. The blend table reports which weights leave no typology at zero.
+     This is the fix to reach for if the diagnosis says "near miss".
+  3. **Scale the heavy tails** (~20 lines, one retrain): GFP counts and amounts are
+     extremely skewed, and `StandardScaler` compresses exactly the large values that make a
+     fan-in or bipartite pattern visible. `log1p` before scaling, or a quantile transform,
+     is the standard remedy and the likeliest cause if the diagnosis says "invisible".
+     Trees are scale-invariant, which would explain why only the network misses it.
+  4. **Weight the rare typologies in training** — effective but easy to do wrongly: the
+     weights must come from training-partition typologies only, and only 62% of positives
+     carry one, so it optimises for a labelled subset.
+- [ ] **E3. Is the neural arm worth shipping at all?** Over seeds 42/1/2/3 its PR-AUC is
+  0.0407 / 0.0462 / 0.0231 / 0.0297 against XGBoost's 0.0325 — two of four seeds below the
+  tree model. It does catch 4–9 more of 127 laundering transactions at a 1% review budget
+  in every seed. "The DNN beats XGBoost" is not a claim the numbers support. Options:
+  1. **Report the narrow claim** (free): not better on PR-AUC; consistently finds a few
+     alerts the trees miss at a fixed budget. This is what the numbers support and it is
+     what the comparison table should say.
+  2. **Ship the blend rather than the network** (free, section 7b): if rank-averaging beats
+     both arms, the honest headline is the ensemble, and E2 is likely solved with it.
+  3. **Average several seeds** (~15 minutes of VM time): score 3–5 seeds and average the
+     ranks. A 0.0231 seed next to a 0.0462 one is variance, and averaging is the standard
+     way to stop reporting whichever seed we happened to run.
+  4. **Only then tune the architecture.** Depth, width and dropout are the least promising
+     lever here and the most time-consuming.
+- [ ] **E4. Does `Vika/` belong in git?** It sits untracked in the other team's repository.
+  It is this repository's work, so it belongs on a branch here rather than there.

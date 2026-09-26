@@ -1,0 +1,24 @@
+{
+  "kind": "ordinal",
+  "unseen_code": -1,
+  "fit_rows": 3047216,
+  "categories": {
+    "currency": {
+      "Australian Dollar": 0,
+      "Bitcoin": 1,
+      "Brazil Real": 2,
+      "Canadian Dollar": 3,
+      "Euro": 4,
+      "Mexican Peso": 5,
+      "Ruble": 6,
+      "Rupee": 7,
+      "Saudi Riyal": 8,
+      "Shekel": 9,
+      "Swiss Franc": 10,
+      "UK Pound": 11,
+      "US Dollar": 12,
+      "Yen": 13,
+      "Yuan": 14
+    }
+  }
+}

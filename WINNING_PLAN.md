@@ -400,3 +400,52 @@ Newest last. Each entry: what was done, what came out, **what went wrong**, what
   S4b's flags and parameters. `run_benchmark` gained `--variant` (default HI-Small).
 - **Gates** as in the tracker, fixed here before extraction started.
 
+
+### 2026-09-26 — LinuxONE handoff: the items that were ours
+Shivraj ran the deployment notebooks on the datathon VM (2 vCPU, 6 GB, s390x) and returned
+`HANDOFF_VIKA_2026-09-24.md`. His §1 edits were made to his copies; the same defects were
+in ours, so they are fixed here at the source.
+
+- **R3 — the nameless typology bar.** `per_group_recall` turned unlabelled rows into `""`
+  and then kept `""` as a group, because `isinstance("", str)` is true. It reached every
+  per-typology chart and gate P5. The existing test missed it: its unlabelled rows were all
+  *negative*, so the group was empty and skipped. Unlabelled **positives** are the normal
+  case — 38% on HI-Small, 71% on LI-Small. Fixed, plus a test that fails on the old code.
+- **R8 — the package is now readable without unpickling.** `calibrator.json`
+  (`isotonic-piecewise`: the knots, read back with `np.interp`) and
+  `encoders/categorical.json` (the ordinal vocabulary). Both are written by
+  `run_validation` and preferred by `score.py`; the pickles stay for older packages.
+  Agreement with the pickled calibrator: **6.0e-8** over 20,100 points (their `np.interp`
+  reimplementation measured 4.6e-6).
+- **Found while doing it — explanations did not describe the scored model.**
+  `shap.TreeExplainer` truncates an early-stopped booster at `best_iteration`; our scoring
+  path uses every tree. On v2 that is **741 trees explained against 841 scored**, so every
+  evidence bundle explained a model that never produced its score. `shap` is also absent
+  from the datathon package list. Both are fixed at once by XGBoost's own
+  `pred_contribs=True` — the same TreeSHAP implementation `shap` calls — pinned by a test
+  asserting contributions + bias == the scored margin.
+- **R8 — `top_features` in `scores.csv`:** the three named features that pushed each alert
+  up, as `label (+0.123)`, computed for alerts only. Contract updated.
+- **R8 — rank ties were already correct.** `rank` orders by `score` then `raw_score` in the
+  shipped file; the request came from the older D37 delivery. It matters more than it
+  sounds: isotonic calibration saturates, so **49,611 of 50,263 rows share a score with
+  another row** and the tie-break decides nearly every rank.
+- **R8 — labels shipped:** `sample_outputs/labels.csv` and `window_metrics.json`, so the
+  window can be recomputed rather than trusted.
+- **Scoring no longer materialises features for rows it will not score.** A 50k window over
+  a 5M-row corpus read 5M x 192 float32 (3.8 GB) to score 39 MB of it; history rows shape
+  the features but their engineered columns are never needed. `graph_features(rows=...)`
+  reads one part file at a time; the few rows a case trace reaches are fetched on demand.
+  This is also what makes the path viable on a 6 GB VM.
+- **R4/R5 in the notebooks:** the epoch cap now says whether it stopped on patience or hit
+  the cap (30 was a budget, not convergence; raised to 150/10), and notebook 02 reports a
+  P5 failure by name instead of averaging it away. Notebook 01 had the same
+  delete-then-use crash Shivraj found in his copy — cell 21 frees the E1 frames, cells 26,
+  27 and 37 still read them — fixed by keeping the score vector and the feature count.
+- **Corpus is now a setting:** `FLOWGUARD_VARIANT`, with outputs under
+  `~/flowguard_outputs/<VARIANT>/` so a second dataset cannot overwrite the first.
+- **Keras was never the problem.** Our STATUS said TF 2.9.3 cannot run on the image and
+  "nothing installable fixes it". Every observation was right; the inference was wrong. The
+  image carries two protobufs, and importing the `3.13.0` beside TensorFlow rather than the
+  `7.35.1` in `~/.local` makes Keras work with nothing installed. Corrected in both
+  `linuxone/` documents, with what the reasoning got wrong.

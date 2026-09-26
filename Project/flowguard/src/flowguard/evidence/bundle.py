@@ -106,6 +106,22 @@ class Reason:
         }
 
 
+def label_for(feature: str, gfp_params: dict[str, Any] | None = None) -> str | None:
+    """Plain-language name for any feature the model uses, or None if unnamed.
+
+    The three families name their columns in three different places: graph
+    columns are derived from GFP's documented layout, the other two carry static
+    maps. Every consumer that shows a feature to a person -- evidence bundles,
+    ``scores.csv`` -- needs the same answer, so the lookup lives here rather than
+    being repeated in each of them.
+    """
+    return (
+        (feature_label(feature, gfp_params) if gfp_params else None)
+        or BEHAVIOUR_LABELS.get(feature)
+        or TX_LABELS.get(feature)
+    )
+
+
 def reason_code(feature: str, contribution: float) -> str:
     """A stable code from a feature name and the direction of its effect."""
     direction = "RAISED" if contribution > 0 else "LOWERED"
@@ -417,8 +433,7 @@ def build_bundle(
                 str(edges.loc[i, S.TRANSACTION_ID])
                 for i in driving.sort_values(ascending=total < 0).index
             ]
-            label = (feature_label(str(feature), gfp_params) if gfp_params else None) \
-                or BEHAVIOUR_LABELS.get(str(feature)) or TX_LABELS.get(str(feature))
+            label = label_for(str(feature), gfp_params)
             reasons.append(
                 Reason(
                     code=reason_code(feature, total),

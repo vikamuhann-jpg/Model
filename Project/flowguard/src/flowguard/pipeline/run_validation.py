@@ -35,7 +35,7 @@ from flowguard.evaluation.thresholds import ThresholdSource, select_thresholds
 from flowguard.features.behaviour import behaviour_features
 from flowguard.features.gfp import timestamp_stat_columns
 from flowguard.features.transaction import TransactionFeatures
-from flowguard.models.xgb import XGBModel
+from flowguard.models.xgb import PiecewiseCalibrator, XGBModel
 from flowguard.registry.experiments import ExperimentRecord, Registry
 from flowguard.splits.hard_negative import select_hard_negatives
 from flowguard.splits.temporal import SplitSpec, chronological_split
@@ -565,6 +565,19 @@ def write_package(root: Path, **kw) -> Path:
         pickle.dump(model.calibrator_, fh)
     with (target / "encoders" / "categorical.pkl").open("wb") as fh:
         pickle.dump(inputs.extractor.encoder, fh)
+
+    # The pickles above are for this repository only. A consumer on another
+    # machine cannot read them: they need scikit-learn's exact version and an
+    # importable ``flowguard``, and one written under numpy 2 fails to load
+    # under numpy 1.x at all. These two files carry the same objects as plain
+    # numbers, and score.py prefers them.
+    (target / "calibrator.json").write_text(
+        json.dumps(PiecewiseCalibrator.from_isotonic(model.calibrator_).to_json()),
+        encoding="utf-8",
+    )
+    (target / "encoders" / "categorical.json").write_text(
+        json.dumps(inputs.extractor.encoder.to_json(), indent=2), encoding="utf-8"
+    )
 
     columns = list(inputs.X_train.columns)
     (target / "feature_schema.json").write_text(
