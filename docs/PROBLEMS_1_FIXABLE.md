@@ -107,16 +107,11 @@ package that has *only* pickles rather than silently falling back, and say so in
 **Effort.** Under an hour. **Done when** a package with the pickles deleted loads, scores
 and passes the contract tests — which is already true today.
 
-## FIX-07 · `Vika/` is untracked in the other team's repository
-**What is wrong.** Our work sits untracked inside their tree (their R9).
-
-**Why it matters.** It is unversioned in a place nobody owns, and it crosses the ownership
-boundary their directive §52 draws.
-
-**Fix.** Take the directory onto a branch here, tell them it has a home, and let them delete
-their copy.
-
-**Effort.** Under an hour. **Done when** their `git status` is clean of it.
+## FIX-07 · `Vika/` in the other team's repository — *reclassified 2026-09-26*
+**Listed here in error.** `Vika/` exists only inside their tree; there is no copy on this
+machine, so there is nothing for us to take onto a branch. What it holds is our work, which
+already lives here in its own right, so the remaining action is theirs — delete it. Tracked
+as **BLK-09** in [PROBLEMS_2_BLOCKED.md](PROBLEMS_2_BLOCKED.md).
 
 ## FIX-08 · Repository litter
 **What is wrong.** An empty `Project/flowguard/linuxone/nonexistent_home/` directory (a test

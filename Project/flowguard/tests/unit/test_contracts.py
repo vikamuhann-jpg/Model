@@ -13,6 +13,7 @@ JSON Schema implementation.
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -273,3 +274,23 @@ def test_the_json_calibrator_reproduces_the_pickled_one():
     knots = np.asarray(isotonic.X_thresholds_, dtype=float)
     raw = np.concatenate([knots, np.linspace(knots[0] - 5, knots[-1] + 5, 5000)])
     np.testing.assert_allclose(isotonic.predict(raw), from_json.predict(raw), atol=1e-6)
+
+
+def test_a_package_without_its_json_is_refused_rather_than_unpickled(tmp_path):
+    """The pickles must not be a silent fallback.
+
+    They load here and fail on the machine that matters: a pickle needs
+    scikit-learn's exact version and an importable `flowguard`, and one written
+    under numpy 2 cannot be read under numpy 1.x at all. A package that can only
+    be opened by unpickling is broken for its consumer, so loading it must say so
+    here rather than there.
+    """
+    from flowguard.pipeline.score import ScoringError, load_package
+
+    copy = tmp_path / PACKAGE.name
+    shutil.copytree(PACKAGE, copy)
+    (copy / "calibrator.json").unlink()
+
+    with pytest.raises(ScoringError) as raised:
+        load_package(copy)
+    assert "calibrator.json" in str(raised.value)

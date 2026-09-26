@@ -1,0 +1,272 @@
+{
+  "metrics": {
+    "n": 761422,
+    "positives": 906,
+    "base_rate": 0.001189878937041483,
+    "pr_auc": 0.006637099593084946,
+    "roc_auc": 0.7944693008303401,
+    "lift_over_base_rate": 5.577962082081596,
+    "best_f1": 0.03184713375796178,
+    "best_f1_threshold": 0.015679441392421722,
+    "budgets": [
+      {
+        "budget": 0.001,
+        "threshold": 0.01567944325506687,
+        "alerts": 761,
+        "true_positives": 11,
+        "precision": 0.01445466491458607,
+        "recall": 0.012141280353200883
+      },
+      {
+        "budget": 0.005,
+        "threshold": 0.01485507283359766,
+        "alerts": 3807,
+        "true_positives": 71,
+        "precision": 0.018649855529288155,
+        "recall": 0.07836644591611479
+      },
+      {
+        "budget": 0.01,
+        "threshold": 0.009630818851292133,
+        "alerts": 7614,
+        "true_positives": 107,
+        "precision": 0.014053060152350933,
+        "recall": 0.11810154525386314
+      },
+      {
+        "budget": 0.05,
+        "threshold": 0.0038029539864510298,
+        "alerts": 38071,
+        "true_positives": 294,
+        "precision": 0.0077224133855165345,
+        "recall": 0.32450331125827814
+      }
+    ]
+  },
+  "interpretation": {
+    "n_sampled": 20000,
+    "top_feature": "tx_amount",
+    "top_share_of_mean_abs_shap": 0.35842185722032893,
+    "c8_ceiling": 0.5,
+    "passes_c8": true,
+    "family_shares": {
+      "tx": 1.000000058447824
+    },
+    "mean_abs_shap": {
+      "tx_amount": 0.5291435718536377,
+      "tx_amount_received_log": 0.24676889181137085,
+      "tx_is_self_transfer": 0.2080734819173813,
+      "tx_currency_code": 0.1980472356081009,
+      "tx_minute_of_day": 0.14113859832286835,
+      "tx_hour": 0.049525950103998184,
+      "tx_amount_decimals": 0.04792346432805061,
+      "tx_amount_log": 0.0464266836643219,
+      "tx_is_cross_currency": 0.00871778093278408,
+      "tx_amount_is_round_100": 0.0005263909115456045,
+      "tx_amount_ratio": 2.305834823346231e-05,
+      "tx_amount_is_round_1k": 0.0
+    }
+  },
+  "error_analysis": {
+    "budget": 0.01,
+    "true_positives": 107,
+    "false_positives": 7507,
+    "false_negatives": 799,
+    "true_negatives": 753009,
+    "slices": {
+      "typology": {
+        "(unannotated)": {
+          "positives": 342,
+          "caught": 2,
+          "recall": 0.005847953216374269
+        },
+        "STACK": {
+          "positives": 81,
+          "caught": 9,
+          "recall": 0.1111111111111111
+        },
+        "GATHER-SCATTER": {
+          "positives": 125,
+          "caught": 21,
+          "recall": 0.168
+        },
+        "RANDOM": {
+          "positives": 41,
+          "caught": 7,
+          "recall": 0.17073170731707318
+        },
+        "FAN-IN": {
+          "positives": 56,
+          "caught": 10,
+          "recall": 0.17857142857142858
+        },
+        "BIPARTITE": {
+          "positives": 40,
+          "caught": 8,
+          "recall": 0.2
+        },
+        "SCATTER-GATHER": {
+          "positives": 106,
+          "caught": 23,
+          "recall": 0.2169811320754717
+        },
+        "FAN-OUT": {
+          "positives": 63,
+          "caught": 14,
+          "recall": 0.2222222222222222
+        },
+        "CYCLE": {
+          "positives": 52,
+          "caught": 13,
+          "recall": 0.25
+        }
+      },
+      "amount_band": {
+        "(-0.000999, 144.172]": {
+          "positives": 42,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "(144.172, 613.914]": {
+          "positives": 35,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "(613.914, 2670.728]": {
+          "positives": 143,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "(2670.728, 17157.762]": {
+          "positives": 442,
+          "caught": 65,
+          "recall": 0.14705882352941177
+        },
+        "(17157.762, 626035501453.45]": {
+          "positives": 244,
+          "caught": 42,
+          "recall": 0.1721311475409836
+        }
+      },
+      "hour_band": {
+        "18-23": {
+          "positives": 209,
+          "caught": 7,
+          "recall": 0.03349282296650718
+        },
+        "00-05": {
+          "positives": 126,
+          "caught": 5,
+          "recall": 0.03968253968253968
+        },
+        "06-11": {
+          "positives": 250,
+          "caught": 33,
+          "recall": 0.132
+        },
+        "12-17": {
+          "positives": 321,
+          "caught": 62,
+          "recall": 0.19314641744548286
+        }
+      },
+      "payment_type": {
+        "Bitcoin": {
+          "positives": 10,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "Cash": {
+          "positives": 17,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "Cheque": {
+          "positives": 53,
+          "caught": 0,
+          "recall": 0.0
+        },
+        "Credit Card": {
+          "positives": 30,
+          "caught": 1,
+          "recall": 0.03333333333333333
+        },
+        "ACH": {
+          "positives": 796,
+          "caught": 106,
+          "recall": 0.13316582914572864
+        }
+      },
+      "pattern_position": {
+        "middle": {
+          "positives": 172,
+          "caught": 26,
+          "recall": 0.1511627906976744
+        },
+        "late": {
+          "positives": 128,
+          "caught": 22,
+          "recall": 0.171875
+        },
+        "early": {
+          "positives": 264,
+          "caught": 57,
+          "recall": 0.2159090909090909
+        }
+      }
+    },
+    "false_negative_profile": {
+      "count": 799,
+      "median_amount": 6792.95,
+      "self_transfer_rate": 0.0025031289111389237,
+      "top_payment_types": {
+        "ACH": 690,
+        "Cheque": 53,
+        "Credit Card": 29
+      },
+      "caught_for_contrast": {
+        "count": 107,
+        "median_amount": 15710.55,
+        "self_transfer_rate": 0.0,
+        "top_payment_types": {
+          "ACH": 106,
+          "Credit Card": 1
+        }
+      }
+    },
+    "false_positive_profile": {
+      "count": 7507,
+      "median_amount": 14307.06,
+      "self_transfer_rate": 0.0,
+      "top_payment_types": {
+        "Cheque": 3023,
+        "Credit Card": 2788,
+        "Cash": 785
+      }
+    }
+  },
+  "hard_negatives": {
+    "n": 172158,
+    "budget": 0.01,
+    "flagged": 2404,
+    "false_positive_rate": 0.013963916867063976,
+    "baseline_benign_rate": 0.013667036590946147,
+    "enrichment_vs_ordinary_benign": 1.0217223590602296,
+    "n_transactions": 172158,
+    "selection_reasons": {
+      "high_fan_out": 116717,
+      "high_fan_in": 18735,
+      "high_volume_hub": 119959,
+      "regular_cadence_fan_out": 9,
+      "reciprocal_pair": 31327,
+      "share_of_benign": 0.2264
+    },
+    "n_accounts_flagged": {
+      "high_fan_out": 2106,
+      "high_fan_in": 1321,
+      "high_volume_hub": 1992,
+      "regular_cadence_fan_out": 1,
+      "reciprocal_pair": 2309
+    }
+  }
+}

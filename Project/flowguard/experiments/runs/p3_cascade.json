@@ -1,0 +1,96 @@
+{
+  "HI-Small": {
+    "rows": 5077237,
+    "test_rows": 761422,
+    "test_positives": 906,
+    "n_graph_features": 155,
+    "full_extraction_recall": 0.5669610007358351,
+    "tier0_rate": 89523.93546784825,
+    "tier1_rate": 450.0,
+    "by_k": {
+      "0.01": {
+        "recall": 0.11846946284032377,
+        "recall_sd": 0.0012745039054958612,
+        "pr_auc": 0.07058171613700372,
+        "retained_fraction": 0.20895522388059704,
+        "end_to_end_tx_per_s": 29946.916747882507,
+        "gate_a_pass": true,
+        "gate_b_pass": false
+      },
+      "0.02": {
+        "recall": 0.16924208977189106,
+        "recall_sd": 0.018774614896501944,
+        "pr_auc": 0.09112632760839412,
+        "retained_fraction": 0.29850746268656714,
+        "end_to_end_tx_per_s": 17980.876494065877,
+        "gate_a_pass": true,
+        "gate_b_pass": false
+      },
+      "0.05": {
+        "recall": 0.29249448123620314,
+        "recall_sd": 0.013785867546133316,
+        "pr_auc": 0.1293289477519568,
+        "retained_fraction": 0.5158987670343934,
+        "end_to_end_tx_per_s": 8177.864753215902,
+        "gate_a_pass": true,
+        "gate_b_pass": false
+      },
+      "0.1": {
+        "recall": 0.3922001471670346,
+        "recall_sd": 0.015066663156323223,
+        "pr_auc": 0.1291732627466942,
+        "retained_fraction": 0.6917585983127841,
+        "end_to_end_tx_per_s": 4284.629308492149,
+        "gate_a_pass": true,
+        "gate_b_pass": false
+      }
+    }
+  },
+  "ETH": {
+    "rows": 1250000,
+    "test_rows": 187495,
+    "test_positives": 257,
+    "n_graph_features": 161,
+    "full_extraction_recall": 0.029831387808041506,
+    "tier0_rate": 75189.98195936604,
+    "tier1_rate": 139.0,
+    "by_k": {
+      "0.01": {
+        "recall": 0.04280155642023346,
+        "recall_sd": 0.02429960310660855,
+        "pr_auc": 0.004251053160183055,
+        "retained_fraction": 1.4347826086956519,
+        "end_to_end_tx_per_s": 11731.293757718762,
+        "gate_a_pass": true,
+        "gate_b_pass": true
+      },
+      "0.02": {
+        "recall": 0.03372243839169909,
+        "recall_sd": 0.011887355888341998,
+        "pr_auc": 0.004167496773154158,
+        "retained_fraction": 1.1304347826086956,
+        "end_to_end_tx_per_s": 6361.948982118174,
+        "gate_a_pass": true,
+        "gate_b_pass": true
+      },
+      "0.05": {
+        "recall": 0.02464332036316472,
+        "recall_sd": 0.005943677944170999,
+        "pr_auc": 0.003912237969884271,
+        "retained_fraction": 0.826086956521739,
+        "end_to_end_tx_per_s": 2680.87980263959,
+        "gate_a_pass": true,
+        "gate_b_pass": false
+      },
+      "0.1": {
+        "recall": 0.0311284046692607,
+        "recall_sd": 0.014029382394801514,
+        "pr_auc": 0.0036116238473591373,
+        "retained_fraction": 1.0434782608695652,
+        "end_to_end_tx_per_s": 1364.7701690367962,
+        "gate_a_pass": true,
+        "gate_b_pass": true
+      }
+    }
+  }
+}

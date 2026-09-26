@@ -41,6 +41,7 @@ from flowguard.splits.hard_negative import select_hard_negatives
 from flowguard.splits.temporal import SplitSpec, chronological_split
 from flowguard.splits.unseen_pattern import annotation_coverage, split_by_typology
 
+from flowguard.config import DATA_ROOT as _DATA_ROOT
 from flowguard.config import PROCESSED_DIR as DEFAULT_PROCESSED
 BUDGETS = (0.001, 0.005, 0.01, 0.05)
 SEEDS = (42, 7, 123, 2024, 31337)
@@ -65,16 +66,19 @@ def _git_commit() -> str | None:
         return None
 
 
-def _throughput_from_log(
-    log: Path = Path("/mnt/c/Users/vikam/flowguard_data/e2_w2.log"),
-) -> float | None:
+def _throughput_from_log(log: Path | None = None) -> float | None:
     """Recover steady-state extraction throughput from the extraction log.
 
     Reports the LAST checkpoint, not the first. Throughput decays as the graph
     fills (ADR-006), so an early reading overstates the sustained rate by an
     order of magnitude -- which is exactly the mistake that produced the
     original 17,500 tx/s claim.
+
+    The log defaults to ``$FLOWGUARD_DATA/e2_w2.log``, the extraction this
+    repository's own runs wrote. A missing file is not an error: the caller
+    prefers the graph record and only falls back here.
     """
+    log = Path(log) if log is not None else _DATA_ROOT / "e2_w2.log"
     if not log.exists():
         return None
     rate = None

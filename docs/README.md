@@ -29,6 +29,7 @@ auditable.
 | [013](ADR-013-degree-skew-dominates-cost.md) | Degree skew dominates extraction cost | accepted — figures pre-ADR-015 |
 | [014](ADR-014-cascade-cannot-prefilter.md) | A cheap tier cannot pre-filter | accepted — figures pre-ADR-015 |
 | [015](ADR-015-gfp-double-insertion.md) | **Every edge was inserted twice; fixed** — lists every affected result | accepted |
+| [016](ADR-016-tree-range-at-scoring.md) | Score with every tree, explicitly | accepted |
 
 ## Findings and plans
 

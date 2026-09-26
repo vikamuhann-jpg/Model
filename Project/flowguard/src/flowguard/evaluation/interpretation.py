@@ -81,12 +81,19 @@ def tree_shap(booster, X: pd.DataFrame) -> np.ndarray:
     """
     import xgboost as xgb
 
+    from flowguard.models.xgb import ALL_TREES
+
     if hasattr(booster, "set_param"):
         # TreeSHAP on CPU: a one-off diagnostic, and the GPU path would need the
         # frame resident on device.
         booster.set_param({"device": "cpu"})
     contributions = booster.predict(
-        xgb.DMatrix(X, feature_names=list(X.columns)), pred_contribs=True
+        xgb.DMatrix(X, feature_names=list(X.columns)),
+        pred_contribs=True,
+        # The same trees ``predict_raw`` scores with. Passing it explicitly is
+        # the point: ``shap`` silently used best_iteration while scoring used
+        # every tree, so the explanations described another model (ADR-016).
+        iteration_range=ALL_TREES,
     )
     return np.asarray(contributions)[:, :-1]
 

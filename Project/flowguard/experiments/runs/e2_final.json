@@ -1,0 +1,487 @@
+{
+  "A2": {
+    "features": 12,
+    "pr_auc_runs": [
+      0.006637099593084946,
+      0.006506621224601085,
+      0.006356785506812342
+    ],
+    "pr_auc_mean": 0.006500168774832791,
+    "pr_auc_sd": 0.00014026839388016273,
+    "metrics": {
+      "n": 761422,
+      "positives": 906,
+      "base_rate": 0.001189878937041483,
+      "pr_auc": 0.006637099593084946,
+      "roc_auc": 0.7944693008303401,
+      "lift_over_base_rate": 5.577962082081596,
+      "best_f1": 0.03184713375796178,
+      "best_f1_threshold": 0.015679441392421722,
+      "budgets": [
+        {
+          "budget": 0.001,
+          "threshold": 0.01567944325506687,
+          "alerts": 761,
+          "true_positives": 11,
+          "precision": 0.01445466491458607,
+          "recall": 0.012141280353200883
+        },
+        {
+          "budget": 0.005,
+          "threshold": 0.01485507283359766,
+          "alerts": 3807,
+          "true_positives": 71,
+          "precision": 0.018649855529288155,
+          "recall": 0.07836644591611479
+        },
+        {
+          "budget": 0.01,
+          "threshold": 0.009630818851292133,
+          "alerts": 7614,
+          "true_positives": 107,
+          "precision": 0.014053060152350933,
+          "recall": 0.11810154525386314
+        },
+        {
+          "budget": 0.05,
+          "threshold": 0.0038029539864510298,
+          "alerts": 38071,
+          "true_positives": 294,
+          "precision": 0.0077224133855165345,
+          "recall": 0.32450331125827814
+        }
+      ]
+    },
+    "amount_band_recall": {
+      "(-0.000999, 144.172]": {
+        "positives": 42,
+        "caught": 0,
+        "recall": 0.0
+      },
+      "(144.172, 613.914]": {
+        "positives": 35,
+        "caught": 0,
+        "recall": 0.0
+      },
+      "(613.914, 2670.728]": {
+        "positives": 143,
+        "caught": 0,
+        "recall": 0.0
+      },
+      "(2670.728, 17157.762]": {
+        "positives": 442,
+        "caught": 65,
+        "recall": 0.14705882352941177
+      },
+      "(17157.762, 626035501453.45]": {
+        "positives": 244,
+        "caught": 42,
+        "recall": 0.1721311475409836
+      }
+    },
+    "typology_recall": {
+      "": {
+        "positives": 342,
+        "caught": 2,
+        "recall": 0.005847953216374269
+      },
+      "BIPARTITE": {
+        "positives": 40,
+        "caught": 8,
+        "recall": 0.2
+      },
+      "CYCLE": {
+        "positives": 52,
+        "caught": 13,
+        "recall": 0.25
+      },
+      "FAN-IN": {
+        "positives": 56,
+        "caught": 10,
+        "recall": 0.17857142857142858
+      },
+      "FAN-OUT": {
+        "positives": 63,
+        "caught": 14,
+        "recall": 0.2222222222222222
+      },
+      "GATHER-SCATTER": {
+        "positives": 125,
+        "caught": 21,
+        "recall": 0.168
+      },
+      "RANDOM": {
+        "positives": 41,
+        "caught": 7,
+        "recall": 0.17073170731707318
+      },
+      "SCATTER-GATHER": {
+        "positives": 106,
+        "caught": 23,
+        "recall": 0.2169811320754717
+      },
+      "STACK": {
+        "positives": 81,
+        "caught": 9,
+        "recall": 0.1111111111111111
+      }
+    },
+    "hard_negative": {
+      "n": 172158,
+      "budget": 0.01,
+      "flagged": 2404,
+      "false_positive_rate": 0.013963916867063976,
+      "baseline_benign_rate": 0.013667036590946147,
+      "enrichment_vs_ordinary_benign": 1.0217223590602296
+    },
+    "shap_top": {
+      "tx_amount": 0.4068908393383026,
+      "tx_amount_received_log": 0.2910707890987396,
+      "tx_is_self_transfer": 0.23944422602653503,
+      "tx_currency_code": 0.19160327315330505,
+      "tx_minute_of_day": 0.14513474702835083,
+      "tx_amount_log": 0.12474927306175232,
+      "tx_hour": 0.04881206154823303,
+      "tx_amount_decimals": 0.04512830451130867,
+      "tx_amount_is_round_100": 0.0004478514601942152,
+      "tx_is_cross_currency": 4.188625553069869e-06,
+      "tx_amount_is_round_1k": 0.0,
+      "tx_amount_ratio": 0.0
+    },
+    "shap_families": {
+      "tx": 1.0000000114420329
+    },
+    "c8_pass": true,
+    "c8_top": [
+      "tx_amount",
+      0.2724802653747585
+    ]
+  },
+  "E2": {
+    "features": 167,
+    "pr_auc_runs": [
+      0.1368849038449003,
+      0.1429462095395969,
+      0.1400793265398538
+    ],
+    "pr_auc_mean": 0.13997014664145033,
+    "pr_auc_sd": 0.0030321274493005685,
+    "metrics": {
+      "n": 761422,
+      "positives": 906,
+      "base_rate": 0.001189878937041483,
+      "pr_auc": 0.1368849038449003,
+      "roc_auc": 0.9468721651711849,
+      "lift_over_base_rate": 115.0410344982248,
+      "best_f1": 0.23516835916622128,
+      "best_f1_threshold": 0.1538461446762085,
+      "budgets": [
+        {
+          "budget": 0.001,
+          "threshold": 0.18390804529190063,
+          "alerts": 761,
+          "true_positives": 188,
+          "precision": 0.24704336399474375,
+          "recall": 0.20750551876379691
+        },
+        {
+          "budget": 0.005,
+          "threshold": 0.054999999701976776,
+          "alerts": 3807,
+          "true_positives": 404,
+          "precision": 0.10612030470186498,
+          "recall": 0.445916114790287
+        },
+        {
+          "budget": 0.01,
+          "threshold": 0.022771889343857765,
+          "alerts": 7614,
+          "true_positives": 485,
+          "precision": 0.06369845022327292,
+          "recall": 0.5353200883002207
+        },
+        {
+          "budget": 0.05,
+          "threshold": 0.0026193438097834587,
+          "alerts": 38071,
+          "true_positives": 696,
+          "precision": 0.018281631688161593,
+          "recall": 0.7682119205298014
+        }
+      ]
+    },
+    "amount_band_recall": {
+      "(-0.000999, 144.172]": {
+        "positives": 42,
+        "caught": 1,
+        "recall": 0.023809523809523808
+      },
+      "(144.172, 613.914]": {
+        "positives": 35,
+        "caught": 5,
+        "recall": 0.14285714285714285
+      },
+      "(613.914, 2670.728]": {
+        "positives": 143,
+        "caught": 68,
+        "recall": 0.4755244755244755
+      },
+      "(17157.762, 626035501453.45]": {
+        "positives": 244,
+        "caught": 145,
+        "recall": 0.5942622950819673
+      },
+      "(2670.728, 17157.762]": {
+        "positives": 442,
+        "caught": 266,
+        "recall": 0.6018099547511312
+      }
+    },
+    "typology_recall": {
+      "": {
+        "positives": 342,
+        "caught": 110,
+        "recall": 0.3216374269005848
+      },
+      "BIPARTITE": {
+        "positives": 40,
+        "caught": 22,
+        "recall": 0.55
+      },
+      "CYCLE": {
+        "positives": 52,
+        "caught": 23,
+        "recall": 0.4423076923076923
+      },
+      "FAN-IN": {
+        "positives": 56,
+        "caught": 42,
+        "recall": 0.75
+      },
+      "FAN-OUT": {
+        "positives": 63,
+        "caught": 45,
+        "recall": 0.7142857142857143
+      },
+      "GATHER-SCATTER": {
+        "positives": 125,
+        "caught": 87,
+        "recall": 0.696
+      },
+      "RANDOM": {
+        "positives": 41,
+        "caught": 23,
+        "recall": 0.5609756097560976
+      },
+      "SCATTER-GATHER": {
+        "positives": 106,
+        "caught": 86,
+        "recall": 0.8113207547169812
+      },
+      "STACK": {
+        "positives": 81,
+        "caught": 47,
+        "recall": 0.5802469135802469
+      }
+    },
+    "hard_negative": {
+      "n": 172158,
+      "budget": 0.01,
+      "flagged": 4022,
+      "false_positive_rate": 0.02336226024930587,
+      "baseline_benign_rate": 0.011138490182981029,
+      "enrichment_vs_ordinary_benign": 2.097435098071196
+    },
+    "shap_top": {
+      "gfp_f185": 1.757321834564209,
+      "gfp_f209": 1.3442522287368774,
+      "tx_amount": 0.45914164185523987,
+      "gfp_f183": 0.4126962423324585,
+      "gfp_f207": 0.41216522455215454,
+      "tx_amount_received_log": 0.35715699195861816,
+      "tx_amount_log": 0.2530641555786133,
+      "gfp_f192": 0.24082031846046448,
+      "gfp_f189": 0.19039027392864227,
+      "gfp_f194": 0.1843712031841278,
+      "gfp_f200": 0.18112356960773468,
+      "tx_minute_of_day": 0.17530378699302673
+    },
+    "shap_families": {
+      "tx": 0.16816500994060907,
+      "gfp": 0.8318350829155226
+    },
+    "c8_pass": true,
+    "c8_top": [
+      "gfp_f185",
+      0.1768861363451794
+    ]
+  },
+  "E2x": {
+    "features": 168,
+    "pr_auc_runs": [
+      0.1973966984833119,
+      0.20914759033548433,
+      0.20791611379592773
+    ],
+    "pr_auc_mean": 0.204820134204908,
+    "pr_auc_sd": 0.006458303341541892,
+    "metrics": {
+      "n": 761422,
+      "positives": 906,
+      "base_rate": 0.001189878937041483,
+      "pr_auc": 0.1973966984833119,
+      "roc_auc": 0.9717198673302291,
+      "lift_over_base_rate": 165.89645579752795,
+      "best_f1": 0.2922794117647059,
+      "best_f1_threshold": 0.11592811346054077,
+      "budgets": [
+        {
+          "budget": 0.001,
+          "threshold": 0.1679687649011612,
+          "alerts": 761,
+          "true_positives": 239,
+          "precision": 0.3140604467805519,
+          "recall": 0.26379690949227375
+        },
+        {
+          "budget": 0.005,
+          "threshold": 0.040712468326091766,
+          "alerts": 3807,
+          "true_positives": 488,
+          "precision": 0.12818492251116365,
+          "recall": 0.5386313465783664
+        },
+        {
+          "budget": 0.01,
+          "threshold": 0.021707670763134956,
+          "alerts": 7614,
+          "true_positives": 600,
+          "precision": 0.07880220646178093,
+          "recall": 0.6622516556291391
+        },
+        {
+          "budget": 0.05,
+          "threshold": 0.0018827556632459164,
+          "alerts": 38071,
+          "true_positives": 773,
+          "precision": 0.020304168527225448,
+          "recall": 0.8532008830022075
+        }
+      ]
+    },
+    "amount_band_recall": {
+      "(-0.000999, 144.172]": {
+        "positives": 42,
+        "caught": 2,
+        "recall": 0.047619047619047616
+      },
+      "(144.172, 613.914]": {
+        "positives": 35,
+        "caught": 10,
+        "recall": 0.2857142857142857
+      },
+      "(613.914, 2670.728]": {
+        "positives": 143,
+        "caught": 88,
+        "recall": 0.6153846153846154
+      },
+      "(17157.762, 626035501453.45]": {
+        "positives": 244,
+        "caught": 175,
+        "recall": 0.7172131147540983
+      },
+      "(2670.728, 17157.762]": {
+        "positives": 442,
+        "caught": 325,
+        "recall": 0.7352941176470589
+      }
+    },
+    "typology_recall": {
+      "": {
+        "positives": 342,
+        "caught": 140,
+        "recall": 0.4093567251461988
+      },
+      "BIPARTITE": {
+        "positives": 40,
+        "caught": 28,
+        "recall": 0.7
+      },
+      "CYCLE": {
+        "positives": 52,
+        "caught": 36,
+        "recall": 0.6923076923076923
+      },
+      "FAN-IN": {
+        "positives": 56,
+        "caught": 48,
+        "recall": 0.8571428571428571
+      },
+      "FAN-OUT": {
+        "positives": 63,
+        "caught": 55,
+        "recall": 0.873015873015873
+      },
+      "GATHER-SCATTER": {
+        "positives": 125,
+        "caught": 100,
+        "recall": 0.8
+      },
+      "RANDOM": {
+        "positives": 41,
+        "caught": 32,
+        "recall": 0.7804878048780488
+      },
+      "SCATTER-GATHER": {
+        "positives": 106,
+        "caught": 96,
+        "recall": 0.9056603773584906
+      },
+      "STACK": {
+        "positives": 81,
+        "caught": 65,
+        "recall": 0.8024691358024691
+      }
+    },
+    "hard_negative": {
+      "n": 172158,
+      "budget": 0.01,
+      "flagged": 4282,
+      "false_positive_rate": 0.02487250084224956,
+      "baseline_benign_rate": 0.01087288104392281,
+      "enrichment_vs_ordinary_benign": 2.28757223975623
+    },
+    "shap_top": {
+      "tx_payment_type_code": 2.150522232055664,
+      "gfp_f185": 1.1232198476791382,
+      "gfp_f183": 0.9965875148773193,
+      "gfp_f209": 0.9759203195571899,
+      "tx_amount": 0.3883240520954132,
+      "tx_amount_received_log": 0.3397756814956665,
+      "gfp_f208": 0.2944195568561554,
+      "gfp_f057": 0.2500399947166443,
+      "gfp_f210": 0.23110751807689667,
+      "gfp_f193": 0.23002348840236664,
+      "gfp_f186": 0.21475693583488464,
+      "tx_minute_of_day": 0.20459508895874023
+    },
+    "shap_families": {
+      "tx": 0.3033547167827415,
+      "gfp": 0.6966452734639705
+    },
+    "c8_pass": true,
+    "c8_top": [
+      "tx_payment_type_code",
+      0.1811382282836207
+    ]
+  },
+  "verdict": {
+    "delta_e2_minus_a2": 0.13346997786661755,
+    "pooled_sd": 0.0015861979215903656,
+    "two_sigma": 0.003172395843180731,
+    "real": true,
+    "low_band_gain": 0.21406371406371405,
+    "high_band_gain": 0.43844113938135154,
+    "prediction_supported": false
+  }
+}

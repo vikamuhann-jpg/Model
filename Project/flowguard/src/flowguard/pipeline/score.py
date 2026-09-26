@@ -24,7 +24,8 @@ synthetic corpus, less on real networks (ADR-013). One transaction cannot be
 scored in isolation; a window with its history can (``--emit-from``). So scoring
 runs as a job and the product reads its results from a database.
 
-The package's pickles are loaded as trusted local files. Do not point
+The package is read as plain data -- JSON and XGBoost's own model format.
+Nothing here unpickles. Do not point
 ``--package`` at a model directory from an untrusted source.
 """
 
@@ -32,7 +33,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import pickle
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -103,22 +103,27 @@ def load_package(path: Path, budget: str = DEFAULT_BUDGET) -> Package:
     # pair is what a consumer outside this repository can actually read, so it
     # is also the path exercised here rather than a second, untested one.
     calibrator_json = path / "calibrator.json"
-    if calibrator_json.exists():
-        calibrator = PiecewiseCalibrator.from_json(
-            json.loads(calibrator_json.read_text(encoding="utf-8"))
-        )
-    else:
-        with (path / "calibrator.pkl").open("rb") as fh:
-            calibrator = pickle.load(fh)
-
     encoder_json = path / "encoders" / "categorical.json"
-    if encoder_json.exists():
-        encoder = CategoricalEncoder.from_json(
-            json.loads(encoder_json.read_text(encoding="utf-8"))
+    if not (calibrator_json.exists() and encoder_json.exists()):
+        # Loud, rather than a quiet fallback to the pickles. A pickle needs
+        # scikit-learn's exact version and an importable ``flowguard``, and one
+        # written under numpy 2 cannot be read under numpy 1.x at all -- so the
+        # fallback works here and fails on the machine that matters. Packages
+        # built before 2026-09-26 predate these files and need rebuilding.
+        missing = [str(p.relative_to(path)) for p in (calibrator_json, encoder_json)
+                   if not p.exists()]
+        raise ScoringError(
+            f"{path.name} is missing {missing}, so it could only be loaded by "
+            "unpickling. Rebuild it with run_validation, which writes both, or "
+            "regenerate the two files from the pickles on the machine that wrote them."
         )
-    else:
-        with (path / "encoders" / "categorical.pkl").open("rb") as fh:
-            encoder = pickle.load(fh)
+
+    calibrator = PiecewiseCalibrator.from_json(
+        json.loads(calibrator_json.read_text(encoding="utf-8"))
+    )
+    encoder = CategoricalEncoder.from_json(
+        json.loads(encoder_json.read_text(encoding="utf-8"))
+    )
 
     # Rebuild the training objects rather than re-implementing their maths:
     # XGBModel.predict is the exact code path validation measured.

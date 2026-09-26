@@ -26,3 +26,23 @@ Steps are described in [`WINNING_PLAN.md`](../../../../WINNING_PLAN.md).
 
 S1b's log was overwritten by the S2 launch (logged in WINNING_PLAN); its JSON survived.
 Paths inside the records are the build machine's.
+
+## Earlier tracks, added 2026-09-26
+
+These backed published numbers while living only in the data folder — the gap
+[`PENDING.md`](../../../../PENDING.md) B1 recorded. **Every one predates the GFP
+double-insertion fix ([ADR-015](../../../../docs/ADR-015-gfp-double-insertion.md)) unless
+its row says otherwise**, so read the magnitudes as pre-fix.
+
+| File | Step | Backs |
+|---|---|---|
+| `COMP1_tree_range.json` | **Post-fix.** 841 trees against 741 on the test partition | [ADR-016](../../../../docs/ADR-016-tree-range-at-scoring.md) |
+| `tier_c.json` · `tier_c.log` · `tier_c_salvage.log` | Tier C, the Ethereum transfer | [ADR-012](../../../../docs/ADR-012-account-disjoint-proxy.md) |
+| `tier_c_bootstrap.json` · `tier_c_boot.log` | Paired bootstrap on the Tier C delta | ADR-012; superseded by `P2_eth_bootstrap_*` |
+| `p3_cascade.json` · `p3_cascade_ETH.json` · `p3.log` · `p3_eth.log` | P3, the cheap-tier cascade | [ADR-014](../../../../docs/ADR-014-cascade-cannot-prefilter.md) |
+| `p4p6.json` · `p3p4p6.log` | P4 typology hinting, P6 unsupervised arm | FR-06 and FR-07 in `PENDING.md` C |
+| `p1_latency.json` · `p1_bench.log` | P1 inference latency | the package's `metrics.json` |
+| `scaling_envelope.json` | S5 scaling envelope | [ADR-013](../../../../docs/ADR-013-degree-skew-dominates-cost.md) |
+| `error_analysis_a2.json` | Where the artifact-free baseline fails | [`ERROR_ANALYSIS_A2.md`](../../../../docs/ERROR_ANALYSIS_A2.md) |
+| `tierb_ablation.json` · `ablation_tx.json` | Tier B adaptive features, rejected | [ADR-011](../../../../docs/ADR-011-adaptive-features-rejected.md) |
+| `baseline_results.json` · `e2_final.json` | E0/E1 baselines and the E2 result | `STATUS.md` history |

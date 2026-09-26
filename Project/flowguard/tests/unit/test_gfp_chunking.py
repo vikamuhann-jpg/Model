@@ -149,3 +149,45 @@ def test_batches_never_straddle_part_files(tmp_path):
     )
     assert extractor.chunk_rows % 8 == 0
     assert extractor.run_streaming(_frame(n=120)).shape[0] == 120
+
+
+def test_a_half_written_cache_is_not_reused_as_if_it_were_complete(tmp_path):
+    """A killed extraction leaves valid parts covering a prefix of the corpus.
+
+    They are indistinguishable from a finished cache by existence alone, and
+    `read_varying_chunks(order=...)` reindexes to the full frame -- so the rows
+    that were never extracted come back as NaN features instead of as an error.
+    A real run hit this: 8 parts of ~28 were accepted, and the next step would
+    have trained on NaN for 70% of the corpus.
+    """
+    from flowguard.pipeline.run_benchmark import _rows_in_cache, gfp_block
+
+    rows = 40
+    frame = pd.DataFrame({
+        S.TRANSACTION_ID: [f"TX{i:04d}" for i in range(rows)],
+        S.TIMESTAMP: pd.date_range("2022-09-01", periods=rows, freq="min", tz="UTC"),
+        S.SOURCE_ACCOUNT: [f"A{i % 7}" for i in range(rows)],
+        S.DESTINATION_ACCOUNT: [f"B{i % 5}" for i in range(rows)],
+        S.AMOUNT: np.linspace(10.0, 500.0, rows),
+        S.IS_SELF_TRANSFER: np.zeros(rows, dtype="int8"),
+        S.IS_LAUNDERING: np.zeros(rows, dtype="int8"),
+    })
+    cache = tmp_path / "parts"
+
+    full, _ = gfp_block(frame, cache, batch_size=1, window_days=None)
+    assert _rows_in_cache(cache) == rows
+    assert not full.isna().all(axis=1).any(), "a complete cache should cover every row"
+
+    # Simulate the interrupted run. The real one left 8 whole parts of ~28; at
+    # this size everything fits one part, so truncate that part's rows instead --
+    # what matters to the check is rows covered, not files present.
+    part = sorted(cache.glob("part_*.parquet"))[0]
+    pd.read_parquet(part).iloc[: rows // 4].to_parquet(part, index=False)
+    truncated = _rows_in_cache(cache)
+    assert 0 < truncated < rows, "the fixture needs a genuinely partial cache"
+
+    again, _ = gfp_block(frame, cache, batch_size=1, window_days=None)
+
+    assert _rows_in_cache(cache) == rows, "the partial cache must be re-extracted"
+    assert not again.isna().all(axis=1).any(), "no row may come back all-NaN"
+    pd.testing.assert_frame_equal(full, again)

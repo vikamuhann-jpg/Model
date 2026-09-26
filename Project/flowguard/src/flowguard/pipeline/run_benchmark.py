@@ -74,6 +74,18 @@ def f1_at(y: np.ndarray, scores: np.ndarray, threshold: float) -> float:
     return 2 * tp / denom if denom else 0.0
 
 
+def _rows_in_cache(cache: Path) -> int:
+    """Rows the part files in ``cache`` actually hold; 0 if there are none.
+
+    Read from each file's metadata rather than by loading it, so checking a
+    complete 5M-row cache costs milliseconds.
+    """
+    import pyarrow.parquet as pq
+
+    return sum(pq.ParquetFile(part).metadata.num_rows
+               for part in sorted(cache.glob("part_*.parquet")))
+
+
 def gfp_block(
     df: pd.DataFrame, cache: Path, batch_size: int, window_days: float | None,
     paper_params: bool = False,
@@ -83,7 +95,19 @@ def gfp_block(
     else:
         params = windowed_params(window_days) if window_days else dict(DEFAULT_GFP_PARAMS)
     info = {"batch_size": batch_size, "window_days": window_days, "params": params}
-    if not any(cache.glob("part_*.parquet")):
+    # "Some parts exist" is not "the cache is complete". A run killed part way
+    # through leaves valid part files covering a prefix of the corpus, and
+    # read_varying_chunks reindexes to the full frame -- so the missing rows come
+    # back as NaN features rather than as an error, and the model trains on
+    # nothing for most of the corpus. Count the rows before trusting them.
+    covered = _rows_in_cache(cache)
+    if covered and covered != len(df):
+        print(f"  cache in {cache} covers {covered:,} of {len(df):,} rows "
+              "-- incomplete, re-extracting", flush=True)
+        for stale in cache.glob("part_*.parquet"):
+            stale.unlink()
+        covered = 0
+    if not covered:
         print(f"extracting GFP, batch_size={batch_size} -> {cache}", flush=True)
         gfp = GFPFeatures(params=params, batch_size=batch_size, chunk_dir=cache)
         gfp.run_streaming(S.feature_view(df), assemble=False)
@@ -91,7 +115,7 @@ def gfp_block(
         info["tx_per_s"] = len(df) / (gfp.extract_seconds_ or 1)
         print(f"  {info['extract_seconds']:.0f}s, {info['tx_per_s']:,.0f} tx/s", flush=True)
     else:
-        print(f"reusing GFP parts in {cache}", flush=True)
+        print(f"reusing {covered:,} cached GFP rows in {cache}", flush=True)
     return read_varying_chunks(cache, order=df.index), info
 
 

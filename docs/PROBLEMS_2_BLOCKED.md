@@ -12,7 +12,7 @@ Companion pages: **[PROBLEMS_1_FIXABLE.md](PROBLEMS_1_FIXABLE.md)** (ours to do)
 |---|---:|
 | The VM, which we cannot reach | 3 |
 | The other team's rerun | 2 |
-| A decision or action only you can take | 3 |
+| A decision or action only you can take | 4 |
 
 **The single most useful unblock:** one Run All of notebooks 01 and 02 on the VM from this
 branch. It clears BLK-01 to BLK-04 at once and produces the two tables that decide the
@@ -150,6 +150,17 @@ deleting them is an outward-facing act that is yours to authorise.
 be the single source. Updating is right if they have already been shared; unpublishing is
 right if they have not. Either way, settle it before the repository is shown: a stale link
 is worse than no link.
+
+## BLK-09 · `Vika/` is untracked in their repository
+**What is wrong.** Our work sits untracked inside their tree (their R9).
+
+**Why we cannot finish it.** It exists only there. There is no `Vika/` on this machine, so
+we cannot move it here — and its contents are work that already lives in this repository
+under its own paths.
+
+**Solution.** They delete the directory. Nothing needs to be preserved from it: if anything
+in there is *not* a copy of what is here, send that file and it will be taken onto a branch
+properly.
 
 ## BLK-08 · The work is uncommitted, and nothing is pushed
 **What is wrong.** 38 changed files with no commit; branch `winning-plan` is two commits

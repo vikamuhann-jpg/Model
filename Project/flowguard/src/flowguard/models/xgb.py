@@ -22,6 +22,12 @@ import numpy as np
 import pandas as pd
 from sklearn.calibration import IsotonicRegression
 
+#: Score with every tree the model holds, including those past the early-stopping
+#: best iteration. ``(0, 0)`` is XGBoost's way of saying "all of them". Stated in
+#: one place so scoring and explanation cannot drift apart again (ADR-016).
+ALL_TREES: tuple[int, int] = (0, 0)
+
+
 @dataclass
 class PiecewiseCalibrator:
     """An isotonic calibrator as two arrays, restorable without pickle.
@@ -204,7 +210,13 @@ class XGBModel:
         # trees are fixed at training time, and GPU vs CPU inference agrees to
         # ~1e-7 (docs/ADR-005).
         self.booster_.set_param({"device": "cpu"})
-        return np.asarray(self.booster_.inplace_predict(X))
+        # Every tree, stated rather than inherited. Which trees an early-stopped
+        # booster uses is a library default, it differs between XGBoost's
+        # prediction entry points, and disagreeing with it is how explanations
+        # came to describe a model that never produced the score (ADR-016).
+        # Measured: truncating at best_iteration moves F1 by 0.0002, against a
+        # seed spread of 0.003.
+        return np.asarray(self.booster_.inplace_predict(X, iteration_range=ALL_TREES))
 
     def calibrate(self, X_val: pd.DataFrame, y_val: np.ndarray) -> XGBModel:
         """Fit an isotonic calibrator on validation only."""

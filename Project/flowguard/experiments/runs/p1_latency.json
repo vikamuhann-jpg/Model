@@ -1,0 +1,33 @@
+{
+  "index_build_seconds": 12.3,
+  "n_accounts": 515078,
+  "n_rows": 5077237,
+  "sample": 400,
+  "by_horizon": {
+    "2": {
+      "p50_ms": 118.12,
+      "p95_ms": 145.84,
+      "max_ms": 1272.05,
+      "mean_edges": 161.5,
+      "max_edges": 1207,
+      "truncated_pct": 33.0
+    },
+    "3": {
+      "p50_ms": 118.38,
+      "p95_ms": 144.44,
+      "max_ms": 186.03,
+      "mean_edges": 311.4,
+      "max_edges": 2725,
+      "truncated_pct": 34.2
+    },
+    "4": {
+      "p50_ms": 137.14,
+      "p95_ms": 168.53,
+      "max_ms": 190.91,
+      "mean_edges": 490.5,
+      "max_edges": 5743,
+      "truncated_pct": 34.2
+    }
+  },
+  "p1c_pass": true
+}
