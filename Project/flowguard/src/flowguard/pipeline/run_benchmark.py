@@ -22,6 +22,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.evaluation.metrics import evaluate
@@ -135,7 +136,7 @@ def run(
     drop_timestamp_stats: bool = False,
     variant: str = "HI-Small",
 ) -> dict:
-    df = pd.read_parquet(processed_dir / f"{variant}_transactions.parquet")
+    df = read_table(processed_dir / f"{variant}_transactions.parquet")
     print(f"loaded {len(df):,} transactions, {int(df[S.IS_LAUNDERING].sum()):,} positives")
     gfp, extraction = gfp_block(df, cache, batch_size, window_days, paper_params)
     if drop_timestamp_stats:

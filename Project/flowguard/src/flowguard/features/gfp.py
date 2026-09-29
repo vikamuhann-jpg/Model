@@ -27,6 +27,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.features.base import FeatureExtractor
@@ -166,7 +167,7 @@ def varying_columns(parts: list[Path]) -> tuple[list[str], int]:
     lo: dict[str, float] = {}
     hi: dict[str, float] = {}
     for path in parts:
-        frame = pd.read_parquet(path)
+        frame = read_table(path)
         for col in frame.columns:
             if col == "_row":
                 continue
@@ -214,7 +215,7 @@ def read_varying_chunks(
 
     frames = []
     for part in parts:
-        block = pd.read_parquet(part, columns=["_row"] + keep).set_index("_row")
+        block = read_table(part, columns=["_row"] + keep).set_index("_row")
         frames.append(block if rows is None else block[block.index.isin(rows)])
     frame = pd.concat(frames)
     del frames
@@ -234,7 +235,7 @@ def read_chunks(chunk_dir: Path, order: pd.Index | None = None) -> pd.DataFrame:
     if not parts:
         raise FileNotFoundError(f"no part files in {chunk_dir}")
     frame = pd.concat(
-        [pd.read_parquet(p) for p in parts], ignore_index=True
+        [read_table(p) for p in parts], ignore_index=True
     ).set_index("_row")
     if order is not None:
         frame = frame.reindex(order)
@@ -528,7 +529,7 @@ class GFPFeatures(FeatureExtractor):
         )
         frame.index.name = "_row"
         path = self.chunk_dir / f"part_{self.n_parts_written_:05d}.parquet"
-        frame.reset_index().to_parquet(path, index=False)
+        write_table(frame.reset_index(), path, index=False)
         self.n_parts_written_ += 1
 
     def to_metadata(self) -> dict:

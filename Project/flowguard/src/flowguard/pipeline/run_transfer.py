@@ -26,6 +26,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.data.capabilities import detect
@@ -85,13 +86,13 @@ def run(
     reuse_chunks: bool = False,
 ) -> dict:
     processed_dir = Path(processed_dir)
-    df = pd.read_parquet(processed_dir / "ETH_transactions.parquet")
+    df = read_table(processed_dir / "ETH_transactions.parquet")
     df = df[
         (df[S.TIMESTAMP] >= pd.Timestamp(slice_start, tz="UTC"))
         & (df[S.TIMESTAMP] < pd.Timestamp(slice_end, tz="UTC"))
     ].reset_index(drop=True)
 
-    labels = pd.read_parquet(processed_dir / "ETH_labels.parquet")
+    labels = read_table(processed_dir / "ETH_labels.parquet")
     accounts = set(df[S.SOURCE_ACCOUNT]) | set(df[S.DESTINATION_ACCOUNT])
     labels = labels[labels.account_id.isin(accounts)].reset_index(drop=True)
     print(

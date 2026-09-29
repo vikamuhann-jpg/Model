@@ -9,15 +9,10 @@
 # Add a "default" key if you want a single path that works on both (e.g. CI).
 
 processed_dir:
-  linux:   /mnt/c/Users/vikam/flowguard_data/processed
-  win32:   C:/Users/vikam/flowguard_data/processed
+  default: ../../flowguard_data/processed
 
 raw_dir:
-  linux:   /mnt/c/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Dataset_/IBM_Dataset
-  win32:   C:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Dataset_/IBM_Dataset
+  default: ../../../../Dataset_/IBM_Dataset
 
-# Default location for the GFP feature cache written by run_graph.py.
-# On Windows this parquet is read directly; extraction still requires WSL.
 gfp_cache:
-  linux:   /mnt/c/Users/vikam/flowguard_data/gfp_cache/HI-Small_2d.parquet
-  win32:   C:/Users/vikam/flowguard_data/gfp_cache/HI-Small_2d.parquet
+  default: ../../flowguard_data/gfp_cache/HI-Small_2d.parquet

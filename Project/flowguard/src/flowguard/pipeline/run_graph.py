@@ -18,6 +18,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.evaluation.metrics import evaluate, per_group_recall
@@ -48,7 +49,7 @@ def run(
     registry = Registry(registry_root) if registry_root else Registry()
 
     _header(f"E2 -- graph features + XGBoost ({variant})")
-    df = pd.read_parquet(processed_dir / f"{variant}_transactions.parquet")
+    df = read_table(processed_dir / f"{variant}_transactions.parquet")
     if sample:
         df = df.iloc[:: max(1, len(df) // sample)].reset_index(drop=True)
     print(f"loaded {len(df):,} transactions")
@@ -71,7 +72,7 @@ def run(
 
     if cache and cache.exists():
         print(f"loading cached features from {cache.name}")
-        gfp_features = pd.read_parquet(cache)
+        gfp_features = read_table(cache)
         gfp_features.index = df.index
         # Features came from a potentially different machine (e.g. WSL extraction
         # loaded on Windows). Record current platform as training_platform and
@@ -89,7 +90,7 @@ def run(
         )
         if cache and chunk_dir is None:
             cache.parent.mkdir(parents=True, exist_ok=True)
-            gfp_features.to_parquet(cache, index=False)
+            write_table(gfp_features, cache, index=False)
             print(f"  cached to {cache}")
         elif chunk_dir is not None:
             # The part files are the cache. Writing a monolithic copy as well

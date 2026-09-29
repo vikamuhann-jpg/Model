@@ -46,7 +46,7 @@ _PLATFORM = "win32" if sys.platform == "win32" else "linux"
 _WIN = sys.platform == "win32"
 _DATA_ROOT = Path(os.environ.get(
     "FLOWGUARD_DATA",
-    r"C:/Users/vikam/flowguard_data" if _WIN else "/mnt/c/Users/vikam/flowguard_data",
+    str(Path(__file__).resolve().parents[4] / "flowguard_data")
 ))
 # [0]=src/flowguard, [1]=src, [2]=Project/flowguard, [3]=Project, [4]=the
 # repository, which is where Dataset_/ sits. Counting wrong here is silent: the

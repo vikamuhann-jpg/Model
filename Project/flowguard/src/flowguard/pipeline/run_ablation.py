@@ -24,6 +24,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.evaluation.metrics import evaluate
@@ -86,7 +87,7 @@ def run(
     seeds: tuple[int, ...] = SEEDS,
     out: Path | None = None,
 ) -> dict:
-    df = pd.read_parquet(processed_dir / f"{variant}_transactions.parquet")
+    df = read_table(processed_dir / f"{variant}_transactions.parquet")
     split = chronological_split(df, SplitSpec())
     train_df, val_df, test_df = split.apply(df)
     y_train = train_df[S.IS_LAUNDERING].to_numpy().astype(int)
@@ -100,7 +101,7 @@ def run(
 
             gfp = read_varying_chunks(gfp_cache, order=df.index)
         else:
-            gfp = pd.read_parquet(gfp_cache)
+            gfp = read_table(gfp_cache)
             gfp.index = df.index
             gfp = gfp.loc[:, gfp.std(numeric_only=True) > 0]
         gc.collect()

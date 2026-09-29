@@ -22,6 +22,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.evaluation import gates as G
@@ -122,7 +123,7 @@ def build_inputs(
     split_spec: SplitSpec | None = None,
     drop_timestamp_stats_for: dict | None = None,
 ) -> ValidationInputs:
-    df = pd.read_parquet(processed_dir / f"{variant}_transactions.parquet")
+    df = read_table(processed_dir / f"{variant}_transactions.parquet")
     print(f"loaded {len(df):,} transactions", flush=True)
 
     split = chronological_split(df, split_spec or SplitSpec(seed=seed))
@@ -156,7 +157,7 @@ def build_inputs(
     gfp_features = None
     if gfp_cache and gfp_cache.exists() and streamed_cache is None:
         # A single-file cache still loads whole: it has no part index to filter.
-        gfp_features = pd.read_parquet(gfp_cache)
+        gfp_features = read_table(gfp_cache)
         gfp_features.index = df.index
         keep = [c for c in gfp_features.columns if gfp_features[c].std() > 0]
         gfp_features = gfp_features[keep]

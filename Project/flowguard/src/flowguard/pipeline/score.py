@@ -40,6 +40,7 @@ from typing import Callable
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.evaluation.interpretation import local_contributions
@@ -160,7 +161,7 @@ def load_package(path: Path, budget: str = DEFAULT_BUDGET) -> Package:
 
 def read_transactions(path: Path) -> pd.DataFrame:
     path = Path(path)
-    tx = pd.read_parquet(path) if path.suffix == ".parquet" else pd.read_csv(path)
+    tx = read_table(path) if path.suffix == ".parquet" else pd.read_csv(path)
     missing = {
         S.TRANSACTION_ID,
         S.TIMESTAMP,

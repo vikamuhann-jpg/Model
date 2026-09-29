@@ -27,7 +27,7 @@ from flowguard.evaluation.metrics import evaluate
 from flowguard.pipeline import score
 
 REPO = Path(__file__).resolve().parents[3]
-DATA = Path(os.environ.get("FLOWGUARD_DATA", "/mnt/c/Users/vikam/flowguard_data"))
+DATA = Path(os.environ.get("FLOWGUARD_DATA", str(REPO / "flowguard_data")))
 PACKAGE = REPO / "Project" / "flowguard" / "models" / "flowguard_V2_v1"
 #: v2 was trained on the untrimmed corpus (benchmark protocol); A4 on the trimmed one.
 CORPUS = DATA / "processed" / "benchmark" / "HI-Small_transactions.parquet"

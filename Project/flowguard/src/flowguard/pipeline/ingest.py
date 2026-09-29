@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.data.loader import (
@@ -153,8 +154,8 @@ def ingest(
     print("[6/6] writing canonical parquet")
     tx_path = out_dir / f"{variant}_transactions.parquet"
     acct_path = out_dir / f"{variant}_accounts.parquet"
-    tx.to_parquet(tx_path, index=False)
-    accounts.to_parquet(acct_path, index=False)
+    write_table(tx, tx_path, index=False)
+    write_table(accounts, acct_path, index=False)
 
     summary = S.summarise(tx)
     # Orphan check: every transaction endpoint should resolve in the accounts

@@ -1,0 +1,600 @@
+{
+  "dataset": {
+    "variant": "HI-Small",
+    "rows": 5077237,
+    "accounts": 515078,
+    "positives": 4522,
+    "base_rate": 0.000890641898339589,
+    "ts_min": "2022-09-01T00:00:00+00:00",
+    "ts_max": "2022-09-10T23:59:00+00:00",
+    "entities": 166207,
+    "banks": 30470,
+    "orphan_endpoints": 0,
+    "self_transfer_rate": 0.11641824255736859,
+    "cross_currency": 72170,
+    "patterns": 370,
+    "pattern_rows": 3209,
+    "ambiguous_keys": 0,
+    "unmatched_pattern_rows": 0,
+    "positive_coverage": 0.6198570600734016,
+    "typology_counts": {
+      "BIPARTITE": 263,
+      "CYCLE": 287,
+      "FAN-IN": 318,
+      "FAN-OUT": 342,
+      "GATHER-SCATTER": 716,
+      "RANDOM": 191,
+      "SCATTER-GATHER": 626,
+      "STACK": 466
+    },
+    "window_trim": {
+      "applied": true,
+      "cutoff": "2022-09-11T00:00:00+00:00",
+      "min_density": 0.05,
+      "rows_before": 5078345,
+      "rows_after": 5077237,
+      "rows_dropped": 1108,
+      "positives_before": 5177,
+      "positives_after": 4522,
+      "positives_dropped": 655,
+      "days_dropped": [
+        "2022-09-11",
+        "2022-09-12",
+        "2022-09-13",
+        "2022-09-14",
+        "2022-09-15",
+        "2022-09-16",
+        "2022-09-17",
+        "2022-09-18"
+      ]
+    }
+  },
+  "daily_profile": [
+    {
+      "date": "2022-09-01",
+      "rows": 1114921,
+      "positives": 322,
+      "rate": 0.0002888097004182359
+    },
+    {
+      "date": "2022-09-02",
+      "rows": 754449,
+      "positives": 408,
+      "rate": 0.0005407920217271148
+    },
+    {
+      "date": "2022-09-03",
+      "rows": 207382,
+      "positives": 391,
+      "rate": 0.0018854095340964981
+    },
+    {
+      "date": "2022-09-04",
+      "rows": 207430,
+      "positives": 407,
+      "rate": 0.0019621076989827894
+    },
+    {
+      "date": "2022-09-05",
+      "rows": 482650,
+      "positives": 471,
+      "rate": 0.0009758624261887496
+    },
+    {
+      "date": "2022-09-06",
+      "rows": 482089,
+      "positives": 531,
+      "rate": 0.0011014563700893403
+    },
+    {
+      "date": "2022-09-07",
+      "rows": 482751,
+      "positives": 497,
+      "rate": 0.001029516251649401
+    },
+    {
+      "date": "2022-09-08",
+      "rows": 482773,
+      "positives": 539,
+      "rate": 0.0011164667452405169
+    },
+    {
+      "date": "2022-09-09",
+      "rows": 654467,
+      "positives": 514,
+      "rate": 0.0007853719133279447
+    },
+    {
+      "date": "2022-09-10",
+      "rows": 208325,
+      "positives": 442,
+      "rate": 0.002121684867394696
+    }
+  ],
+  "pretrim_daily": [
+    {
+      "date": "2022-09-01",
+      "rows": 1114921,
+      "positives": 484,
+      "rate": 0.000434
+    },
+    {
+      "date": "2022-09-02",
+      "rows": 754449,
+      "positives": 407,
+      "rate": 0.000539
+    },
+    {
+      "date": "2022-09-03",
+      "rows": 207382,
+      "positives": 236,
+      "rate": 0.001138
+    },
+    {
+      "date": "2022-09-04",
+      "rows": 207430,
+      "positives": 232,
+      "rate": 0.001119
+    },
+    {
+      "date": "2022-09-05",
+      "rows": 482650,
+      "positives": 476,
+      "rate": 0.000986
+    },
+    {
+      "date": "2022-09-06",
+      "rows": 482089,
+      "positives": 456,
+      "rate": 0.000946
+    },
+    {
+      "date": "2022-09-07",
+      "rows": 482751,
+      "positives": 447,
+      "rate": 0.000926
+    },
+    {
+      "date": "2022-09-08",
+      "rows": 482773,
+      "positives": 449,
+      "rate": 0.00093
+    },
+    {
+      "date": "2022-09-09",
+      "rows": 654467,
+      "positives": 493,
+      "rate": 0.000753
+    },
+    {
+      "date": "2022-09-10",
+      "rows": 208325,
+      "positives": 442,
+      "rate": 0.002122
+    },
+    {
+      "date": "2022-09-11",
+      "rows": 396,
+      "positives": 232,
+      "rate": 0.585859
+    },
+    {
+      "date": "2022-09-12",
+      "rows": 281,
+      "positives": 170,
+      "rate": 0.604982
+    },
+    {
+      "date": "2022-09-13",
+      "rows": 184,
+      "positives": 106,
+      "rate": 0.576087
+    },
+    {
+      "date": "2022-09-14",
+      "rows": 121,
+      "positives": 70,
+      "rate": 0.578512
+    },
+    {
+      "date": "2022-09-15",
+      "rows": 46,
+      "positives": 28,
+      "rate": 0.608696
+    },
+    {
+      "date": "2022-09-16",
+      "rows": 46,
+      "positives": 26,
+      "rate": 0.565217
+    },
+    {
+      "date": "2022-09-17",
+      "rows": 23,
+      "positives": 15,
+      "rate": 0.652174
+    },
+    {
+      "date": "2022-09-18",
+      "rows": 11,
+      "positives": 8,
+      "rate": 0.727273
+    }
+  ],
+  "experiments": {
+    "E0": {
+      "description": "Rule-based baseline: fixed thresholds, no memory, no graph",
+      "pr_auc": 0.0011340157018174372,
+      "roc_auc": 0.4616570998205854,
+      "lift": 0.9530513285973915,
+      "base_rate": 0.001189878937041483,
+      "n": 761422,
+      "positives": 906,
+      "budgets": [
+        {
+          "budget": 0.001,
+          "threshold": 0.4117647058823529,
+          "alerts": 761,
+          "true_positives": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        {
+          "budget": 0.005,
+          "threshold": 0.29411764705882354,
+          "alerts": 3807,
+          "true_positives": 5,
+          "precision": 0.001313370107696349,
+          "recall": 0.005518763796909493
+        },
+        {
+          "budget": 0.01,
+          "threshold": 0.23529411764705882,
+          "alerts": 7614,
+          "true_positives": 9,
+          "precision": 0.001182033096926714,
+          "recall": 0.009933774834437087
+        },
+        {
+          "budget": 0.05,
+          "threshold": 0.11764705882352941,
+          "alerts": 38071,
+          "true_positives": 19,
+          "precision": 0.000499067531717055,
+          "recall": 0.02097130242825607
+        }
+      ],
+      "n_features": 6,
+      "train_seconds": 0.57,
+      "device": null,
+      "typology_recall": {},
+      "importance": {}
+    },
+    "E1": {
+      "description": "Transaction-only XGBoost: row-local features, no graph",
+      "pr_auc": 0.0424452162972016,
+      "roc_auc": 0.9226584892339332,
+      "lift": 35.67187801705059,
+      "base_rate": 0.001189878937041483,
+      "n": 761422,
+      "positives": 906,
+      "budgets": [
+        {
+          "budget": 0.001,
+          "threshold": 0.06531389057636261,
+          "alerts": 761,
+          "true_positives": 72,
+          "precision": 0.09461235216819974,
+          "recall": 0.07947019867549669
+        },
+        {
+          "budget": 0.005,
+          "threshold": 0.03833865746855736,
+          "alerts": 3807,
+          "true_positives": 268,
+          "precision": 0.07039663777252429,
+          "recall": 0.2958057395143488
+        },
+        {
+          "budget": 0.01,
+          "threshold": 0.02167629823088646,
+          "alerts": 7614,
+          "true_positives": 372,
+          "precision": 0.04885736800630418,
+          "recall": 0.4105960264900662
+        },
+        {
+          "budget": 0.05,
+          "threshold": 0.005564830265939236,
+          "alerts": 38071,
+          "true_positives": 701,
+          "precision": 0.018412965249139764,
+          "recall": 0.7737306843267108
+        }
+      ],
+      "n_features": 13,
+      "train_seconds": 53.97,
+      "device": null,
+      "typology_recall": {
+        "": {
+          "positives": 342,
+          "caught": 37,
+          "recall": 0.10818713450292397
+        },
+        "BIPARTITE": {
+          "positives": 40,
+          "caught": 20,
+          "recall": 0.5
+        },
+        "CYCLE": {
+          "positives": 52,
+          "caught": 33,
+          "recall": 0.6346153846153846
+        },
+        "FAN-IN": {
+          "positives": 56,
+          "caught": 33,
+          "recall": 0.5892857142857143
+        },
+        "FAN-OUT": {
+          "positives": 63,
+          "caught": 39,
+          "recall": 0.6190476190476191
+        },
+        "GATHER-SCATTER": {
+          "positives": 125,
+          "caught": 66,
+          "recall": 0.528
+        },
+        "RANDOM": {
+          "positives": 41,
+          "caught": 24,
+          "recall": 0.5853658536585366
+        },
+        "SCATTER-GATHER": {
+          "positives": 106,
+          "caught": 69,
+          "recall": 0.6509433962264151
+        },
+        "STACK": {
+          "positives": 81,
+          "caught": 51,
+          "recall": 0.6296296296296297
+        }
+      },
+      "importance": {
+        "tx_payment_type_code": 26678.28125,
+        "tx_is_cross_currency": 9975.4375,
+        "tx_is_self_transfer": 9606.048828125,
+        "tx_amount_ratio": 6097.81005859375,
+        "tx_amount_received_log": 2627.861572265625,
+        "tx_amount": 2230.1689453125,
+        "tx_amount_is_round_100": 1740.019287109375,
+        "tx_currency_code": 1715.9205322265625,
+        "tx_amount_decimals": 1609.82373046875,
+        "tx_amount_log": 1602.010009765625
+      }
+    }
+  },
+  "throughput": {
+    "w10": [
+      [
+        4.9,
+        13596
+      ],
+      [
+        9.8,
+        12735
+      ],
+      [
+        14.8,
+        8395
+      ],
+      [
+        19.7,
+        5383
+      ],
+      [
+        24.6,
+        3440
+      ],
+      [
+        29.5,
+        1664
+      ],
+      [
+        34.5,
+        1161
+      ],
+      [
+        39.4,
+        870
+      ],
+      [
+        44.3,
+        822
+      ]
+    ],
+    "w2": [
+      [
+        4.9,
+        12539
+      ],
+      [
+        9.8,
+        12484
+      ],
+      [
+        14.8,
+        8118
+      ],
+      [
+        19.7,
+        5155
+      ],
+      [
+        24.6,
+        3448
+      ],
+      [
+        29.5,
+        2281
+      ]
+    ]
+  },
+  "device_study": {
+    "gpu": {
+      "mean": 0.0452,
+      "sd": 0.0021,
+      "runs": [
+        0.0452,
+        0.0437,
+        0.0485,
+        0.0433,
+        0.0451
+      ]
+    },
+    "cpu": {
+      "mean": 0.0449,
+      "sd": 0.0014,
+      "runs": [
+        0.0465,
+        0.0442,
+        0.0435,
+        0.0439,
+        0.0463
+      ]
+    },
+    "two_sigma": 0.0034
+  },
+  "early_stopping": [
+    {
+      "device": "cpu",
+      "patience": 30,
+      "pr_auc": 0.0461,
+      "iters": 119,
+      "secs": 59.9
+    },
+    {
+      "device": "cuda",
+      "patience": 30,
+      "pr_auc": 0.0371,
+      "iters": 80,
+      "secs": 2.8
+    },
+    {
+      "device": "cuda",
+      "patience": 100,
+      "pr_auc": 0.0452,
+      "iters": 220,
+      "secs": 5.5
+    },
+    {
+      "device": "cuda",
+      "patience": 200,
+      "pr_auc": 0.0452,
+      "iters": 220,
+      "secs": 5.4
+    }
+  ],
+  "payment_type": [
+    {
+      "type": "ACH",
+      "rows": 599689,
+      "positives": 3828,
+      "rate": 0.006383,
+      "enrichment": 7.17
+    },
+    {
+      "type": "Cheque",
+      "rows": 1864331,
+      "positives": 324,
+      "rate": 0.000174,
+      "enrichment": 0.2
+    },
+    {
+      "type": "Credit Card",
+      "rows": 1323324,
+      "positives": 206,
+      "rate": 0.000156,
+      "enrichment": 0.17
+    },
+    {
+      "type": "Cash",
+      "rows": 490891,
+      "positives": 108,
+      "rate": 0.00022,
+      "enrichment": 0.25
+    },
+    {
+      "type": "Bitcoin",
+      "rows": 146091,
+      "positives": 56,
+      "rate": 0.000383,
+      "enrichment": 0.43
+    },
+    {
+      "type": "Reinvestment",
+      "rows": 481056,
+      "positives": 0,
+      "rate": 0.0,
+      "enrichment": 0.0
+    },
+    {
+      "type": "Wire",
+      "rows": 171855,
+      "positives": 0,
+      "rate": 0.0,
+      "enrichment": 0.0
+    }
+  ],
+  "pattern_annotated_rail": {
+    "ACH": 2553,
+    "Bitcoin": 1
+  },
+  "boundary_policy": [
+    {
+      "policy": "purge (auto 8d10h)",
+      "train": 0,
+      "val": 0,
+      "test": 18,
+      "dropped": 5078327,
+      "test_pos": 13,
+      "violations": null
+    },
+    {
+      "policy": "purge (12h)",
+      "train": 3320814,
+      "val": 241199,
+      "test": 441676,
+      "dropped": 1074656,
+      "test_pos": 1292,
+      "violations": null
+    },
+    {
+      "policy": "pattern_start",
+      "train": 3555531,
+      "val": 761711,
+      "test": 761103,
+      "dropped": 0,
+      "test_pos": 1025,
+      "violations": 238
+    },
+    {
+      "policy": "hard_cut",
+      "train": 3554957,
+      "val": 761749,
+      "test": 761639,
+      "dropped": 0,
+      "test_pos": 1561,
+      "violations": 0
+    }
+  ],
+  "pattern_durations": {
+    "median_days": 3.11,
+    "p95_days": 6.72,
+    "max_days": 8.43,
+    "count": 370,
+    "spanning_boundary": 140
+  }
+}
