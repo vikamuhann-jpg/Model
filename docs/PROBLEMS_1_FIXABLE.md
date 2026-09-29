@@ -134,7 +134,7 @@ the VM and belongs in git.
 
 # Part B — fixable, but needs a run
 
-## COMP-01 · Undecided: should scoring use 741 trees or 841?
+## COMP-01 · Undecided: should scoring use 741 trees or 841? — **DONE 2026-09-26**
 **What is wrong.** Training used early stopping, which chose iteration 740 — 741 trees.
 `predict_raw` calls `inplace_predict`, which uses **all 841**. We found this because `shap`
 explained 741 while scoring used 841. Explanations now match scoring, but *which of the two
@@ -151,6 +151,8 @@ make the choice explicit in `predict_raw` instead of inheriting a library defaul
 
 **Effort.** About 30 minutes; the feature cache exists. **Done when** an ADR says which and
 why, and the code states it.
+
+**Result.** **ADR-016 accepted**. The difference was 0.0002 F1 against a seed spread of 0.0025. It is within noise, so we keep 841 trees explicitly. The package now passes `ALL_TREES = (0, 0)` explicitly so explanation and scoring can never drift apart again.
 
 ## COMP-02 · The LI-Small check never finished — **RAN 2026-09-29, gate FAILED**
 **What is wrong.** Extraction reached **8 part files of about 28** before the session ended.
