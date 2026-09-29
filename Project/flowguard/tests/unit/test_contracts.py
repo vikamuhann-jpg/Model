@@ -294,3 +294,20 @@ def test_a_package_without_its_json_is_refused_rather_than_unpickled(tmp_path):
     with pytest.raises(ScoringError) as raised:
         load_package(copy)
     assert "calibrator.json" in str(raised.value)
+
+
+def test_the_model_card_says_what_the_model_detects():
+    """The card must carry the structured/unstructured split, not a coverage caveat.
+
+    It used to describe unannotated positives as "only ~62% of positives carry a
+    typology label" -- true, and misleading, because those are exactly the
+    positives the model misses (27.9% recall against 95.3% for patterned). A
+    corpus's overall recall is mostly its mix of the two: LI-Small is 88%
+    unstructured and the same model scores 13.3% there. Without the split, the
+    headline reads as a general claim it cannot support.
+    """
+    card = (PACKAGE / "model_card.md").read_text(encoding="utf-8")
+
+    assert "Structured vs unstructured" in card
+    assert "Unstructured laundering is largely missed" in card
+    assert "## Fresh data" in card, "the LI-Small result must be on the card"

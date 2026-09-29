@@ -37,6 +37,10 @@ its row says otherwise**, so read the magnitudes as pre-fix.
 | File | Step | Backs |
 |---|---|---|
 | `COMP1_tree_range.json` | **Post-fix.** 841 trees against 741 on the test partition | [ADR-016](../../../../docs/ADR-016-tree-range-at-scoring.md) |
+| `COMP3_p9_validation.log` | **Post-fix.** `run_validation` reading graph features per partition — P9 9.71 GB, PASS | `STATUS.md` §6 |
+| `G0_extract_LI2M.json` | **Post-fix.** GFP extraction over the 2M-row LI-Small prefix, 2,102 tx/s | the G runs below |
+| `G1_zero_shot_LI-Small-2M.json` · `G1_zero_shot_LI2M.log` | **Post-fix.** Shipped v2, unchanged, on the prefix — recall@1% 13.3%, **G1 FAIL** | `WINNING_PLAN.md`, 2026-09-29 |
+| `G2_LI2M_retrain.json` · `G2_LI2M_retrain.log` | **Post-fix.** Recipe retrained on the prefix — **invalid**, early stopping at 1–37 trees | `WINNING_PLAN.md`, 2026-09-29 |
 | `tier_c.json` · `tier_c.log` · `tier_c_salvage.log` | Tier C, the Ethereum transfer | [ADR-012](../../../../docs/ADR-012-account-disjoint-proxy.md) |
 | `tier_c_bootstrap.json` · `tier_c_boot.log` | Paired bootstrap on the Tier C delta | ADR-012; superseded by `P2_eth_bootstrap_*` |
 | `p3_cascade.json` · `p3_cascade_ETH.json` · `p3.log` · `p3_eth.log` | P3, the cheap-tier cascade | [ADR-014](../../../../docs/ADR-014-cascade-cannot-prefilter.md) |

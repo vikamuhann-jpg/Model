@@ -40,7 +40,11 @@ the experiment registry and run records — never in git before — now tracked.
 - [ ] **A4. Throughput (P8).** 532 tx/s strictly one at a time; 2,785 tx/s at batch 128 with
   no measured accuracy cost. Reconstruction is sound but does not help. **Decide:** adopt
   micro-batching (≤ ~23 s alert latency) with an ADR, or keep P8 as a reported failure.
-- [ ] **A5. Memory (P9).** 10.99 GB peak against 10 GB, from training over the full table.
+- [x] **A5. Memory (P9) — closed 2026-09-28.** 10.99 GB → **9.71 GB**, inside the 10 GB
+  budget. The peak was the full-corpus graph-feature frame held beside the matrices built
+  from it, not the training matrices; partitions now read only their own rows from the part
+  files. Model unchanged to four decimals. *Still not enough for the 6 GB VM — that needs
+  the notebook's HDF5 streaming path.*
 - [ ] **A6. Tail-inflated headline.** Dense-window PR-AUC 0.406 vs 0.595 overall. Both are
   reported in STATUS; consider a variance gate (P7 spread 0.593).
 - [ ] **A7. Low-value laundering.** Recall at 1%: 4% below $139, 34% for $139–599.

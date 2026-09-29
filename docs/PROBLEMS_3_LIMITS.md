@@ -21,6 +21,7 @@ a judge cannot obtain from the published benchmark at all.
 | LIM-05 | No true off-generator validation is available | The data we have |
 | LIM-06 | The full corpus cannot be trained on the VM | The hardware |
 | LIM-07 | Two PS9 requirements have no data to build on | The corpus |
+| LIM-08 | Laundering with no graph shape is largely missed | The method |
 
 ---
 
@@ -29,6 +30,11 @@ a judge cannot obtain from the published benchmark at all.
 **0% on cash, credit card and Bitcoin**. The cause is the corpus, not the model:
 **2,553 of 2,554 injected laundering patterns are on ACH**, and only 144 of 1,797 test
 positives are on anything else.
+
+**It is not a HI-Small quirk (measured 2026-09-29).** On a 2M-row LI-Small prefix, 45% of
+test laundering is off ACH against HI-Small's 8%, and the shipped model's recall at 1% falls
+from 78.0% to **13.3%**. On a corpus where laundering is spread across rails, this limit
+is the dominant failure, not a footnote.
 
 **Why no fix exists here.** A supervised model cannot learn a rail it has almost never seen
 laundering on. More training, better features and rebalancing all operate on examples that
@@ -145,6 +151,33 @@ this project.
    identifiers and traced paths, so customer-level aggregation is a join away once the data
    exists.
 3. **Do not claim partial credit** for a requirement we cannot evidence.
+
+## LIM-08 · Laundering with no graph shape is largely missed
+**The limit.** Split by whether a laundering transaction belongs to an injected pattern:
+
+| | HI-Small | LI-Small prefix |
+|---|---:|---:|
+| Structured (patterned) | **95.3%** | 41.2% (7 of 17; ranked 98.7th pct) |
+| Unstructured | 27.9% | 9.5% |
+| Unstructured, off ACH | 1.4% | 3.1% |
+| Share of laundering that is unstructured | 25% | **88%** |
+
+Recall at a 1% alert budget, shipped model. Records: `runs/G1_diagnosis_*.json`.
+
+**Why no fix exists here.** Graph features describe *shape*: who sends to whom, in what
+pattern, how fast. A single transfer between two ordinary accounts, with no fan-in, cycle or
+chain around it, has no shape to describe. This is a property of the method, not of one
+corpus — it holds on both, which is why it is listed here rather than as a transfer bug.
+
+**What we do instead.**
+1. **State the scope in the headline**: the model detects laundering that leaves a graph
+   shape. `README.md` now opens with that sentence, and with the 95% / 28% split.
+2. **Report the composition beside any single number.** A corpus's overall recall is
+   mostly its mix: HI-Small is 75% structured and scores 78%; LI-Small is 12% structured and
+   scores 13%. Quoting either alone misleads.
+3. **Name the remedy as future work, not a patch:** a second detector built on
+   account-level behaviour and velocity, combined with the graph score. It is the only
+   thing that moves this number, and it is a separate model, not a tweak to this one.
 
 ---
 

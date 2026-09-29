@@ -50,7 +50,7 @@ Status: ⬜ not started · 🔄 in progress · ✅ done (gate passed) · ❌ don
 | S1c | Paper GFP config at **batch 1** (no lookahead), S2 params fixed, 5 seeds | Reported next to S1e (same config, batch 128) | ✅ | **F1 0.518 ± 0.027**, PR-AUC 0.504 ± 0.020 vs batch 128: 0.524 ± 0.021 / 0.516 ± 0.020 — **lookahead worth nothing measurable**. Extraction 532 tx/s |
 | **S2** | Hyperparameter tuning (`models/tuning.py`, paper's ranges) | Tuned PR-AUC > untuned + 2σ on validation | ✅ | **F1 0.521 ± 0.004**, PR-AUC 0.513 ± 0.002 (from 0.280 / 0.243). Winner: `scale_pos_weight` **2** (was ~980), depth 8, lr 0.03 |
 | **S3** | GFP window sweep (A4 2d / library / long) | Kept only if validation improves | ❌ | Ours vs the paper's windows equal within noise (S2 vs S1e); no further sweep |
-| **S4b** | Drop GFP timestamp statistics (explainability) | Decided before the run; report val and test | ✅ | val 0.541 → 0.494, **test 0.570 → 0.608**, F1 0.614 ± 0.003 — a time proxy. Shipped |
+| **S4b** | Drop GFP timestamp statistics (explainability) | Decided before the run; report val and test | ✅ | val 0.541 → 0.494, **test 0.570 → 0.608**, F1 0.614 ± 0.002 — a time proxy. Shipped |
 | **S4** | ~10 causal account-behaviour features | Leakage test per feature; kept only if validation improves | ✅ | Artifact-free, batch 1: val PR-AUC 0.291 → **0.541 ± 0.004**; test **F1 0.544 ± 0.036** (oracle 0.601), **PR-AUC 0.570 ± 0.012**, recall@1% 71.6%. KEPT |
 | S4-pt | Same model **without `payment_type`** (the ACH artifact), no behaviour | Reported | ✅ finding | F1 0.518 → **0.249**, PR-AUC 0.504 → 0.203: **half the benchmark-protocol score was the artifact** |
 | **S5** | Throughput: minute micro-batch vs parallel extraction | P8 ≥ 1,000 tx/s; lookahead inflation < 1σ or rejected | 🔄 | Batch 128: 2,785 tx/s, lookahead inflation < 1σ (S1c vs S1e). Reconstruction: sound, +1%. Adoption not decided (PENDING A4) |
@@ -60,9 +60,9 @@ Status: ⬜ not started · 🔄 in progress · ✅ done (gate passed) · ❌ don
 | **S9** | Granite case narratives, grounded in the bundle | 100% of facts traceable (test) | ⏸ needs watsonx key or local-Granite approval | |
 | **S10** | Executive summary, demo script, B1–B4 hygiene, ship v2 | Fresh clone reproduces headline in one command | 🔄 | v2 shipped (all correctness gates), samples regenerated with history, README/STATUS/PENDING rewritten, B2/B3 closed. Open: executive summary, demo notebook |
 | **P2-eth** | Ethereum transfer re-run with corrected features | Graph Δ > 2σ; bootstrap CI | ✅ | Δ +0.0497 [0.0186, 0.1079] — holds; behaviour +0.0098 (> 2σ 0.0085) |
-| **G1** | **v2 unchanged on LI-Small** (zero-shot: no refit, shipped threshold), test = last 20% | Recall@1% ≥ 0.50; alert rate at the shipped threshold within 0.5–2% (the threshold transfers) | 🔄 | |
-| **G2** | **v2 recipe retrained on LI-Small** (S4b config, S4b params, 5 seeds) | Test PR-AUC ≥ 0.30 (half HI's 0.608, for half the base rate); F1 sd ≤ 0.05 | 🔄 | |
-| **G3** | G2 **without behaviour features** (PENDING A2) | Behaviour kept if G2 − G3 test PR-AUC > 2σ | ⬜ | |
+| **G1** | **v2 unchanged on LI-Small** (zero-shot: no refit, shipped threshold), test = last 20% | Recall@1% ≥ 0.50; alert rate at the shipped threshold within 0.5–2% (the threshold transfers) | ❌ | **Recall@1% 13.3% — FAIL.** Alert rate 1.34% — the threshold transfers. PR-AUC 0.0049 (14× base rate), ROC-AUC 0.904. On a 2M-row prefix, 143 test positives; 45% of them off ACH |
+| **G2** | **v2 recipe retrained on LI-Small** (S4b config, S4b params, 5 seeds) | Test PR-AUC ≥ 0.30 (half HI's 0.608, for half the base rate); F1 sd ≤ 0.05 | ⚠️ invalid | PR-AUC 0.0035 ± 0.0017 — **not a verdict**: early stopping fired at trees 1, 2 and 37 of 3,000. The prefix gave 221 training positives against HI-Small's 2,299 |
+| **G3** | G2 **without behaviour features** (PENDING A2) | Behaviour kept if G2 − G3 test PR-AUC > 2σ | ⏸ | Not run: G2 has no valid model to compare against |
 
 ---
 
@@ -371,7 +371,7 @@ Newest last. Each entry: what was done, what came out, **what went wrong**, what
   | | val PR-AUC | test PR-AUC | test F1 | recall@1% | F1 sd |
   |---|---:|---:|---:|---:|---:|
   | S4 with timestamp stats | **0.541** | 0.570 | 0.544 | 71.6% | 0.036 |
-  | S4b without | 0.494 | **0.608** | **0.614** | **78.5%** | **0.003** |
+  | S4b without | 0.494 | **0.608** | **0.614** | **78.5%** | **0.002** |
 
   The timestamp statistics encode position in time: they help on validation (adjacent to
   training time, where values are still splittable) and hurt on test (further out). The
@@ -449,3 +449,103 @@ in ours, so they are fixed here at the source.
   image carries two protobufs, and importing the `3.13.0` beside TensorFlow rather than the
   `7.35.1` in `~/.local` makes Keras work with nothing installed. Corrected in both
   `linuxone/` documents, with what the reasoning got wrong.
+
+### 2026-09-28 — Sessions 2 and 3: gate P9 passes, and P1 was grading the wrong model
+- **P9: 10.99 GB → 9.71 GB, PASS** (`runs/COMP3_p9_validation.log`, 21m47s). The peak was
+  never the training matrices — `XGBModel.fit` already builds a `QuantileDMatrix`, about a
+  byte per value. It was the **full-corpus graph-feature frame (~3.9 GB) held beside the
+  three matrices built from it (~4.2 GB)**, and no partition ever needs another partition's
+  rows. `read_varying_chunks` gained a `rows` filter; `build_inputs` reads per partition.
+  The planned HDF5/`DataIter` rewrite was not needed. **The model is unchanged to four
+  decimals:** PR-AUC 0.5949, best F1 0.6126, recall@1% 78.0%, all correctness gates pass.
+  The same filter let `score.py` drop the duplicate read added a session earlier.
+- **P1 was comparing each build against its own predecessor.** The gate reads
+  `registry.load(model_id)`, but this run's record is written at the *end* of validation,
+  so the V2 report quoted **0.5587** — the superseded 214-feature build — for a model
+  scoring 0.5949. Fixed to use the metrics just measured; the registry is still read for
+  the other side of the comparison. The verdict never changed (+0.52 over E1); the number
+  did. This is what `STATUS.md` had recorded as a stale quote, and rebuilding would not
+  have cleared it.
+- **A partial GFP cache was being reused as if complete** (found while restarting LI-Small):
+  8 part files of ~28 covering 2,000,000 of 6,924,049 rows. `read_varying_chunks` reindexes
+  to the full frame, so the missing 70% would have arrived as NaN features and trained
+  silently. `gfp_block` now counts rows from parquet metadata and re-extracts. Test:
+  `test_a_half_written_cache_is_not_reused_as_if_it_were_complete`.
+- **ADR-016 — score with every tree, explicitly.** Early stopping chose 741 of 841 trees
+  and nothing decided which to score with; `shap` used 741, `inplace_predict` used 841.
+  Measured on the test partition: PR-AUC 0.6034 vs 0.6036, F1 0.6142 vs 0.6140 — inside the
+  0.0025 seed spread. Keep all trees, pass the range from one constant in both paths.
+- **Throughput, honestly:** the LI-Small extraction reads 4,937 tx/s at 18% and 412 tx/s by
+  the time the graph fills. Quoting the early figure is the same mistake ADR-006 records and
+  `_throughput_from_log` exists to avoid; the run is ~4 hours, not the 19 minutes the early
+  rate implied.
+
+### 2026-09-29 — G: the shipped model on fresh data fails its pre-registered gate
+**Setup.** The full LI-Small extraction was abandoned (two runs had been writing one cache
+at once — see below), and at the user's direction the check ran on a **chronological
+2M-row prefix**: 2,000,493 rows, 468 positives, 1.5 days, 645k accounts. It is the sparsest
+stretch of LI-Small (base rate 0.023%, against 0.050% for the whole corpus and 0.089% for
+HI-Small). Records: `runs/G1_zero_shot_LI-Small-2M.json`, `runs/G2_LI2M_retrain.json`.
+
+**G1 — the shipped v2, unchanged. FAIL.**
+
+| | HI-Small (shipped) | LI-Small prefix |
+|---|---:|---:|
+| Recall @1% | 78.0% | **13.3%** (19 of 143) |
+| PR-AUC | 0.595 | 0.0049 (14× base rate) |
+| ROC-AUC | 0.982 | 0.904 |
+| Alert rate at shipped threshold | 1.0% | **1.34% — transfers** |
+| Test positives on ACH | 92% | **55%** |
+| Recall @1% on ACH | 84.6% | 22% |
+| Recall @1% off ACH | 0–4% | 0–7% |
+
+The threshold transfers and the model still ranks well above chance, but recall collapses.
+The largest visible cause is the rail mix: **45% of this corpus's test laundering is off
+ACH**, where the model was already known to be blind (LIM-01), against 8% on HI-Small. That
+is not the whole story — ACH recall falls from 84.6% to 22% as well — so the model's
+HI-Small strength does not carry over even on the rail it was built for.
+
+**G2 — the recipe retrained on the prefix. Invalid, not failed.** PR-AUC 0.0035 ± 0.0017,
+but early stopping fired at **trees 1, 2 and 37** of 3,000: validation PR-AUC never rose
+above ~0.001. The prefix holds **221 training positives against HI-Small's 2,299**, and the
+parameters were tuned for the latter. This measures an under-powered training set, not the
+method. **Went wrong:** the prefix was chosen after checking only *test* positives (143);
+training positives are what a retrain needs, and nobody checked them before the run.
+
+**G3** was not run — without a valid G2 there is nothing to compare it against.
+
+**What this settles.** The pre-registered claim — that v2's HI-Small result holds on data
+no decision touched — **does not hold** on this corpus. Stated plainly, since this is
+exactly the result pre-registration exists to catch: the headline is specific to HI-Small's
+rail mix and density. LIM-01 is not a HI-Small quirk; on a corpus where laundering is less
+concentrated on ACH, it is the dominant failure.
+
+**What it does not settle.** Whether retraining on LI-Small recovers performance. That
+needs the full corpus (~2,100 training positives) — a 3–5 hour uncontended extraction.
+
+**Why the full run was abandoned.** Two extraction processes wrote the same cache directory:
+the previous session's job survived its "stopped" notification, and a new one started
+beside it. They split 12 cores, pushed 2.5 GB into swap, and throughput fell from 2,022 to
+**60 tx/s** — a 24-hour floor for the remainder. The new partial-cache check then deleted
+the directory while the other process still wrote to it, so the parts interleaved two runs.
+Both killed, the cache deleted. `prefix_run.sh` now refuses to start while another
+extraction is alive. A single uncontended run did the 2M prefix at **2,102 tx/s**.
+
+### 2026-09-29 — Option A: the claim now says what the model detects
+Decision taken from `docs/DECISION_REPORT_LI_TRANSFER.md`: keep the method, narrow the claim.
+- **The split behind the headline** (`runs/G1_diagnosis_*.json`): on HI-Small the model
+  catches **95.3%** of structured laundering and **27.9%** of unstructured; 75% of that
+  corpus is structured. On the LI-Small prefix, 88% is unstructured, and the same model
+  scores 13.3% — about two-thirds of the drop is composition, a third a genuine per-group
+  fall. Unstructured laundering off ACH is 1–3% on both corpora.
+- **README** now opens with what the model detects — laundering that leaves a graph shape —
+  and carries the split and the fresh-data result in its status table.
+- **The model card called the weak half a coverage caveat.** "Only ~62% of positives carry
+  a typology label" was true and hid that those are the positives the model misses. The
+  generator now measures the structured/unstructured split from the data (new
+  `structure_recall_at_1pct` in `metrics.json`); the shipped V2 card is updated by hand from
+  the diagnosis and says so. A test pins it.
+- **LIM-08** added: laundering with no graph shape is largely missed, on every corpus.
+- **Scoring could not score any corpus but its own** — found running the diagnosis. It read
+  the graph columns that vary in the *new* cache; 25 of the model's columns are constant on
+  LI-Small, so they vanished. `graph_features` now takes the package's own column list.

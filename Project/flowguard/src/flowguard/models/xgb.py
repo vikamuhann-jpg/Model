@@ -215,7 +215,7 @@ class XGBModel:
         # prediction entry points, and disagreeing with it is how explanations
         # came to describe a model that never produced the score (ADR-016).
         # Measured: truncating at best_iteration moves F1 by 0.0002, against a
-        # seed spread of 0.003.
+        # seed spread of 0.0025.
         return np.asarray(self.booster_.inplace_predict(X, iteration_range=ALL_TREES))
 
     def calibrate(self, X_val: pd.DataFrame, y_val: np.ndarray) -> XGBModel:

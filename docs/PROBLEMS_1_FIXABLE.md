@@ -35,7 +35,7 @@ Pushing, or merging to `main`, is a separate decision.
 
 **Effort.** Minutes. **Done when** `git status` is clean and 279 tests still pass.
 
-## FIX-02 · The shipped validation report quotes a stale number
+## FIX-02 · The shipped validation report quotes a stale number — **DONE 2026-09-28**
 **What is wrong.** `STATUS.md:60` records it: gate P1's line in
 `models/flowguard_V2_v1/validation_report.md` reads **0.5587**, the *previous* v2 build's
 registry entry, read before the current build overwrote it. The model's real PR-AUC is
@@ -44,11 +44,17 @@ registry entry, read before the current build overwrote it. The model's real PR-
 **Why it matters.** It is the one number inside the shipped package that contradicts every
 other number we publish, and the package is where a careful evaluator looks first.
 
-**Fix.** Rebuild the package (COMP-03 needs a rebuild anyway) or correct the line and note
-which run produced it. Rebuilding is better: it removes the stale value instead of
-annotating it.
+**Fix, and the cause was not what this entry assumed.** Rebuilding would not have helped:
+the number comes back on every build. Gate P1 reads `registry.load(model_id)`, and the
+current run's record is written at the *end* of validation — so each build compares itself
+against its predecessor wearing the same name. The V2 build read the superseded
+214-feature entry (0.5587) for a model scoring 0.5949. P1 now uses the metrics the run has
+just measured, and only falls back to the registry for the *other* side of the comparison
+(E1, E0), which is what it was always for.
 
-**Effort.** Minutes. **Done when** no file in the package mentions 0.5587.
+**Effort.** 40 minutes, most of it finding the cause. **Done:** the next build's report
+quotes the model it validated. The verdict never changed — P1 passed either way, by +0.52
+over E1 — but it was quoting another model's number to do it.
 
 ## FIX-03 · `shap_summary.json` describes a model that never scores
 **What is wrong.** It was produced with `shap.TreeExplainer`, which truncates an
@@ -139,14 +145,14 @@ improving, so they may be mild overfitting. Every published metric was measured 
 841, so a change here moves every number — which is why it must be measured, not assumed.
 
 **Fix.** Score the test partition with `iteration_range=(0, 741)` and with every tree, and
-compare PR-AUC, F1 and recall at 1%. If the difference is inside the seed spread (±0.003
+compare PR-AUC, F1 and recall at 1%. If the difference is inside the seed spread (±0.0025
 F1), keep 841 and record it in an ADR. If truncation wins, retrain and restate. Either way,
 make the choice explicit in `predict_raw` instead of inheriting a library default.
 
 **Effort.** About 30 minutes; the feature cache exists. **Done when** an ADR says which and
 why, and the code states it.
 
-## COMP-02 · The LI-Small check never finished
+## COMP-02 · The LI-Small check never finished — **RAN 2026-09-29, gate FAILED**
 **What is wrong.** Extraction reached **8 part files of about 28** before the session ended.
 G1 (the shipped model applied unchanged) and G2 (the recipe retrained) never ran. The gates
 were pre-registered in `WINNING_PLAN.md` before any result existed.
@@ -162,10 +168,19 @@ It is **not** external validation: same generator, same ACH convention
 free: the last attempt died because the host had 4.4 GB of 15.6 GB free and WSL could not
 grow into it.
 
-**Effort.** About 4 hours, mostly unattended. **Done when** `G1_zero_shot_LI-Small.json` and
-`G2_LI_retrain.json` exist and each pre-registered gate is marked pass or fail.
+**Effort.** About 4 hours, mostly unattended.
 
-## COMP-03 · Gate P9: 10.99 GB against a 10 GB budget
+**Result, on a 2M-row chronological prefix** (the full run was abandoned; see
+`WINNING_PLAN.md`, 2026-09-29). **G1 FAILS:** recall @1% **13.3%** against the 50% bar and
+HI-Small's 78.0%. The threshold does transfer (alert rate 1.34%), and ROC-AUC stays 0.904,
+so the model still ranks above chance — but 45% of this corpus's test laundering is off
+ACH, where the model is blind (LIM-01), and even ACH recall falls from 84.6% to 22%.
+**G2 is invalid rather than failed:** early stopping fired at trees 1, 2 and 37, because the
+prefix held 221 training positives against HI-Small's 2,299. **Still open:** whether a
+retrain on the *full* LI-Small (~2,100 training positives) recovers performance — one
+uncontended 3–5 hour run.
+
+## COMP-03 · Gate P9: 10.99 GB against a 10 GB budget — **DONE 2026-09-28**
 **What is wrong.** `run_validation` trains over the whole feature table in memory and peaks
 at 10.99 GB. `PENDING.md` A5.
 
@@ -179,9 +194,17 @@ one byte per value instead of four and never materialising the matrix. Lift that
 `run_validation` behind a flag, then make it the default once it reproduces today's metrics.
 Scoring is already bounded: `score.py` reads only the rows it scores.
 
-**Effort.** About half a day plus a validation run. **Done when** P9 passes and the rebuilt
-model matches the current metrics within the seed spread. The rebuild also clears FIX-02
-and FIX-03.
+**Effort.** About half a day plus a validation run.
+
+**Result.** **9.71 GB, P9 PASS**, in a 21m47s run. The fix was smaller than the plan above
+assumed: the training matrices were never the problem, because `XGBModel.fit` already builds
+a `QuantileDMatrix`. The peak was the full-corpus graph-feature frame (~3.9 GB) held beside
+the three matrices built from it (~4.2 GB), and no partition ever needs another's rows, so
+`read_varying_chunks` gained a `rows` filter and `build_inputs` reads per partition. The
+HDF5/`DataIter` rewrite was not needed and is still available if the 6 GB VM becomes the
+target. The model is identical to four decimals (PR-AUC 0.5949, F1 0.6126, recall@1% 78.0%),
+all correctness gates still pass, and the same change let `score.py` drop a duplicate
+filtered read. Record: `runs/COMP3_p9_validation.log`, package `models/flowguard_P9_v1/`.
 
 ## COMP-04 · The project cannot be built from the provided package list
 **What is wrong.** Eleven modules read or write parquet — `config.py`, `data/eth.py`,

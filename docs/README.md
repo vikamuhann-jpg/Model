@@ -41,10 +41,13 @@ auditable.
 | [`TRACK_P_PLAN.md`](TRACK_P_PLAN.md) | The completed plan for tracing, evidence, cascade and typology |
 | [`COMPLETION_PLAN.md`](COMPLETION_PLAN.md) | The completed Tier A/B/C plan |
 | [`OPEN_ITEMS.md`](OPEN_ITEMS.md) | Longer-form discussion of the open research findings |
+| [`CLAIMS_REGISTER.md`](CLAIMS_REGISTER.md) | **Every published number, its evidence record, and the test that keeps them equal** |
+| [`DECISION_REPORT_LI_TRANSFER.md`](DECISION_REPORT_LI_TRANSFER.md) | **Does the approach survive fresh data?** What the model catches, what it cannot, and the options with their cost |
 | [`PROBLEMS_1_FIXABLE.md`](PROBLEMS_1_FIXABLE.md) | Every open problem we can fix ourselves, with the fix and its cost |
 | [`PROBLEMS_2_BLOCKED.md`](PROBLEMS_2_BLOCKED.md) | Problems waiting on the VM, the other team, or a decision |
 | [`PROBLEMS_3_LIMITS.md`](PROBLEMS_3_LIMITS.md) | Limits that cannot be fixed, and how each is stated instead |
 | [`HANDOFF_REPLY_2026-09-26.md`](HANDOFF_REPLY_2026-09-26.md) | Our answer to the LinuxONE handoff |
+| [`ABSTRACT_SUBMISSION.md`](ABSTRACT_SUBMISSION.md) | The datathon abstract (≤ 500 words), on a standard hackathon template |
 
 ## Archive
 

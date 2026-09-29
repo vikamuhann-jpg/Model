@@ -135,40 +135,58 @@ def build_inputs(
         S.feature_view(train_df)
     )
 
-    gfp_features = None
-    if gfp_cache and gfp_cache.exists():
-        # The cache is a directory of part files (ADR-009). A plain
-        # read_parquet on it would lose the row index the parts carry.
-        if gfp_cache.is_dir():
-            from flowguard.features.gfp import read_varying_chunks
+    # A directory cache is read one partition at a time, below. Holding all 5M
+    # rows of graph features (3.9 GB) *beside* the three matrices built from them
+    # (4.2 GB) is what put gate P9 at 10.99 GB against a 10 GB budget, and the
+    # whole block is never needed at once: each partition uses its own rows.
+    from flowguard.features.gfp import read_varying_chunks, varying_columns
 
-            # Column-selective read; the naive path OOM's on this corpus.
-            gfp_features = read_varying_chunks(gfp_cache, order=df.index)
-        else:
-            gfp_features = pd.read_parquet(gfp_cache)
-            gfp_features.index = df.index
-        if not gfp_cache.is_dir():
-            keep = [c for c in gfp_features.columns if gfp_features[c].std() > 0]
-            gfp_features = gfp_features[keep]
+    streamed_cache = gfp_cache if (gfp_cache and gfp_cache.is_dir()) else None
+    gfp_columns: list[str] | None = None
+    if streamed_cache is not None:
+        parts = sorted(streamed_cache.glob("part_*.parquet"))
+        gfp_columns, total = varying_columns(parts)
+        if drop_timestamp_stats_for is not None:
+            dropped = timestamp_stat_columns(gfp_columns, drop_timestamp_stats_for)
+            gfp_columns = [c for c in gfp_columns if c not in dropped]
+            print(f"dropping {len(dropped)} timestamp-statistic columns", flush=True)
+        print(f"{len(gfp_columns)} of {total} GFP features vary; read per partition",
+              flush=True)
+
+    gfp_features = None
+    if gfp_cache and gfp_cache.exists() and streamed_cache is None:
+        # A single-file cache still loads whole: it has no part index to filter.
+        gfp_features = pd.read_parquet(gfp_cache)
+        gfp_features.index = df.index
+        keep = [c for c in gfp_features.columns if gfp_features[c].std() > 0]
+        gfp_features = gfp_features[keep]
         print(f"loaded {gfp_features.shape[1]} varying GFP features", flush=True)
 
-    if drop_timestamp_stats_for is not None and gfp_features is not None:
-        # The GFP params decide which output columns are timestamp statistics.
-        dropped = timestamp_stat_columns(gfp_features.columns, drop_timestamp_stats_for)
-        gfp_features = gfp_features.drop(columns=dropped)
-        print(f"dropped {len(dropped)} timestamp-statistic columns", flush=True)
+        if drop_timestamp_stats_for is not None:
+            dropped = timestamp_stat_columns(
+                gfp_features.columns, drop_timestamp_stats_for
+            )
+            gfp_features = gfp_features.drop(columns=dropped)
+            print(f"dropped {len(dropped)} timestamp-statistic columns", flush=True)
 
+    history = None
     if behaviour:
         # Whole corpus before slicing, so a validation row keeps its history.
+        # Ten columns over 5M rows is ~400 MB, so this one does stay resident.
         history = behaviour_features(S.feature_view(df))
-        gfp_features = history if gfp_features is None else gfp_features.join(history)
         print(f"added {history.shape[1]} behaviour features", flush=True)
 
     def build(part: pd.DataFrame) -> pd.DataFrame:
-        tabular = extractor.run(S.feature_view(part))
-        if gfp_features is None:
-            return tabular
-        return pd.concat([tabular, gfp_features.loc[part.index]], axis=1)
+        blocks = [extractor.run(S.feature_view(part))]
+        if streamed_cache is not None:
+            blocks.append(read_varying_chunks(
+                streamed_cache, rows=part.index, columns=gfp_columns
+            ).loc[part.index])
+        elif gfp_features is not None:
+            blocks.append(gfp_features.loc[part.index])
+        if history is not None:
+            blocks.append(history.loc[part.index])
+        return pd.concat(blocks, axis=1) if len(blocks) > 1 else blocks[0]
 
     return ValidationInputs(
         df=df,
@@ -350,8 +368,16 @@ def run(
     _header("P1 / P2 — experiment comparisons")
     for gate_id, better, worse in (("P1", model_id, "E1"), ("P2", "E1", "E0")):
         try:
-            a = registry.load(better)["metrics"]["test"]["pr_auc"]
-            b = registry.load(worse)["metrics"]["test"]["pr_auc"]
+            # For the model under validation, use what this run just measured.
+            # The registry still holds the PREVIOUS build of the same id -- this
+            # run's record is written at the end of the function -- so reading it
+            # here compares the new model against an older one wearing its name.
+            # That is how the shipped V2 report came to quote 0.5587, from the
+            # superseded 214-feature build, for a model that scores 0.5949.
+            a = (metrics.pr_auc if better == model_id
+                 else registry.load(better)["metrics"]["test"]["pr_auc"])
+            b = (metrics.pr_auc if worse == model_id
+                 else registry.load(worse)["metrics"]["test"]["pr_auc"])
         except FileNotFoundError:
             report.add(G.performance(gate_id, G.GateStatus.NOT_RUN,
                                      f"{better} or {worse} not in registry"))
@@ -381,6 +407,22 @@ def run(
     )
     named = {k: v for k, v in typology.items() if k}
     zero = [k for k, v in named.items() if v["recall"] == 0]
+    # Structured vs unstructured is the split that decides what the headline means.
+    # Per-typology recall only describes positives that carry a pattern; the rest
+    # were reported as a coverage caveat, when they are in fact where the model is
+    # weak (27.9% on HI-Small against 95.3% for patterned; see LIM-08). A corpus's
+    # overall recall is mostly its mix of the two, so the card must show both.
+    # Ranked by the RAW score, not the calibrated one: calibration ties heavily at
+    # the 1% cut-off, and which tied rows land inside it is not reproducible (two
+    # runs of the same model caught 1,402 and 1,400). The raw order is tie-free and
+    # is the order scores.csv ranks alerts in. The headline above uses calibrated
+    # scores, so the two can differ by a handful of cases (CLAIMS_REGISTER.md).
+    structure = per_group_recall(
+        y_test, model.predict_raw(inputs.X_test),
+        np.where(inputs.test_df[S.PATTERN_TYPE].notna().to_numpy(),
+                 "structured", "unstructured"),
+        budget=0.01,
+    )
     report.add(G.performance(
         "P5", G.GateStatus.PASS if not zero else G.GateStatus.FAIL,
         "all typologies detected" if not zero else f"zero recall: {zero}",
@@ -505,6 +547,7 @@ def run(
             "test": metrics.to_metadata(),
             "seed_scores": seed_scores,
             "typology_recall_at_1pct": named,
+            "structure_recall_at_1pct": structure,
             "shap_families": interp.family_shares,
         },
         cost={
@@ -536,6 +579,7 @@ def run(
         unseen_meta=unseen_meta,
         drift=drift,
         typology=named,
+        structure=structure,
         seed_scores=seed_scores,
         latency=latency,
         elapsed=time.perf_counter() - started,
@@ -605,6 +649,7 @@ def write_package(root: Path, **kw) -> Path:
                 "test": metrics.to_metadata(),
                 "seed_scores": kw["seed_scores"],
                 "typology_recall_at_1pct": kw["typology"],
+                "structure_recall_at_1pct": kw.get("structure", {}),
                 "temporal_stability": kw["stability"].to_metadata(),
                 "hard_negatives": kw["hard_eval"],
                 "unseen_pattern_split": kw["unseen_meta"],
@@ -692,6 +737,13 @@ def _model_card(model_id, metrics, model, kw) -> str:
         f"| {k} | {v['recall']:.1%} | {v['caught']}/{v['positives']} |"
         for k, v in sorted(kw["typology"].items())
     )
+    structure = kw.get("structure", {})
+    total_positives = sum(v["positives"] for v in structure.values()) or 1
+    structure_rows = "\n".join(
+        f"| {k.capitalize()} | {v['positives'] / total_positives:.0%} | "
+        f"{v['recall']:.1%} | {v['caught']}/{v['positives']} |"
+        for k, v in sorted(structure.items())
+    ) or "| (not measured) | | | |"
     # Measured from the inputs, never typed in: an earlier card hardcoded A4's
     # corpus and split, which would have been false for any other package.
     df, spec = kw["inputs"].df, kw["inputs"].split.spec
@@ -762,20 +814,39 @@ anything.
 |---|---:|---|
 {typ}
 
+### Structured vs unstructured laundering, recall at 1% budget
+
+The per-typology table above covers only laundering that belongs to an injected
+pattern. What the model detects is *structure*, so this split is what the headline
+number actually means. It ranks by the raw score, which has no ties; the headline and
+the typology table use calibrated scores, which tie at the 1% cut-off, so totals can
+differ by a handful of cases:
+
+| | Share of test positives | Recall | Caught |
+|---|---:|---:|---|
+{structure_rows}
+
 ## Known failure modes
 
-* **Unannotated positives.** Only ~62% of positives carry a typology label, so
-  per-typology recall describes two-thirds of the positive class.
+* **Unstructured laundering is largely missed.** A transfer with no fan-in, cycle or
+  chain around it leaves no graph shape to find. See the split above; this is a
+  limit of the method on every corpus measured, not of this one (LIM-08).
 * **Truncated patterns.** 140 of 370 patterns straddle a split boundary; recall
   on those is a floor, not an unbiased estimate (ADR-002).
 * **Structurally complex benign activity** — see the hard-negative slice in
   `metrics.json` for the measured false-positive enrichment.
 
-## Datasets NOT validated on
+## Fresh data
 
-HI-Medium, HI-Large, LI-*, and any real-world transaction data. No cross-dataset
-validation has been performed, so generalisation beyond this generator is
-**unmeasured**.
+**LI-Small (2M-row prefix), applied unchanged: recall at 1% 13.3%, against the
+pre-registered bar of 50% — failed.** 88% of that corpus's laundering is
+unstructured, against 25% here, which explains about two-thirds of the drop;
+structured laundering is still ranked at the 98.7th percentile. The alert threshold
+transfers (1.34% alert rate). See `docs/DECISION_REPORT_LI_TRANSFER.md`.
+
+**Not validated on:** HI-Medium, HI-Large, the full LI-Small, or any real-world
+transaction data. Both corpora come from one generator, so generalisation beyond it
+is **unmeasured** apart from the Ethereum graph (ADR-012).
 
 ## Evaluated and dropped
 

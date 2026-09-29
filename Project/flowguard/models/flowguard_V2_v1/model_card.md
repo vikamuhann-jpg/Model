@@ -55,20 +55,45 @@ anything.
 | SCATTER-GATHER | 97.6% | 246/252 |
 | STACK | 89.3% | 125/140 |
 
+### Structured vs unstructured laundering, recall at 1% budget
+
+The per-typology table above covers only laundering that belongs to an injected
+pattern. What the model detects is *structure*, so this split is what the headline
+number actually means. It ranks by the raw score, which has no ties; the headline and
+the typology table use calibrated scores, which tie at the 1% cut-off, so totals can
+differ by a handful of cases:
+
+| | Share of test positives | Recall | Caught |
+|---|---:|---:|---|
+| Structured | 75% | 95.3% | 1276/1339 |
+| Unstructured | 25% | 27.9% | 128/458 |
+
+*Added 2026-09-29 from `runs/G1_diagnosis_HI-Small.json` — this model, this test
+partition. Packages built after that date compute it themselves.*
+
 ## Known failure modes
 
-* **Unannotated positives.** Only ~62% of positives carry a typology label, so
-  per-typology recall describes two-thirds of the positive class.
+* **Unstructured laundering is largely missed.** A transfer with no fan-in, cycle or
+  chain around it leaves no graph shape to find. See the split above; this is a
+  limit of the method on every corpus measured, not of this one (LIM-08). *This
+  bullet previously read as a coverage caveat — "only ~62% of positives carry a
+  typology label" — which hid that those are the positives the model misses.*
 * **Truncated patterns.** 140 of 370 patterns straddle a split boundary; recall
   on those is a floor, not an unbiased estimate (ADR-002).
 * **Structurally complex benign activity** — see the hard-negative slice in
   `metrics.json` for the measured false-positive enrichment.
 
-## Datasets NOT validated on
+## Fresh data
 
-HI-Medium, HI-Large, LI-*, and any real-world transaction data. No cross-dataset
-validation has been performed, so generalisation beyond this generator is
-**unmeasured**.
+**LI-Small (2M-row prefix), applied unchanged: recall at 1% 13.3%, against the
+pre-registered bar of 50% — failed.** 88% of that corpus's laundering is
+unstructured, against 25% here, which explains about two-thirds of the drop;
+structured laundering is still ranked at the 98.7th percentile. The alert threshold
+transfers (1.34% alert rate). See `docs/DECISION_REPORT_LI_TRANSFER.md`.
+
+**Not validated on:** HI-Medium, HI-Large, the full LI-Small, or any real-world
+transaction data. Both corpora come from one generator, so generalisation beyond it
+is **unmeasured** apart from the Ethereum graph (ADR-012).
 
 ## Evaluated and dropped
 

@@ -46,12 +46,7 @@ from flowguard.evaluation.interpretation import local_contributions
 from flowguard.evidence import build_bundle
 from flowguard.evidence.bundle import label_for
 from flowguard.features.behaviour import behaviour_features
-from flowguard.features.gfp import (
-    GFPFeatures,
-    read_varying_chunks,
-    varying_columns,
-    windowed_params,
-)
+from flowguard.features.gfp import GFPFeatures, read_varying_chunks, windowed_params
 from flowguard.features.transaction import CategoricalEncoder, TransactionFeatures
 from flowguard.graph.trace import TraceIndex, TraceLimits, TraceResult
 from flowguard.models.xgb import PiecewiseCalibrator, XGBModel
@@ -196,8 +191,15 @@ def graph_features(
     cache: Path | None = None,
     params: dict | None = None,
     rows: pd.Index | None = None,
+    columns: list[str] | None = None,
 ) -> pd.DataFrame:
     """Graph features for every row of ``tx``, indexed like ``tx``.
+
+    ``columns`` fixes which graph columns come back. Without it the cache is read
+    for whatever *varies in that cache*, which is right when training and wrong
+    when scoring: a column the model needs can be constant on another corpus or
+    in another window, and then simply vanishes. On LI-Small 25 of the shipped
+    model's columns do, so scoring any corpus but the training one failed.
 
     With ``cache``, reuse part files extracted earlier over this same frame --
     their row ids are positions in it. Without one, extract now: slow, and the
@@ -211,18 +213,7 @@ def graph_features(
     is 3.8 GB, against 39 MB for the window itself.
     """
     if cache is not None:
-        if rows is not None:
-            parts = sorted(Path(cache).glob("part_*.parquet"))
-            if not parts:
-                raise FileNotFoundError(f"no part files in {cache}")
-            keep, _ = varying_columns(parts)
-            frames = []
-            for part in parts:
-                block = pd.read_parquet(part, columns=["_row"] + keep).set_index("_row")
-                frames.append(block[block.index.isin(rows)])
-            graph = pd.concat(frames)
-        else:
-            graph = read_varying_chunks(cache)
+        graph = read_varying_chunks(cache, rows=rows, columns=columns)
         wanted = tx.index if rows is None else pd.Index(rows)
         absent = wanted.difference(graph.index)
         if len(absent):
@@ -438,7 +429,8 @@ def run(
     # but materialising their engineered columns made a 50k-row window cost the
     # whole corpus: 3.8 GB against 39 MB, which no 6 GB machine can pay.
     def features_for(rows: pd.Index) -> pd.DataFrame:
-        graph = graph_features(tx, graph_cache, pkg.graph["params"], rows=rows)
+        graph = graph_features(tx, graph_cache, pkg.graph["params"], rows=rows,
+                               columns=[c for c in pkg.columns if c.startswith("gfp_")])
         return feature_matrix(pkg, tx, graph, rows=rows)
 
     X = features_for(tx.index[emit])

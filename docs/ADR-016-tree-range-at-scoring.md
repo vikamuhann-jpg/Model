@@ -47,7 +47,7 @@ Measured on the full test partition — 1,015,564 rows, 1,797 positives:
 | Truncated at `best_iteration` | 741 | 0.6036 | 0.6140 | 78.30% |
 | **Difference** | −100 | −0.0003 | **+0.0002** | −0.17 pp |
 
-The F1 difference is **0.0002** against a five-seed spread of **0.003** for this
+The F1 difference is **0.0002** against a five-seed spread of **0.0025** for this
 configuration (S4b). The extra hundred trees neither help nor hurt: there is no
 measurable overfitting to remove, and no accuracy to be gained by removing it.
 

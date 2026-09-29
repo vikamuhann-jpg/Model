@@ -1,0 +1,157 @@
+{
+  "protocol": "GFP paper: untrimmed, 60/20/20, batched GFP",
+  "variant": "LI-Small-2M",
+  "extraction": {
+    "batch_size": 1,
+    "window_days": null,
+    "params": {
+      "num_threads": 8,
+      "time_window": 86400,
+      "vertex_stats": true,
+      "vertex_stats_tw": 86400,
+      "vertex_stats_cols": [
+        3,
+        4
+      ],
+      "vertex_stats_feats": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        8,
+        9,
+        10
+      ],
+      "fan": true,
+      "fan_tw": 86400,
+      "degree": true,
+      "degree_tw": 86400,
+      "scatter-gather": true,
+      "scatter-gather_tw": 21600,
+      "temp-cycle": true,
+      "temp-cycle_tw": 86400,
+      "lc-cycle": true,
+      "lc-cycle_tw": 86400,
+      "lc-cycle_len": 10
+    },
+    "timestamp_stats_dropped": [
+      "gfp_f186",
+      "gfp_f187",
+      "gfp_f199",
+      "gfp_f200",
+      "gfp_f212",
+      "gfp_f213",
+      "gfp_f225",
+      "gfp_f226"
+    ]
+  },
+  "include_payment_type": false,
+  "behaviour_features": true,
+  "split": {
+    "spec": {
+      "train_frac": 0.6,
+      "val_frac": 0.2,
+      "test_frac": 0.2,
+      "boundary_policy": "hard_cut",
+      "purge_buffer": null,
+      "seed": 42
+    },
+    "boundaries": {
+      "train_end": "2022-09-01T16:55:00+00:00",
+      "val_end": "2022-09-02T01:19:00+00:00"
+    },
+    "sizes": {
+      "train": 1200395,
+      "val": 400444,
+      "test": 399654
+    },
+    "patterns_spanning_boundary": 7,
+    "purged_rows": 0,
+    "notes": [
+      "hard cut; 7 pattern(s) truncated at a boundary and may be undetectable in test by construction"
+    ]
+  },
+  "n_features": 181,
+  "params": {
+    "objective": "binary:logistic",
+    "eval_metric": "aucpr",
+    "tree_method": "hist",
+    "max_depth": 8,
+    "learning_rate": 0.03,
+    "subsample": 0.8,
+    "colsample_bytree": 0.75,
+    "min_child_weight": 1,
+    "reg_lambda": 0.01,
+    "n_jobs": 8,
+    "random_state": 42,
+    "scale_pos_weight": 2
+  },
+  "tuning": {
+    "params_from": "/mnt/c/Users/vikam/flowguard_data/runs/S4b_no_ts_stats.json"
+  },
+  "runs": [
+    {
+      "seed": 42,
+      "val_pr_auc": 0.0012678979735962655,
+      "f1_val_threshold": 0.00625,
+      "f1_oracle": 0.012738853503184714,
+      "pr_auc": 0.0021379227200893796,
+      "roc_auc": 0.8460183658438526,
+      "recall_at_1pct": 0.04195804195804196,
+      "best_iteration": 2,
+      "device": "cuda",
+      "fit_seconds": 12.4
+    },
+    {
+      "seed": 7,
+      "val_pr_auc": 0.0011432243888081855,
+      "f1_val_threshold": 0.003826530612244898,
+      "f1_oracle": 0.020512820512820516,
+      "pr_auc": 0.005402397792171901,
+      "roc_auc": 0.8484630677786811,
+      "recall_at_1pct": 0.027972027972027972,
+      "best_iteration": 37,
+      "device": "cuda",
+      "fit_seconds": 12.2
+    },
+    {
+      "seed": 123,
+      "val_pr_auc": 0.0012280295393991357,
+      "f1_val_threshold": 0.005934718100890208,
+      "f1_oracle": 0.020512820512820516,
+      "pr_auc": 0.0030835749432924823,
+      "roc_auc": 0.848461194859667,
+      "recall_at_1pct": 0.04195804195804196,
+      "best_iteration": 1,
+      "device": "cuda",
+      "fit_seconds": 11.9
+    }
+  ],
+  "summary": {
+    "f1_val_threshold": {
+      "mean": 0.005337082904378368,
+      "sd": 0.001317640633643647
+    },
+    "f1_oracle": {
+      "mean": 0.01792149817627525,
+      "sd": 0.0044883019456845
+    },
+    "pr_auc": {
+      "mean": 0.0035412984851845874,
+      "sd": 0.0016796822630080178
+    },
+    "roc_auc": {
+      "mean": 0.8476475428274002,
+      "sd": 0.001410908965790284
+    },
+    "recall_at_1pct": {
+      "mean": 0.0372960372960373,
+      "sd": 0.008074828939715046
+    },
+    "val_pr_auc": {
+      "mean": 0.001213050633934529,
+      "sd": 6.367221837399624e-05
+    }
+  }
+}

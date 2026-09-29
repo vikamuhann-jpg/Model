@@ -12,6 +12,18 @@ raw run records are in the data folder under `runs/`.
 
 ## Current results
 
+> **Read this first — the headline does not transfer.** Applied unchanged to a 2M-row
+> chronological prefix of LI-Small, a corpus no decision in this project touched, the
+> shipped model reaches **13.3% recall at a 1% alert budget** against 78.0% on HI-Small.
+> The pre-registered bar was 50%; it fails. The alert threshold does transfer (1.34%
+> alert rate) and ROC-AUC stays 0.904, so the model still ranks above chance, but 45% of
+> that corpus's laundering sits off ACH, where this model is blind, and ACH recall itself
+> falls from 84.6% to 22%. A retrain on the prefix was **invalid** rather than failed: 221
+> training positives, and early stopping at 1–37 trees. Whether a retrain on the full
+> LI-Small recovers is still open. Detail: `WINNING_PLAN.md`, 2026-09-29.
+>
+> **Why, measured:** 88% of that corpus's laundering has no injected graph pattern, against 25% on HI-Small. On patterned laundering the model still ranks positives at the 98.7th percentile; on unstructured laundering it is weak on *both* corpora (28% and 9.5%). See [`DECISION_REPORT_LI_TRANSFER.md`](DECISION_REPORT_LI_TRANSFER.md).
+
 ### HI-Small, the GFP paper's protocol
 
 Full corpus (5,078,345 rows, 5,177 positives), chronological 60/20/20, five seeds,
@@ -26,14 +38,14 @@ minority-class F1 at a threshold chosen on validation.
 | S1c — strictly one at a time | paper | **1** | yes | no | 0.518 ± 0.027 | 0.504 ± 0.020 |
 | S4-pt — artifact removed | paper | 1 | **no** | no | 0.249 ± 0.044 | 0.203 ± 0.046 |
 | S4 — + behaviour | paper | 1 | no | **yes** | 0.544 ± 0.036 | 0.570 ± 0.012 |
-| **S4b — timestamp statistics dropped (→ v2)** | paper | 1 | no | yes | **0.614 ± 0.003** | **0.608 ± 0.004** |
+| **S4b — timestamp statistics dropped (→ v2)** | paper | 1 | no | yes | **0.614 ± 0.002** | **0.608 ± 0.004** |
 
 **Why S4b.** The paper's configuration adds GFP vertex statistics on the timestamp. They
 topped the attributions ("average timestamp of the sender's transfers") — meaningless to an
 investigator — so they were dropped on explainability grounds, before measuring. The result
 exposed them as a time proxy: validation PR-AUC fell (0.541 → 0.494; validation sits next to
 training time, where their values are still splittable) while test rose (0.570 → 0.608) and
-F1's seed spread fell from 0.036 to 0.003.
+F1's seed spread fell from 0.036 to 0.002.
 
 ### v2, through every validation gate
 
@@ -47,7 +59,7 @@ F1's seed spread fell from 0.036 to 0.003.
 | Recall / precision at 0.1% budget | 46.6% / **82.5%** |
 | Dense window only (first 952k test rows, excludes the laundering-saturated tail) | PR-AUC **0.406** |
 | Correctness gates C1–C8 | **all pass** (shuffled-label PR-AUC 0.0021 vs base rate 0.0018) |
-| Performance gates | P1, P2, P4 (78.0% ≥ 45%), P5, P6, P7 pass · **P8 (532 tx/s), P9 (10.99 GB) fail** · P3 not run |
+| Performance gates | P1, P2, P4 (78.0% ≥ 45%), P5, P6, P7, **P9 (9.71 GB, fixed 2026-09-28)** pass · **P8 (532 tx/s) fails** · P3 not run |
 | Attribution (SHAP) | graph 49% · behaviour 43% · row-local 8%; top feature 31.0% (`bh_pair_n_prior`, first-time counterparty) |
 
 **Recall by typology at 1%:** fan-out 97.9%, scatter-gather 97.6%, gather-scatter 95.5%,
@@ -57,8 +69,12 @@ positives are off ACH). **By amount:** 4% below $139, 34% for $139–599, 60% fo
 ~86% above. **Hard negatives:** false-positive rate 1.79% vs 1.18% ordinary benign (1.5×;
 A4: 2.1×).
 
-P1's report line quotes 0.5587 for V2 — the previous v2 build's registry entry, read before
-this build's record was written. The comparison passes either way (+0.52 over E1).
+**Fixed 2026-09-28.** P1's report line quoted 0.5587 for V2, from the superseded
+214-feature build. The cause was ordering, not a stale file: the gate read
+`registry.load(model_id)` while the current run's record is written at the *end* of
+validation, so every build compared itself against its predecessor wearing the same name.
+P1 now uses the metrics the run just measured. The comparison passed either way (+0.52
+over E1); the number quoted was another model's.
 
 ### Throughput (corrected extractor)
 
@@ -255,7 +271,12 @@ Eight of eight **correctness** gates pass, including the conditional C8. Two
 **performance** gates fail and are reported as failures:
 
 * **P8 — extraction ≥ 1,000 tx/s.** Measured ~450 tx/s steady state on HI-Small. **FAIL** — and per [ADR-013](ADR-013-degree-skew-dominates-cost.md) the gate is not transferable: on a real scale-free network the method runs an order of magnitude slower still.
-* **P9 — peak RSS ≤ 10 GB.** Measured 10.88 GB. **FAIL.**
+* **P9 — peak RSS ≤ 10 GB.** Was 10.88 GB (**FAIL**); **9.71 GB PASS** since 2026-09-28.
+  The peak was never the training matrices, which XGBoost already quantises: it was the
+  full-corpus graph-feature frame (~3.9 GB) held beside the three matrices built from it
+  (~4.2 GB). Each partition only ever needs its own rows, so they are now read straight
+  from the part files. The model is unchanged — PR-AUC 0.5949, best F1 0.6126, recall@1%
+  78.0%, identical to four decimals. Record: `runs/COMP3_p9_validation.log`.
 * **P3 — a Tier B family beats E2 by 2σ.** −0.0326. **FAIL**, recorded not hidden.
 * **P4 — recall ≥ 45% @1%.** 66.2%, but ACH-only, so reported as a conditional pass
   against a target that was itself pre-registered on contaminated numbers (ADR-010).
