@@ -42,6 +42,7 @@ def run(
     *,
     seed: int = 42,
     sample: int | None = None,
+    head: int | None = None,
     cache: Path | None = None,
     window_days: float = 2.0,
     experiment_id: str = "E2",
@@ -52,6 +53,8 @@ def run(
     df = read_table(processed_dir / f"{variant}_transactions.parquet")
     if sample:
         df = df.iloc[:: max(1, len(df) // sample)].reset_index(drop=True)
+    if head:
+        df = df.head(head).reset_index(drop=True)
     print(f"loaded {len(df):,} transactions")
 
     dataset_meta = {"variant": variant, **S.summarise(df).to_metadata()}
@@ -241,6 +244,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--chunk-rows", type=int, default=250_000)
     parser.add_argument("--experiment-id", default="E2")
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--head", type=int, default=None, help="Process only the first N rows")
     args = parser.parse_args(argv)
 
     results = run(
