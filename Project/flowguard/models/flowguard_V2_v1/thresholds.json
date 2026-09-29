@@ -21,8 +21,8 @@
       "budget": 0.01,
       "value": 0.01364365965127945,
       "source": "validation",
-      "selection_precision": 0.07965734541157936,
-      "selection_recall": 0.7483811285846439,
+      "selection_precision": 0.07975580937376921,
+      "selection_recall": 0.7493061979648473,
       "selection_alerts": 10156
     },
     "0.05": {

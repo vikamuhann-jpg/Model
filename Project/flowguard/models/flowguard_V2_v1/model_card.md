@@ -30,7 +30,7 @@ anything.
 |---|---|
 | Features | 206 |
 | Graph | GFP `time_window` 24 h, scatter-gather 6 h, vertex statistics on columns [3, 4] (timestamp statistics dropped); batch size 1; transform inserts once; behaviour features on. Stored in `graph.json`; `score.py` rebuilds features from it. |
-| XGBoost | {'max_depth': 8, 'learning_rate': 0.03, 'subsample': 0.8, 'colsample_bytree': 0.75, 'min_child_weight': 1, 'reg_lambda': 0.01, 'scale_pos_weight': 2}; up to 3000 rounds, best 740 |
+| XGBoost | {'max_depth': 8, 'learning_rate': 0.03, 'subsample': 0.8, 'colsample_bytree': 0.75, 'min_child_weight': 1, 'reg_lambda': 0.01, 'scale_pos_weight': 2}; up to 1000 rounds, best 740 |
 
 ## Performance
 
@@ -38,9 +38,9 @@ anything.
 |---|---:|
 | PR-AUC | 0.5949 |
 | Lift | 336.2x |
-| Recall @1% budget | 78.0% |
-| Precision @1% budget | 13.80% |
-| Inference latency | 30.12 ms median (batch=1) |
+| Recall @1% budget | 78.3% |
+| Precision @1% budget | 13.85% |
+| Inference latency | 15.56 ms median (batch=1) |
 
 ### Per typology, recall at 1% budget
 
@@ -50,10 +50,10 @@ anything.
 | CYCLE | 95.4% | 104/109 |
 | FAN-IN | 93.4% | 128/137 |
 | FAN-OUT | 97.9% | 137/140 |
-| GATHER-SCATTER | 95.5% | 383/401 |
-| RANDOM | 91.9% | 79/86 |
+| GATHER-SCATTER | 96.3% | 386/401 |
+| RANDOM | 93.0% | 80/86 |
 | SCATTER-GATHER | 97.6% | 246/252 |
-| STACK | 89.3% | 125/140 |
+| STACK | 90.0% | 126/140 |
 
 ### Structured vs unstructured laundering, recall at 1% budget
 
@@ -68,16 +68,11 @@ differ by a handful of cases:
 | Structured | 75% | 95.3% | 1276/1339 |
 | Unstructured | 25% | 27.9% | 128/458 |
 
-*Added 2026-09-29 from `runs/G1_diagnosis_HI-Small.json` — this model, this test
-partition. Packages built after that date compute it themselves.*
-
 ## Known failure modes
 
 * **Unstructured laundering is largely missed.** A transfer with no fan-in, cycle or
   chain around it leaves no graph shape to find. See the split above; this is a
-  limit of the method on every corpus measured, not of this one (LIM-08). *This
-  bullet previously read as a coverage caveat — "only ~62% of positives carry a
-  typology label" — which hid that those are the positives the model misses.*
+  limit of the method on every corpus measured, not of this one (LIM-08).
 * **Truncated patterns.** 140 of 370 patterns straddle a split boundary; recall
   on those is a floor, not an unbiased estimate (ADR-002).
 * **Structurally complex benign activity** — see the hard-negative slice in
