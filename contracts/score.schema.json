@@ -25,6 +25,7 @@
     "score": {"type": "number", "minimum": 0, "maximum": 1, "description": "Calibrated probability of laundering. Saturates at 1.0 for the most severe cases; order those by `rank`, not by score."},
     "raw_score": {"type": "number", "description": "Uncalibrated model output. Use it only to break ties among equal scores; `rank` already does."},
     "rank": {"type": "integer", "minimum": 1, "description": "1 = most suspicious. Orders by score, then raw_score."},
-    "alert": {"type": "boolean", "description": "score >= the package threshold for a 1% alert budget (see run.json)."}
+    "alert": {"type": "boolean", "description": "score >= the package threshold for a 1% alert budget (see run.json)."},
+    "top_features": {"type": "string", "description": "Why this row alerted: the three features that pushed its score up most, named in plain language, as `label (+0.123); label (+0.045)`. An empty field (not null) for rows that did not alert — read the CSV with pandas' `keep_default_na=False`, or treat NaN as empty. Contributions are TreeSHAP values from the scoring model, in raw-score units. The full reasoning, including the traced path, is in the case bundle."}
   }
 }

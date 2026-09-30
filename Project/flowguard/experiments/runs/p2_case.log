@@ -1,0 +1,23 @@
+threshold 0.00997506 from validation (precision 0.0688)
+corpus 5,077,237 rows; test period 761,422 after 2022-09-09 03:14:00+00:00
+  155 of 215 GFP features vary; reading only those
+features (761422, 168)
+
+subject 222697:8087F4940 score 1.000000 rail ACH amount 17,049.76
+forward trace from 222697:8087F4940 | horizon 3 | 3 transactions, 1 terminal accounts | complete
+
+FG-18aedbed  subject 222697:8087F4940  score 1.0000 (threshold 0.0100)
+  3 transactions across 3 accounts
+  COVERAGE: This case involves payment rails on which the model has NOT demonstrated recall. On the validation corpus it caught 599 of 796 ACH laundering transactions and 1 of 100 across all other rails combined (ADR-007). Absence of an alert on these transactions is not evidence of absence.
+  top reasons:
+    TX_PAYMENT_TYPE_CODE_RAISED            +8.59865
+    TX_IS_CROSS_CURRENCY_LOWERED           -3.08347
+    GFP_F185_RAISED                        +2.62167 [opaque]
+    TX_IS_SELF_TRANSFER_LOWERED            -1.39520
+    GFP_F192_RAISED                        +1.30996 [opaque]
+
+wrote FG-18aedbed.json (4,490 bytes); round-trip identical
+reasons 8, opaque 4/8
+rails in case: {'ACH': 2, 'Cheque': 1}
+P2 CASE DONE
+EXIT: 0

@@ -191,7 +191,10 @@ def per_group_recall(
     flagged[top] = True
 
     out: dict[str, dict] = {}
-    for group in sorted({g for g in groups if isinstance(g, str)}):
+    # "" is the unlabelled marker set above, not a typology: excluded here, or a
+    # corpus whose positives are mostly unannotated (LI-Small: 71%) grows a
+    # nameless bar in every per-typology chart and a nameless P5 gate row.
+    for group in sorted({g for g in groups if isinstance(g, str) and g}):
         mask = (groups == group) & (y_true == 1)
         total = int(mask.sum())
         if not total:

@@ -1,0 +1,180 @@
+
+======================================================================
+FlowGuard validation — HI-Small / E2
+======================================================================
+loaded 5,077,237 transactions
+  155 of 215 GFP features vary; reading only those
+loaded 155 varying GFP features
+train=3,554,066 val=761,749 test=761,422 | test positives 906 | features 168
+
+======================================================================
+Training the model under validation
+======================================================================
+  n=761,422  positives=906  base_rate=0.11899%
+  PR-AUC=0.1974  (lift 165.9x)  ROC-AUC=0.9717  best-F1=0.2923
+  @  0.1% budget: precision=0.3141 recall=0.2638 (239/761 alerts)
+  @  0.5% budget: precision=0.1282 recall=0.5386 (488/3807 alerts)
+  @  1.0% budget: precision=0.0788 recall=0.6623 (600/7614 alerts)
+  @  5.0% budget: precision=0.0203 recall=0.8532 (773/38071 alerts)
+  device=cuda  36.3s
+
+======================================================================
+C2 / C3 — sanity baselines
+======================================================================
+  random     PR-AUC=0.001214 PASS
+  constant   PR-AUC=0.001190 PASS
+  shuffled   PR-AUC=0.001095 PASS
+
+======================================================================
+C7 — determinism
+======================================================================
+  identical predictions on re-fit: True
+
+======================================================================
+C8 — SHAP interpretation
+======================================================================
+SHAP over 20,000 sampled rows
+  top feature: tx_payment_type_code at 17.8% of mean |SHAP|
+  gate C8 (<50%): PASS
+  share by family:
+    gfp         69.8%
+    tx          30.2%
+  top features:
+    tx_payment_type_code              17.8%
+    gfp_f185                           9.4%
+    gfp_f209                           9.2%
+    gfp_f183                           7.8%
+    tx_amount                          3.1%
+    tx_amount_received_log             3.0%
+    gfp_f057                           2.7%
+    gfp_f208                           2.1%
+    gfp_f193                           2.0%
+    tx_minute_of_day                   1.9%
+    gfp_f214                           1.8%
+    gfp_f192                           1.7%
+
+======================================================================
+C1 — leakage suite
+======================================================================
+  35 passed, 4 xfailed, 6 warnings in 875.27s (0:14:35)
+
+======================================================================
+P6 — seed stability
+======================================================================
+  seed 42     PR-AUC=0.1974
+  seed 7      PR-AUC=0.2091
+  seed 123    PR-AUC=0.2079
+  mean=0.2048 sd=0.0065  =>  2 sigma = 0.0129
+
+======================================================================
+P1 / P2 — experiment comparisons
+======================================================================
+  P2: E1 0.0376 vs E0 0.0011 -> delta +0.0364 > 2 sigma (0.0129)
+
+======================================================================
+P7 — temporal stability
+======================================================================
+temporal stability -- P7 PASS: no monotone decline; spread 0.1918
+  2022-09-09 03:15:00+00:00 .. 2022-09-09 12:11:48+00:00  n= 239,133 pos=  184 PR-AUC=0.1526
+  2022-09-09 12:11:48+00:00 .. 2022-09-09 21:08:36+00:00  n= 238,463 pos=  229 PR-AUC=0.2976
+  2022-09-09 21:08:36+00:00 .. 2022-09-10 06:05:24+00:00  n= 139,972 pos=  130 PR-AUC=0.1059
+  2022-09-10 06:05:24+00:00 .. 2022-09-10 15:02:12+00:00  n=  72,077 pos=  196 PR-AUC=0.2384
+  2022-09-10 15:02:12+00:00 .. 2022-09-10 23:59:00+00:00  n=  71,777 pos=  167 PR-AUC=0.1716
+
+======================================================================
+P8 / P9 — cost
+======================================================================
+  P8: nan tx/s vs >= 1,000 required
+  P9: 10.88 GB vs <= 10 GB allowed
+  inference: 11.86 ms median (batch=1)
+
+======================================================================
+Error analysis and robustness slices
+======================================================================
+at 1.0% alert budget:
+  TP=600  FP=7,014  FN=306  TN=753,502
+
+  recall by typology:
+    (unannotated)           40.9% (140/342)
+    CYCLE                   69.2% (36/52)
+    BIPARTITE               70.0% (28/40)
+    RANDOM                  78.0% (32/41)
+    GATHER-SCATTER          80.0% (100/125)
+    STACK                   80.2% (65/81)
+    FAN-IN                  85.7% (48/56)
+    FAN-OUT                 87.3% (55/63)
+    SCATTER-GATHER          90.6% (96/106)
+
+  recall by amount_band:
+    (-0.000999, 144.172]     4.8% (2/42)
+    (144.172, 613.914]      28.6% (10/35)
+    (613.914, 2670.728]     61.5% (88/143)
+    (17157.762, 626035501453.45]  71.7% (175/244)
+    (2670.728, 17157.762]   73.5% (325/442)
+
+  recall by hour_band:
+    18-23                   55.5% (116/209)
+    00-05                   62.7% (79/126)
+    06-11                   68.4% (171/250)
+    12-17                   72.9% (234/321)
+
+  recall by payment_type:
+    Cheque                   0.0% (0/53)
+    Cash                     0.0% (0/17)
+    Credit Card              0.0% (0/30)
+    Bitcoin                 10.0% (1/10)
+    ACH                     75.3% (599/796)
+
+  recall by pattern_position:
+    middle                  80.2% (138/172)
+    early                   81.8% (216/264)
+    late                    82.8% (106/128)
+
+hard negatives: 172,158 rows; FP rate 2.49% vs ordinary benign 1.09% (2.3x)
+unseen-pattern split available; held out ['BIPARTITE', 'SCATTER-GATHER']
+feature drift: 15 of 168 features above PSI 0.25
+
+======================================================================
+Gate report
+======================================================================
+CORRECTNESS GATES (a failure voids the result)
+  [PASS  ] C2  Shuffled-label PR-AUC within 2x base rate
+            shuffled-label PR-AUC 0.001095 vs base rate 0.001190
+  [PASS  ] C3  Random-score PR-AUC at base rate
+            random-score PR-AUC 0.001214
+  [PASS  ] C4  Split boundary timestamps strictly ordered and recorded
+            train_end=2022-09-07 14:52:00+00:00, val_end=2022-09-09 03:14:00+00:00; strictly ordered=True
+  [PASS  ] C5  Training and inference feature schemas identical
+            feature schema hash 43961206045965d9 (train) vs 43961206045965d9 (test)
+  [PASS  ] C7  Same seed and data produce identical predictions
+            same seed and data reproduce predictions: True
+  [PASS  ] C8  No single feature above 50% of mean |SHAP|
+            top feature tx_payment_type_code holds 17.8% of mean |SHAP|
+  [PASS  ] C1  Leakage suite passes
+            35 passed, 4 xfailed, 6 warnings in 875.27s (0:14:35)
+  [PASS  ] C6  One command reproduces the headline PR-AUC
+            `python -m flowguard.pipeline.run_validation` reproduces this report from the cached feature table; headline PR-AUC 0.1974
+
+PERFORMANCE GATES (a failure is a finding, not a defect)
+  [PASS  ] P6  PR-AUC standard deviation across seeds
+            sd 0.0065 vs < 0.02
+  [SKIP  ] P1  E2 beats E1 by > 2 sigma
+            E2 or E1 not in registry
+  [PASS  ] P2  E1 beats E0 by > 2 sigma
+            delta +0.0364 > 2 sigma (0.0129)
+  [SKIP  ] P3  E7 beats E2 by > 2 sigma (or inconclusive)
+            E7 not built; feature research not reached
+  [PASS  ] P4  Recall at 1% alert budget
+            recall 66.2% at 1% budget vs >= 45%
+  [PASS  ] P5  No typology at zero recall
+            all typologies detected
+  [PASS  ] P7  No monotone decline across test sub-windows
+            no monotone decline; spread 0.1918
+  [SKIP  ] P8  Feature extraction throughput
+            nan tx/s vs >= 1,000 required
+  [FAIL  ] P9  Peak resident memory
+            10.88 GB vs <= 10 GB allowed
+
+Correctness gates all pass; result stands.
+
+model package -> /mnt/c/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Project/flowguard/models/flowguard_E2_v1

@@ -3,6 +3,13 @@
 **Graph-structural AML detection on IBM Snap ML's Graph Feature Preprocessor — measured
 against IBM's own benchmark, without lookahead and without the simulator's artifact.**
 
+**What it detects, precisely:** laundering that leaves a *shape* in the transaction graph —
+fan-in, fan-out, cycles, scatter-gather, layering chains. It catches **95% of that** at a 1%
+alert budget. Laundering with no graph shape — an isolated transfer between two ordinary
+accounts — is a known limit of the method on every corpus we measured (28% here, 9.5% on
+fresh data). The model is built to trace structured movement of funds, which is what PS9
+asks for; it is not a general-purpose fraud detector, and the numbers below say so.
+
 Built for **Datathon problem statement PS9 — *Tracking of Funds within Bank for Fraud
 Detection*.** FlowGuard scores transactions for money-laundering risk, traces where funds
 went, and packages each alert as a self-validating evidence bundle an investigator can read.
@@ -20,12 +27,14 @@ went, and packages each alert as a self-validating evidence bundle an investigat
 | | |
 |---|---|
 | **Shipped model** | `flowguard_V2_v1` — PR-AUC **0.595** (seeds 0.597 ± 0.002), best F1 **0.613**, recall **78.0%** at a 1% alert budget; all 8 correctness gates pass |
+| **What the 78% is made of** | **95.3%** of structured laundering (1,276 of 1,339) · **27.9%** of unstructured (128 of 458). 75% of this corpus's laundering is structured |
+| **On fresh data** | LI-Small, a corpus no decision touched: **13.3%** overall — because **88%** of its laundering is unstructured. Structured laundering is still found (ranked at the 98.7th percentile). [Decision report](docs/DECISION_REPORT_LI_TRANSFER.md) |
 | **Against IBM's benchmark** | F1 **0.614** vs the published GFP+XGBoost **63.2** — using **neither** the payment-rail artifact **nor** within-batch lookahead, both of which the published protocol includes |
 | **Real network** | On the Ethereum phishing graph, graph features lift account PR-AUC by **+0.050** (95% CI 0.019–0.108), and survived the extractor fix unchanged |
 | **Explainability** | Every reason in every evidence bundle is named in plain language — graph, behaviour and row-local features alike; a test enforces it |
 | **Scoring** | `python -m flowguard.pipeline.score` — batch, Linux, history-aware |
-| **Tests** | 275 passing (plus 7 slow reconstruction tests), including contract tests on every sample output |
-| **Decision records** | 15 ADRs — including [ADR-015](docs/ADR-015-gfp-double-insertion.md), a defect we found in our own extractor and every result it touched |
+| **Tests** | 306 passing (plus 7 slow reconstruction tests) — contract tests on every sample output, and a [claims register](docs/CLAIMS_REGISTER.md) test that checks every published number against its record |
+| **Decision records** | 16 ADRs — including [ADR-015](docs/ADR-015-gfp-double-insertion.md), a defect we found in our own extractor and every result it touched |
 | **Production-ready?** | **No** — see [Where this stands](#where-this-stands) |
 
 ---
@@ -43,7 +52,7 @@ Full per-run detail in [`WINNING_PLAN.md`](WINNING_PLAN.md).
 | Same, **strictly one transaction at a time** | yes | **none** | 0.518 ± 0.027 | 0.504 ± 0.020 |
 | Same, **`payment_type` removed** | **no** | none | 0.249 ± 0.044 | 0.203 ± 0.046 |
 | + account-behaviour features | no | none | 0.544 ± 0.036 | 0.570 ± 0.012 |
-| **v2 — same, timestamp statistics dropped (shipped)** | **no** | **none** | **0.614 ± 0.003** | **0.608 ± 0.004** |
+| **v2 — same, timestamp statistics dropped (shipped)** | **no** | **none** | **0.614 ± 0.002** | **0.608 ± 0.004** |
 
 Five things this table says, each measured rather than assumed:
 
@@ -62,7 +71,7 @@ Five things this table says, each measured rather than assumed:
    statistics on the timestamp. They topped the attributions ("average timestamp of the
    sender's transfers"), helped on validation (next to training time) and **hurt on test**
    (further out). Dropping them — decided on explainability grounds before measuring —
-   raised test F1 from 0.544 to 0.614 and cut its seed spread twelvefold.
+   raised test F1 from 0.544 to 0.614 and cut its seed spread nearly fifteenfold.
 5. **The test period includes the generator's tail**, where laundering is 20–68% of rows
    ([ADR-003](docs/ADR-003-sparse-tail-trim.md)). On the dense first window alone — 952k rows,
    1,003 positives — v2's PR-AUC is **0.41**. The published protocol includes the same tail.
@@ -114,6 +123,8 @@ own path does not.
 | **False positives on legitimate complexity** 1.5× ordinary traffic | Merchant hubs, payroll fan-out (hard-negative slice; A4 was 2.1×) |
 | **Low-value laundering is missed.** Recall at 1%: 4% below $139, 34% for $139–599 | Small transfers carry little structural signal |
 | **Synthetic data only**, one generator for the headline | Behaviour features in particular need a second corpus |
+| **Unstructured laundering is largely missed — on every corpus.** 27.9% recall here; 9.5% on LI-Small; 1–3% for unstructured laundering off ACH on either | A method limit, not a data quirk: an isolated transfer leaves no graph shape to find. Needs a second, non-graph detector (future work) |
+| **The headline does not transfer as a single number.** On a 2M-row LI-Small prefix, recall at 1% is **13.3%** against 78.0% here (pre-registered bar: 50% — failed) | About two-thirds of the drop is composition: 88% of LI-Small's laundering is unstructured, against 25% here. The rest is a genuine per-group drop (structured 95% → 41%, on 17 cases). The alert threshold does transfer (1.34%). [Decision report](docs/DECISION_REPORT_LI_TRANSFER.md) |
 | **Cold start** — a window scored without history alerts far above budget | `score.py --emit-from` scores a window using earlier rows as history; use ≥ 2 days |
 
 ---
@@ -177,12 +188,13 @@ python -m pytest -m "not slow"                           # the leakage suite is 
 
 ## Where to start reading
 
-1. **[`docs/STATUS.md`](docs/STATUS.md)** — every current number and the protocol behind it.
-2. **[ADR-015](docs/ADR-015-gfp-double-insertion.md)** — the extractor defect, found and fixed,
+1. **[`docs/CLAIMS_REGISTER.md`](docs/CLAIMS_REGISTER.md)** — every published number, the record that proves it, and the test that keeps them equal.
+2. **[`docs/STATUS.md`](docs/STATUS.md)** — every current number and the protocol behind it.
+3. **[ADR-015](docs/ADR-015-gfp-double-insertion.md)** — the extractor defect, found and fixed,
    and the table of every result it affected.
-3. **[ADR-007](docs/ADR-007-payment-type-artifact.md)** — the artifact that halves the benchmark.
-4. **[`WINNING_PLAN.md`](WINNING_PLAN.md)** — how the numbers moved, step by step.
-5. **[`docs/README.md`](docs/README.md)** — the index of all decision records.
+4. **[ADR-007](docs/ADR-007-payment-type-artifact.md)** — the artifact that halves the benchmark.
+5. **[`WINNING_PLAN.md`](WINNING_PLAN.md)** — how the numbers moved, step by step.
+6. **[`docs/README.md`](docs/README.md)** — the index of all decision records.
 
 A negative result is a success condition here: several decision records document work that
 was built, measured and discarded because a rule fixed before the run said so.

@@ -34,8 +34,8 @@
   "behaviour": true,
   "timestamp_stats_dropped": true,
   "insertion_convention": "transform inserts once",
-  "tx_per_s": 532.3705227873531,
-  "extract_seconds": 9539.117555591001,
-  "model_source": "/mnt/c/Users/vikam/flowguard_data/runs/S4b_no_ts_stats.json",
-  "extraction_source": "/mnt/c/Users/vikam/flowguard_data/runs/S1c_paper_b1.json"
+  "tx_per_s": null,
+  "extract_seconds": null,
+  "model_source": "Project\\flowguard\\experiments\\runs\\S4b_no_ts_stats.json",
+  "extraction_source": "Project\\flowguard\\experiments\\runs\\S4b_no_ts_stats.json"
 }

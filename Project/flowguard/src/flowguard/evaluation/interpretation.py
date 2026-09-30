@@ -70,6 +70,34 @@ class Interpretation:
         return "\n".join(lines)
 
 
+def tree_shap(booster, X: pd.DataFrame) -> np.ndarray:
+    """Signed TreeSHAP contributions, one row per input row, via XGBoost itself.
+
+    ``shap.TreeExplainer`` on an XGBoost model calls straight into this same
+    implementation, so the numbers are the library's own -- but ``shap`` is a
+    dependency the deployment environment does not have, and its absence used to
+    mean no explanations at all there. The bias column XGBoost appends is
+    dropped, leaving exactly one contribution per feature.
+    """
+    import xgboost as xgb
+
+    from flowguard.models.xgb import ALL_TREES
+
+    if hasattr(booster, "set_param"):
+        # TreeSHAP on CPU: a one-off diagnostic, and the GPU path would need the
+        # frame resident on device.
+        booster.set_param({"device": "cpu"})
+    contributions = booster.predict(
+        xgb.DMatrix(X, feature_names=list(X.columns)),
+        pred_contribs=True,
+        # The same trees ``predict_raw`` scores with. Passing it explicitly is
+        # the point: ``shap`` silently used best_iteration while scoring used
+        # every tree, so the explanations described another model (ADR-016).
+        iteration_range=ALL_TREES,
+    )
+    return np.asarray(contributions)[:, :-1]
+
+
 def _family_of(column: str) -> str:
     """Feature families are encoded as a name prefix (`gfp_`, `tx_`, ...)."""
     return column.split("_", 1)[0] if "_" in column else column
@@ -83,8 +111,6 @@ def explain(
     seed: int = 42,
 ) -> Interpretation:
     """Compute global SHAP importance and evaluate gate C8."""
-    import shap
-
     rng = np.random.default_rng(seed)
     if len(X) > sample:
         idx = rng.choice(len(X), size=sample, replace=False)
@@ -98,10 +124,7 @@ def explain(
     if hasattr(booster, "set_param"):
         booster.set_param({"device": "cpu"})
 
-    explainer = shap.TreeExplainer(booster)
-    values = explainer.shap_values(X_sample)
-    if isinstance(values, list):  # older SHAP returns per-class lists
-        values = values[-1]
+    values = tree_shap(booster, X_sample)
 
     mean_abs = np.abs(values).mean(axis=0)
     total = float(mean_abs.sum()) or 1.0
@@ -138,16 +161,8 @@ def local_contributions(model, X: pd.DataFrame) -> pd.DataFrame:
     No sampling -- a case is a handful of transactions, and silently explaining a
     subset of the evidence would defeat the purpose.
     """
-    import shap
-
     booster = model.booster_ if hasattr(model, "booster_") else model
-    if hasattr(booster, "set_param"):
-        booster.set_param({"device": "cpu"})
-
-    values = shap.TreeExplainer(booster).shap_values(X)
-    if isinstance(values, list):  # older SHAP returns per-class lists
-        values = values[-1]
-    return pd.DataFrame(values, index=X.index, columns=X.columns)
+    return pd.DataFrame(tree_shap(booster, X), index=X.index, columns=X.columns)
 
 
 def stability_across_seeds(

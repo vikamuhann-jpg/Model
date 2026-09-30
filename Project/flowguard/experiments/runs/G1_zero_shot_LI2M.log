@@ -1,0 +1,4 @@
+validation: PR-AUC 0.0035  recall@1% 0.192  F1 shipped-threshold 0.0101  oracle 0.0288
+test: PR-AUC 0.0049  recall@1% 0.133  F1 shipped-threshold 0.0087  oracle 0.0311
+F1 at a threshold re-chosen on LI-Small-2M validation: 0.0207
+wrote /mnt/c/Users/vikam/flowguard_data/runs/G1_zero_shot_LI-Small-2M.json

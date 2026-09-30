@@ -1,0 +1,44 @@
+{
+  "best_iteration": 740,
+  "trees_trained": 841,
+  "test_rows": 1015564,
+  "test_positives": 1797,
+  "threshold": 0.01364365965127945,
+  "arms": {
+    "all_trees": {
+      "trees": 841,
+      "pr_auc": 0.6033537592765086,
+      "roc_auc": 0.9824206797769696,
+      "best_f1": 0.6142394822006472,
+      "recall_at_1pct": 0.7813021702838063,
+      "precision_at_1pct": 0.13824340291453327,
+      "at_shipped_threshold": {
+        "alerts": 18464,
+        "recall": 0.8319421257651641,
+        "precision": 0.08096837088388215,
+        "f1": 0.1475741572479147
+      }
+    },
+    "best_iteration": {
+      "trees": 741,
+      "pr_auc": 0.6036108953389095,
+      "roc_auc": 0.982499253313852,
+      "best_f1": 0.6140235910878113,
+      "recall_at_1pct": 0.7829716193656093,
+      "precision_at_1pct": 0.1385387948011028,
+      "at_shipped_threshold": {
+        "alerts": 20849,
+        "recall": 0.8441847523650529,
+        "precision": 0.07276128351479687,
+        "f1": 0.13397509493950366
+      }
+    }
+  },
+  "delta_all_minus_best": {
+    "pr_auc": -0.0002571360624009644,
+    "best_f1": 0.00021589111283581985,
+    "recall_at_1pct": -0.0016694490818029983
+  },
+  "seed_spread_f1": 0.003,
+  "verdict": "inside the seed spread -- keep all trees, and say so explicitly"
+}

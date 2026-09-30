@@ -34,22 +34,33 @@ _YAML_PATH = Path(__file__).resolve().parents[2] / "configs" / "paths.yaml"
 
 _PLATFORM = "win32" if sys.platform == "win32" else "linux"
 
-# Hard-coded last-resort defaults, resolved per platform.
-# These mirror paths.yaml but require no file I/O, so the module always loads.
+# Last-resort defaults, derived rather than written out. Two things decide all of
+# them, so a fresh clone on another machine needs no source edit:
+#
+#   FLOWGUARD_DATA  where generated data lives  (default: the build machine's)
+#   the repository  where the raw corpora live  (found from this file)
+#
+# The previous defaults were three absolute paths from one laptop, which is what
+# PENDING.md B2 recorded. That location now survives only as the default value of
+# FLOWGUARD_DATA -- one place instead of six.
 _WIN = sys.platform == "win32"
+_DATA_ROOT = Path(os.environ.get(
+    "FLOWGUARD_DATA",
+    str(Path(__file__).resolve().parents[4] / "flowguard_data")
+))
+# [0]=src/flowguard, [1]=src, [2]=Project/flowguard, [3]=Project, [4]=the
+# repository, which is where Dataset_/ sits. Counting wrong here is silent: the
+# path simply never exists and the loader reports a missing corpus.
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+
+#: Where generated data lives. Exported so other modules resolve their own
+#: artefacts against the same root instead of hard-coding one.
+DATA_ROOT = _DATA_ROOT
+
 _FALLBACKS: dict[str, str] = {
-    "processed_dir": (
-        r"C:/Users/vikam/flowguard_data/processed" if _WIN
-        else "/mnt/c/Users/vikam/flowguard_data/processed"
-    ),
-    "raw_dir": (
-        r"C:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Dataset_/IBM_Dataset" if _WIN
-        else "/mnt/c/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Dataset_/IBM_Dataset"
-    ),
-    "gfp_cache": (
-        r"C:/Users/vikam/flowguard_data/gfp_cache/HI-Small_2d.parquet" if _WIN
-        else "/mnt/c/Users/vikam/flowguard_data/gfp_cache/HI-Small_2d.parquet"
-    ),
+    "processed_dir": str(_DATA_ROOT / "processed"),
+    "raw_dir": str(_REPO_ROOT / "Dataset_" / "IBM_Dataset"),
+    "gfp_cache": str(_DATA_ROOT / "gfp_cache" / "HI-Small_2d.parquet"),
 }
 
 _ENV_VARS: dict[str, str] = {

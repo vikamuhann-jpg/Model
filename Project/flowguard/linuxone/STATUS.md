@@ -146,25 +146,40 @@ is what took the VM down.
 spilling to the ~24 GB of free disk. xgboost 2.0.3 supports it. This is the
 single remaining piece for a genuine full-corpus result.
 
-### TensorFlow / Keras — environment-level, not our code
+### TensorFlow / Keras — CORRECTED 2026-09-24: Keras does run here
 
-`02_keras_model.ipynb` **cannot run on this image.** `tensorflow 2.9.3`
-requires `protobuf < 3.20`; the image ships `7.35.1`. Setting
-`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` gets the import through, but
-constructing any Keras layer then raises *"RepeatedCompositeFieldContainer
-object does not support item assignment"*. Nothing installable fixes it on
-s390x.
+**The conclusion below was wrong, and the correction is worth keeping.** We
+reported that `tensorflow 2.9.3` cannot run on this image because it requires
+`protobuf < 3.20` while the image ships `7.35.1`; that
+`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python` only gets the import through;
+and that constructing a Keras layer then raises *"RepeatedCompositeFieldContainer
+object does not support item assignment"*.
 
-Corroboration: the datathon's own `Fraud_LSTM_Keras_TF.ipynb` and
-`Digit_Class_TensorFlow.ipynb` carry **zero saved outputs**, consistent with TF
-never having run on this image.
+Every observation held; the inference drawn from them did not. The image carries
+**two** protobufs: `7.35.1` in `~/.local`, which shadows everything, and
+**`3.13.0` in the system `site-packages` beside TensorFlow itself**, which TF
+2.9.3 accepts. Importing the older one before TensorFlow lets Keras build,
+train, save and reload a model on this VM, with **nothing installed**. Verified
+on the VM by Shivraj, 2026-09-24.
 
-`02` now fails on its first cell with that explanation rather than a protobuf
-traceback thirty cells deep.
+Two lessons, both about us rather than the image: "nothing installable fixes it"
+generalised from one failing import path to the whole package set; and the
+supporting evidence — the datathon's own `Fraud_LSTM_Keras_TF.ipynb` carrying no
+saved outputs — fitted our explanation but was never tested against the simpler
+one, that nobody had run it.
 
-**`torch 2.1.0a0` does work** (source-built for s390x, 2 threads) with the same
-env var set before import. A neural model is viable — `02` needs porting from
-Keras to PyTorch.
+A second constraint surfaced at the same time: TensorFlow rejects thread
+settings made after it initialises, so `tf.config.threading.*` must come
+immediately after `import tensorflow`.
+
+**`torch 2.1.0a0` also works** (source-built for s390x, 2 threads) with the same
+environment variable set before import.
+
+**Decided 2026-09-26: Keras ships.** `02_keras_model.ipynb` is the neural
+notebook, with the protobuf import order in cell 1. The PyTorch port
+(`02_neural_model.ipynb`) is removed and stays in git history at `136c07a^`; it
+needs no protobuf handling, so it is the fallback if TensorFlow ever breaks here
+again.
 
 ---
 
@@ -232,7 +247,9 @@ does not degrade gracefully, it lies.
 1. **Restart the VM.** Nothing else can proceed until Jupyter answers again.
 2. **External-memory XGBoost** for genuine full-corpus training — the one
    remaining gap in the scale story.
-3. **Port `02` to PyTorch**, since TensorFlow is unusable here.
+3. ~~**Port `02` to PyTorch**, since TensorFlow is unusable here.~~ Withdrawn:
+   TensorFlow is usable, and Keras is the notebook we ship (see the correction
+   above). The port was written and is kept in git history only.
 4. Optional: an ADR recording GFP-on-s390x, which is a real finding and fits
    this repo's existing practice of documenting platform decisions.
 

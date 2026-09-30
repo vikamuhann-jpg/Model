@@ -101,5 +101,6 @@ the model does not support.
 - The shipped model is `flowguard_V2_v1` (A4 is retired, [ADR-015](../docs/ADR-015-gfp-double-insertion.md)).
   Its `uses_payment_type` is `false`, and a test fails if a model that uses the payment-type
   artifact is ever committed.
+- `score.py` will now loudly refuse to load a package that only has `.pkl` calibrator/encoder files. It requires the JSON versions to prevent silent numpy version failures.
 - `run.json` may carry `history_transactions`: rows used as history for features but not
   scored (`score.py --emit-from`). Store it; a run with little history alerts above budget.

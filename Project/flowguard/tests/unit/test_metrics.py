@@ -100,3 +100,21 @@ def test_per_group_recall_handles_unlabelled_rows(imbalanced):
     out = per_group_recall(imbalanced, imbalanced.astype(float), groups, budget=0.01)
     assert out["CYCLE"]["positives"] == 10
     assert out["CYCLE"]["recall"] == pytest.approx(1.0)
+
+
+def test_per_group_recall_never_reports_an_unnamed_typology(imbalanced):
+    """Unannotated positives must not become a group of their own.
+
+    Most positives carry no typology (HI-Small 62% annotated, LI-Small 29%), so
+    an unlabelled *positive* is the normal case, not an edge case. Naming that
+    group "" put a nameless bar in the typology charts and a nameless row in
+    gate P5.
+    """
+    positives = np.flatnonzero(imbalanced == 1)
+    groups = np.full(len(imbalanced), None, dtype=object)
+    groups[positives[: len(positives) // 2]] = "CYCLE"  # the rest stay unlabelled
+
+    out = per_group_recall(imbalanced, imbalanced.astype(float), groups, budget=0.01)
+
+    assert list(out) == ["CYCLE"]
+    assert out["CYCLE"]["positives"] == len(positives) // 2

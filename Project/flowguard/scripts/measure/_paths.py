@@ -7,6 +7,6 @@ REPO is this repository's root, found from this file's own location.
 import os
 from pathlib import Path
 
-DATA = Path(os.environ.get("FLOWGUARD_DATA", "/mnt/c/Users/vikam/flowguard_data"))
 # _paths.py -> measure -> scripts -> flowguard -> Project -> repository root
 REPO = Path(__file__).resolve().parents[4]
+DATA = Path(os.environ.get("FLOWGUARD_DATA", str(REPO / "flowguard_data")))

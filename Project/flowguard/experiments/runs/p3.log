@@ -1,0 +1,15 @@
+
+============================================================
+HI-Small
+============================================================
+  155 of 215 GFP features vary; reading only those
+/root/flowguard/.venv/lib/python3.12/site-packages/pandas/core/nanops.py:1037: RuntimeWarning: overflow encountered in cast
+  result = result.astype(dtype, copy=False)
+5,077,237 rows, 155 graph features
+train 3,554,066 val 761,749 test 761,422 | test positives 906
+Traceback (most recent call last):
+  File "/mnt/c/Users/vikam/AppData/Local/Temp/claude/c--Users-vikam-OneDrive-Desktop-Hackathon-project-datathon-research/65fa4870-8f87-4ee7-b1a1-6ee4894682f0/scratchpad/p3_cascade.py", line 75, in <module>
+    f"{ev.budget_points[0].recall:.4f}", flush=True)
+       ^^^^^^^^^^^^^^^^
+AttributeError: 'Metrics' object has no attribute 'budget_points'
+EXIT: 1

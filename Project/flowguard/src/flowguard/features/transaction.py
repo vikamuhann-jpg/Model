@@ -60,6 +60,28 @@ class CategoricalEncoder:
             "columns": {c: len(m) for c, m in self.categories_.items()},
         }
 
+    # A pickle of this object can only be read where ``flowguard`` is importable
+    # under that exact name, so a consumer whose own package is also called
+    # ``flowguard`` cannot load it at all. The vocabulary is a plain mapping;
+    # JSON carries it with no import and no library version to agree on.
+    def to_json(self) -> dict:
+        return {
+            "kind": "ordinal",
+            "unseen_code": -1,
+            "fit_rows": self.fit_rows_,
+            "categories": {c: dict(m) for c, m in self.categories_.items()},
+        }
+
+    @classmethod
+    def from_json(cls, payload: dict) -> CategoricalEncoder:
+        encoder = cls()
+        encoder.categories_ = {
+            col: {str(value): int(code) for value, code in mapping.items()}
+            for col, mapping in payload["categories"].items()
+        }
+        encoder.fit_rows_ = payload.get("fit_rows")
+        return encoder
+
 
 #: What each column means, for evidence-bundle reasons (columns carry a ``tx_`` prefix).
 LABELS = {

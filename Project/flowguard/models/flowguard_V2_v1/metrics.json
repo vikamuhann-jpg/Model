@@ -3,9 +3,9 @@
     "n": 1015564,
     "positives": 1797,
     "base_rate": 0.0017694601226510588,
-    "pr_auc": 0.5949178241218661,
-    "roc_auc": 0.982004076808358,
-    "lift_over_base_rate": 336.2143156018358,
+    "pr_auc": 0.5949179882314906,
+    "roc_auc": 0.9820211925943638,
+    "lift_over_base_rate": 336.21440834742657,
     "best_f1": 0.612565445026178,
     "best_f1_threshold": 0.3333333134651184,
     "budgets": [
@@ -13,42 +13,38 @@
         "budget": 0.001,
         "threshold": 0.44897958636283875,
         "alerts": 1016,
-        "true_positives": 838,
-        "precision": 0.8248031496062992,
-        "recall": 0.46633277685030605
+        "true_positives": 837,
+        "precision": 0.8238188976377953,
+        "recall": 0.4657762938230384
       },
       {
         "budget": 0.005,
         "threshold": 0.03954802080988884,
         "alerts": 5078,
-        "true_positives": 1282,
-        "precision": 0.25246159905474597,
-        "recall": 0.7134112409571508
+        "true_positives": 1289,
+        "precision": 0.2538400945254037,
+        "recall": 0.7173066221480244
       },
       {
         "budget": 0.01,
         "threshold": 0.020205065608024597,
         "alerts": 10156,
-        "true_positives": 1402,
-        "precision": 0.1380464749901536,
-        "recall": 0.780189204229271
+        "true_positives": 1407,
+        "precision": 0.1385387948011028,
+        "recall": 0.7829716193656093
       },
       {
         "budget": 0.05,
         "threshold": 0.006108597386628389,
         "alerts": 50778,
-        "true_positives": 1596,
-        "precision": 0.03143093465674111,
-        "recall": 0.8881469115191987
+        "true_positives": 1599,
+        "precision": 0.0314900153609831,
+        "recall": 0.8898163606010017
       }
     ]
   },
   "seed_scores": [
-    0.5949178241218661,
-    0.5979685550869931,
-    0.5958666013241372,
-    0.6008018924538701,
-    0.5953713508655832
+    0.5949179882314906
   ],
   "typology_recall_at_1pct": {
     "BIPARTITE": {
@@ -73,13 +69,13 @@
     },
     "GATHER-SCATTER": {
       "positives": 401,
-      "caught": 383,
-      "recall": 0.9551122194513716
+      "caught": 386,
+      "recall": 0.9625935162094763
     },
     "RANDOM": {
       "positives": 86,
-      "caught": 79,
-      "recall": 0.9186046511627907
+      "caught": 80,
+      "recall": 0.9302325581395349
     },
     "SCATTER-GATHER": {
       "positives": 252,
@@ -88,8 +84,20 @@
     },
     "STACK": {
       "positives": 140,
-      "caught": 125,
-      "recall": 0.8928571428571429
+      "caught": 126,
+      "recall": 0.9
+    }
+  },
+  "structure_recall_at_1pct": {
+    "structured": {
+      "positives": 1339,
+      "caught": 1276,
+      "recall": 0.9529499626587006
+    },
+    "unstructured": {
+      "positives": 458,
+      "caught": 128,
+      "recall": 0.2794759825327511
     }
   },
   "temporal_stability": {
@@ -99,7 +107,7 @@
         "end": "2022-09-10 16:14:00+00:00",
         "n": 952348,
         "positives": 1003,
-        "pr_auc": 0.40551743102192567,
+        "pr_auc": 0.4055176900504537,
         "base_rate": 0.0010531864402508328
       },
       {
@@ -107,7 +115,7 @@
         "end": "2022-09-12 16:15:00+00:00",
         "n": 62704,
         "positives": 496,
-        "pr_auc": 0.7780382078250765,
+        "pr_auc": 0.7780386722612501,
         "base_rate": 0.007910181168665476
       },
       {
@@ -139,8 +147,8 @@
       "passes": true,
       "detail": "no monotone decline; spread 0.5929"
     },
-    "mean_pr_auc": 0.8282328370926126,
-    "sd_pr_auc": 0.25307965673449556
+    "mean_pr_auc": 0.8282329817855529,
+    "sd_pr_auc": 0.25307952554309715
   },
   "hard_negatives": {
     "n": 259435,
@@ -258,7 +266,7 @@
       },
       {
         "feature": "gfp_f234",
-        "psi": 0.40586964288866273,
+        "psi": 0.4058696428886628,
         "ks": 0.22595266332147357
       },
       {
@@ -315,10 +323,10 @@
   },
   "error_analysis": {
     "budget": 0.01,
-    "true_positives": 1402,
-    "false_positives": 8754,
-    "false_negatives": 395,
-    "true_negatives": 1005013,
+    "true_positives": 1407,
+    "false_positives": 8749,
+    "false_negatives": 390,
+    "true_negatives": 1005018,
     "slices": {
       "typology": {
         "(unannotated)": {
@@ -328,18 +336,18 @@
         },
         "STACK": {
           "positives": 140,
-          "caught": 125,
-          "recall": 0.8928571428571429
-        },
-        "RANDOM": {
-          "positives": 86,
-          "caught": 79,
-          "recall": 0.9186046511627907
+          "caught": 126,
+          "recall": 0.9
         },
         "BIPARTITE": {
           "positives": 74,
           "caught": 68,
           "recall": 0.918918918918919
+        },
+        "RANDOM": {
+          "positives": 86,
+          "caught": 80,
+          "recall": 0.9302325581395349
         },
         "FAN-IN": {
           "positives": 137,
@@ -353,8 +361,8 @@
         },
         "GATHER-SCATTER": {
           "positives": 401,
-          "caught": 383,
-          "recall": 0.9551122194513716
+          "caught": 386,
+          "recall": 0.9625935162094763
         },
         "SCATTER-GATHER": {
           "positives": 252,
@@ -375,45 +383,45 @@
         },
         "(138.5, 598.992]": {
           "positives": 65,
-          "caught": 22,
-          "recall": 0.3384615384615385
+          "caught": 23,
+          "recall": 0.35384615384615387
         },
         "(598.992, 2621.25]": {
           "positives": 252,
-          "caught": 152,
-          "recall": 0.6031746031746031
-        },
-        "(16868.03, 626035501453.45]": {
-          "positives": 551,
-          "caught": 471,
-          "recall": 0.8548094373865699
+          "caught": 153,
+          "recall": 0.6071428571428571
         },
         "(2621.25, 16868.03]": {
           "positives": 882,
           "caught": 755,
           "recall": 0.8560090702947846
+        },
+        "(16868.03, 626035501453.45]": {
+          "positives": 551,
+          "caught": 474,
+          "recall": 0.8602540834845736
         }
       },
       "hour_band": {
         "18-23": {
           "positives": 432,
-          "caught": 290,
-          "recall": 0.6712962962962963
+          "caught": 286,
+          "recall": 0.6620370370370371
         },
         "00-05": {
           "positives": 286,
-          "caught": 215,
-          "recall": 0.7517482517482518
+          "caught": 218,
+          "recall": 0.7622377622377622
         },
         "06-11": {
           "positives": 447,
-          "caught": 362,
-          "recall": 0.8098434004474273
+          "caught": 367,
+          "recall": 0.8210290827740492
         },
         "12-17": {
           "positives": 632,
-          "caught": 535,
-          "recall": 0.8465189873417721
+          "caught": 536,
+          "recall": 0.8481012658227848
         }
       },
       "payment_type": {
@@ -439,64 +447,64 @@
         },
         "ACH": {
           "positives": 1653,
-          "caught": 1399,
-          "recall": 0.8463399879007865
+          "caught": 1404,
+          "recall": 0.8493647912885662
         }
       },
       "pattern_position": {
         "early": {
           "positives": 521,
-          "caught": 488,
-          "recall": 0.9366602687140115
+          "caught": 490,
+          "recall": 0.9404990403071017
         },
         "middle": {
           "positives": 447,
-          "caught": 426,
-          "recall": 0.9530201342281879
+          "caught": 428,
+          "recall": 0.9574944071588367
         },
         "late": {
           "positives": 371,
-          "caught": 356,
-          "recall": 0.9595687331536388
+          "caught": 357,
+          "recall": 0.9622641509433962
         }
       }
     },
     "false_negative_profile": {
-      "count": 395,
-      "median_amount": 2918.83,
-      "self_transfer_rate": 0.012658227848101266,
+      "count": 390,
+      "median_amount": 2865.12,
+      "self_transfer_rate": 0.01282051282051282,
       "top_payment_types": {
-        "ACH": 254,
+        "ACH": 249,
         "Cheque": 68,
         "Credit Card": 38
       },
       "caught_for_contrast": {
-        "count": 1402,
-        "median_amount": 12848.035,
+        "count": 1407,
+        "median_amount": 12852.82,
         "self_transfer_rate": 0.0,
         "top_payment_types": {
-          "ACH": 1399,
+          "ACH": 1404,
           "Cheque": 3
         }
       }
     },
     "false_positive_profile": {
-      "count": 8754,
-      "median_amount": 4093.375,
-      "self_transfer_rate": 0.0003427004797806717,
+      "count": 8749,
+      "median_amount": 4076.73,
+      "self_transfer_rate": 0.00045719510801234427,
       "top_payment_types": {
-        "ACH": 6582,
-        "Cheque": 1453,
-        "Credit Card": 428
+        "ACH": 6565,
+        "Cheque": 1451,
+        "Credit Card": 438
       }
     }
   },
   "inference_latency": {
     "batch_size": 1,
     "repeats": 5,
-    "median_ms": 30.12318300170591,
-    "p95_ms": 206.22145819943395,
-    "min_ms": 20.887245002086274
+    "median_ms": 15.561000007437542,
+    "p95_ms": 16.58929999684915,
+    "min_ms": 13.012500014156103
   },
-  "elapsed_seconds": 1588.7
+  "elapsed_seconds": 656.8
 }

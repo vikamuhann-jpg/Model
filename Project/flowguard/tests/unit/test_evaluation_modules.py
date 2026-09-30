@@ -210,3 +210,37 @@ def test_search_samples_are_distinct_and_deterministic():
 def test_rolling_origin_rejects_impossible_fold_counts(transactions):
     with pytest.raises(ValueError):
         rolling_origin_folds(transactions.head(3), n_folds=5)
+
+
+def test_tree_shap_explains_the_model_that_actually_scores():
+    """Contributions must reconstruct the score the pipeline serves.
+
+    They did not before: ``shap.TreeExplainer`` truncates an early-stopped model
+    at ``best_iteration``, while ``predict_raw`` uses every tree. On the shipped
+    v2 model that is 741 trees against 841, so each bundle explained a model
+    that never produced its score. TreeSHAP's identity -- contributions plus the
+    bias equal the margin -- is what ties the two together, so it is asserted
+    against the scoring path itself.
+    """
+    xgb = pytest.importorskip("xgboost")
+    from flowguard.evaluation.interpretation import tree_shap
+    from flowguard.models.xgb import XGBModel
+
+    rng = np.random.default_rng(0)
+    X = pd.DataFrame(rng.normal(size=(300, 6)), columns=[f"f{i}" for i in range(6)])
+    y = (X["f0"] + rng.normal(scale=0.1, size=len(X)) > 0).astype(int).to_numpy()
+    X_val, y_val = X.iloc[200:], y[200:]
+
+    model = XGBModel(params={"max_depth": 3}, n_estimators=40).fit(
+        X.iloc[:200], y[:200], X_val, y_val
+    )
+
+    contributions = tree_shap(model.booster_, X_val)
+    bias = model.booster_.predict(
+        xgb.DMatrix(X_val, feature_names=list(X_val.columns)), pred_contribs=True
+    )[:, -1]
+
+    assert contributions.shape == X_val.shape
+    np.testing.assert_allclose(
+        contributions.sum(axis=1) + bias, model.predict_raw(X_val), atol=1e-4
+    )

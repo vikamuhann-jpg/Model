@@ -1,0 +1,170 @@
+{
+  "arms": [
+    {
+      "name": "A1",
+      "description": "transaction features, payment_type included",
+      "include_payment_type": true,
+      "include_gfp": false,
+      "include_adaptive": false,
+      "n_features": 13,
+      "pr_auc_runs": [
+        0.03758102347489008,
+        0.0451894861029844,
+        0.040418695790920646
+      ],
+      "pr_auc_mean": 0.04106306845626504,
+      "pr_auc_sd": 0.003844943171187225,
+      "recall_at_1pct_mean": 0.40802060338484186
+    },
+    {
+      "name": "A2",
+      "description": "transaction features, payment_type REMOVED",
+      "include_payment_type": false,
+      "include_gfp": false,
+      "include_adaptive": false,
+      "n_features": 12,
+      "pr_auc_runs": [
+        0.006637099593084946,
+        0.006506621224601085,
+        0.006356785506812342
+      ],
+      "pr_auc_mean": 0.006500168774832791,
+      "pr_auc_sd": 0.00014026839388016273,
+      "recall_at_1pct_mean": 0.11589403973509933
+    },
+    {
+      "name": "A3",
+      "description": "+ GFP graph features, payment_type included",
+      "include_payment_type": true,
+      "include_gfp": true,
+      "include_adaptive": false,
+      "n_features": 168,
+      "pr_auc_runs": [
+        0.1973966984833119,
+        0.20914759033548433,
+        0.20791611379592773
+      ],
+      "pr_auc_mean": 0.204820134204908,
+      "pr_auc_sd": 0.006458303341541892,
+      "recall_at_1pct_mean": 0.6618837380426784
+    },
+    {
+      "name": "A4",
+      "description": "+ GFP graph features, payment_type REMOVED",
+      "include_payment_type": false,
+      "include_gfp": true,
+      "include_adaptive": false,
+      "n_features": 167,
+      "pr_auc_runs": [
+        0.1368849038449003,
+        0.1429462095395969,
+        0.1400793265398538
+      ],
+      "pr_auc_mean": 0.13997014664145033,
+      "pr_auc_sd": 0.0030321274493005685,
+      "recall_at_1pct_mean": 0.5618101545253863
+    },
+    {
+      "name": "A5",
+      "description": "+ adaptive neighbourhood, no graph",
+      "include_payment_type": false,
+      "include_gfp": false,
+      "include_adaptive": true,
+      "n_features": 21,
+      "pr_auc_runs": [
+        0.0040760776652777895,
+        0.004136421726315327,
+        0.004013307340811376
+      ],
+      "pr_auc_mean": 0.0040752689108014975,
+      "pr_auc_sd": 6.156117723335077e-05,
+      "recall_at_1pct_mean": 0.07431935246504784
+    },
+    {
+      "name": "A6",
+      "description": "+ GFP graph + adaptive neighbourhood",
+      "include_payment_type": false,
+      "include_gfp": true,
+      "include_adaptive": true,
+      "n_features": 176,
+      "pr_auc_runs": [
+        0.10532240055719078,
+        0.11521429857025876,
+        0.10148599077531878
+      ],
+      "pr_auc_mean": 0.10734089663425611,
+      "pr_auc_sd": 0.007083244562910318,
+      "recall_at_1pct_mean": 0.5275938189845476
+    },
+    {
+      "name": "E_LEAK",
+      "description": "deliberate leak: random split, global fit",
+      "include_payment_type": false,
+      "include_gfp": false,
+      "include_adaptive": false,
+      "n_features": 12,
+      "pr_auc_runs": [
+        0.005200781412562537,
+        0.005116743274556545,
+        0.005314668901519139
+      ],
+      "pr_auc_mean": 0.00521073119621274,
+      "pr_auc_sd": 9.933723923156076e-05,
+      "recall_at_1pct_mean": 0.11375291375291376
+    }
+  ],
+  "pooled_seed_sd": 0.002959969333612154,
+  "two_sigma": 0.005919938667224308,
+  "comparisons": [
+    {
+      "arms": [
+        "A1",
+        "A2"
+      ],
+      "label": "cost of removing the payment_type artifact",
+      "delta": 0.03456289968143225,
+      "two_sigma": 0.005919938667224308,
+      "verdict": "REAL"
+    },
+    {
+      "arms": [
+        "A3",
+        "A1"
+      ],
+      "label": "graph features, artifact present",
+      "delta": 0.16375706574864296,
+      "two_sigma": 0.005919938667224308,
+      "verdict": "REAL"
+    },
+    {
+      "arms": [
+        "A4",
+        "A2"
+      ],
+      "label": "graph features, artifact removed",
+      "delta": 0.13346997786661755,
+      "two_sigma": 0.005919938667224308,
+      "verdict": "REAL"
+    },
+    {
+      "arms": [
+        "A5",
+        "A2"
+      ],
+      "label": "adaptive neighbourhood alone",
+      "delta": -0.002424899864031294,
+      "two_sigma": 0.005919938667224308,
+      "verdict": "within noise"
+    },
+    {
+      "arms": [
+        "A6",
+        "A4"
+      ],
+      "label": "adaptive ON TOP of graph -- the Tier B question",
+      "delta": -0.032629250007194216,
+      "two_sigma": 0.005919938667224308,
+      "verdict": "REAL"
+    }
+  ]
+}

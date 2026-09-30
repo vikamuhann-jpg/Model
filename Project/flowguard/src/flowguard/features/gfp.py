@@ -27,6 +27,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.features.base import FeatureExtractor
@@ -166,7 +167,7 @@ def varying_columns(parts: list[Path]) -> tuple[list[str], int]:
     lo: dict[str, float] = {}
     hi: dict[str, float] = {}
     for path in parts:
-        frame = pd.read_parquet(path)
+        frame = read_table(path)
         for col in frame.columns:
             if col == "_row":
                 continue
@@ -180,7 +181,10 @@ def varying_columns(parts: list[Path]) -> tuple[list[str], int]:
 
 
 def read_varying_chunks(
-    chunk_dir: Path, order: pd.Index | None = None
+    chunk_dir: Path,
+    order: pd.Index | None = None,
+    rows: pd.Index | None = None,
+    columns: list[str] | None = None,
 ) -> pd.DataFrame:
     """Load only the columns that carry information.
 
@@ -190,20 +194,35 @@ def read_varying_chunks(
     regardless of which patterns occur, so a large share of its columns are
     structurally constant here; selecting them out *during* the read rather
     than after is the difference between fitting in memory and not.
+
+    ``rows`` narrows the read to those row ids, one part at a time, so a caller
+    that needs a single partition never holds the whole corpus. Which columns
+    vary is still decided across *every* part, so the result carries the same
+    columns whichever rows are asked for -- three partitions read separately stay
+    comparable. ``columns`` overrides that choice for a caller that needs a fixed
+    set, such as a model's own feature list, rather than whatever varies here.
     """
     parts = sorted(Path(chunk_dir).glob("part_*.parquet"))
     if not parts:
         raise FileNotFoundError(f"no part files in {chunk_dir}")
 
-    keep, total = varying_columns(parts)
-    print(f"  {len(keep)} of {total} GFP features vary; reading only those",
-          flush=True)
+    if columns is None:
+        keep, total = varying_columns(parts)
+        print(f"  {len(keep)} of {total} GFP features vary; reading only those",
+              flush=True)
+    else:
+        keep = list(columns)
 
-    frames = [pd.read_parquet(p, columns=["_row"] + keep) for p in parts]
-    frame = pd.concat(frames, ignore_index=True).set_index("_row")
+    frames = []
+    for part in parts:
+        block = read_table(part, columns=["_row"] + keep).set_index("_row")
+        frames.append(block if rows is None else block[block.index.isin(rows)])
+    frame = pd.concat(frames)
     del frames
     gc.collect()
-    return frame.reindex(order) if order is not None else frame
+    if order is not None:
+        return frame.reindex(order)
+    return frame.loc[rows] if rows is not None else frame
 
 
 def read_chunks(chunk_dir: Path, order: pd.Index | None = None) -> pd.DataFrame:
@@ -216,7 +235,7 @@ def read_chunks(chunk_dir: Path, order: pd.Index | None = None) -> pd.DataFrame:
     if not parts:
         raise FileNotFoundError(f"no part files in {chunk_dir}")
     frame = pd.concat(
-        [pd.read_parquet(p) for p in parts], ignore_index=True
+        [read_table(p) for p in parts], ignore_index=True
     ).set_index("_row")
     if order is not None:
         frame = frame.reindex(order)
@@ -510,7 +529,7 @@ class GFPFeatures(FeatureExtractor):
         )
         frame.index.name = "_row"
         path = self.chunk_dir / f"part_{self.n_parts_written_:05d}.parquet"
-        frame.reset_index().to_parquet(path, index=False)
+        write_table(frame.reset_index(), path, index=False)
         self.n_parts_written_ += 1
 
     def to_metadata(self) -> dict:

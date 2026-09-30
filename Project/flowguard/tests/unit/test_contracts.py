@@ -13,6 +13,7 @@ JSON Schema implementation.
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -71,7 +72,11 @@ def contract(name: str) -> dict:
 
 
 def rows(path: Path) -> list[dict]:
-    return pd.read_csv(path).to_dict("records")
+    # keep_default_na=False: an empty CSV field is an empty string, which is what
+    # the contract says it is -- `top_features` is empty for every row that did
+    # not alert. Left to pandas it becomes NaN, a float, and the row then fails
+    # its own schema.
+    return pd.read_csv(path, keep_default_na=False).to_dict("records")
 
 
 # ---------------------------------------------------------------- the validator
@@ -228,3 +233,81 @@ def test_scoring_refuses_input_missing_a_feature_the_model_needs(tmp_path):
     source.drop(columns=["amount_received"]).to_csv(tmp_path / "tx.csv", index=False)
     with pytest.raises(score.ScoringError, match="absent"):
         score.run(PACKAGE, tmp_path / "tx.csv", tmp_path / "out", n_cases=0)
+
+
+def test_the_package_can_be_read_without_unpickling_anything():
+    """Everything needed to score must be readable as plain data.
+
+    The consumer on the LinuxONE VM cannot load our pickles at all: they need
+    scikit-learn's exact version and an importable `flowguard`, and their own
+    package is also called flowguard, so the encoder pickle collides on import.
+    A numpy-2 pickle additionally fails outright under numpy 1.x. These two JSON
+    files are the supported path, so their absence is a broken contract.
+    """
+    calibrator = json.loads((PACKAGE / "calibrator.json").read_text(encoding="utf-8"))
+    encoder = json.loads(
+        (PACKAGE / "encoders" / "categorical.json").read_text(encoding="utf-8")
+    )
+
+    assert calibrator["kind"] == "isotonic-piecewise"
+    assert len(calibrator["x"]) == len(calibrator["y"]) > 1
+    assert calibrator["x"] == sorted(calibrator["x"]), "interpolation needs sorted knots"
+    assert encoder["unseen_code"] == -1
+    assert encoder["categories"], "no vocabulary recorded"
+    for column, mapping in encoder["categories"].items():
+        assert sorted(mapping.values()) == list(range(len(mapping))), column
+
+
+def test_the_json_calibrator_reproduces_the_pickled_one():
+    """np.interp over the stored knots IS isotonic-with-clipping, not an approximation."""
+    np = pytest.importorskip("numpy")
+    pickle = pytest.importorskip("pickle")
+    from flowguard.models.xgb import PiecewiseCalibrator
+
+    with (PACKAGE / "calibrator.pkl").open("rb") as fh:
+        isotonic = pickle.load(fh)
+    from_json = PiecewiseCalibrator.from_json(
+        json.loads((PACKAGE / "calibrator.json").read_text(encoding="utf-8"))
+    )
+
+    # Inside the fitted range and well outside it, where "clip" is what matters.
+    knots = np.asarray(isotonic.X_thresholds_, dtype=float)
+    raw = np.concatenate([knots, np.linspace(knots[0] - 5, knots[-1] + 5, 5000)])
+    np.testing.assert_allclose(isotonic.predict(raw), from_json.predict(raw), atol=1e-6)
+
+
+def test_a_package_without_its_json_is_refused_rather_than_unpickled(tmp_path):
+    """The pickles must not be a silent fallback.
+
+    They load here and fail on the machine that matters: a pickle needs
+    scikit-learn's exact version and an importable `flowguard`, and one written
+    under numpy 2 cannot be read under numpy 1.x at all. A package that can only
+    be opened by unpickling is broken for its consumer, so loading it must say so
+    here rather than there.
+    """
+    from flowguard.pipeline.score import ScoringError, load_package
+
+    copy = tmp_path / PACKAGE.name
+    shutil.copytree(PACKAGE, copy)
+    (copy / "calibrator.json").unlink()
+
+    with pytest.raises(ScoringError) as raised:
+        load_package(copy)
+    assert "calibrator.json" in str(raised.value)
+
+
+def test_the_model_card_says_what_the_model_detects():
+    """The card must carry the structured/unstructured split, not a coverage caveat.
+
+    It used to describe unannotated positives as "only ~62% of positives carry a
+    typology label" -- true, and misleading, because those are exactly the
+    positives the model misses (27.9% recall against 95.3% for patterned). A
+    corpus's overall recall is mostly its mix of the two: LI-Small is 88%
+    unstructured and the same model scores 13.3% there. Without the split, the
+    headline reads as a general claim it cannot support.
+    """
+    card = (PACKAGE / "model_card.md").read_text(encoding="utf-8")
+
+    assert "Structured vs unstructured" in card
+    assert "Unstructured laundering is largely missed" in card
+    assert "## Fresh data" in card, "the LI-Small result must be on the card"

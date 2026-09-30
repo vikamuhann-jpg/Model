@@ -13,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 
@@ -72,6 +73,6 @@ def convert(raw_pickle: Path, out_dir: Path) -> tuple[Path, Path]:
     tx, labels = to_frames(load_graph(raw_pickle))
     tx_path = out_dir / "ETH_transactions.parquet"
     lb_path = out_dir / "ETH_labels.parquet"
-    tx.to_parquet(tx_path, index=False)
-    labels.to_parquet(lb_path, index=False)
+    write_table(tx, tx_path, index=False)
+    write_table(labels, lb_path, index=False)
     return tx_path, lb_path

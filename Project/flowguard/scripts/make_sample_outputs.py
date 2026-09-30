@@ -23,10 +23,11 @@ from pathlib import Path
 import pandas as pd
 
 from flowguard.data import schema as S
+from flowguard.evaluation.metrics import evaluate
 from flowguard.pipeline import score
 
 REPO = Path(__file__).resolve().parents[3]
-DATA = Path(os.environ.get("FLOWGUARD_DATA", "/mnt/c/Users/vikam/flowguard_data"))
+DATA = Path(os.environ.get("FLOWGUARD_DATA", str(REPO / "flowguard_data")))
 PACKAGE = REPO / "Project" / "flowguard" / "models" / "flowguard_V2_v1"
 #: v2 was trained on the untrimmed corpus (benchmark protocol); A4 on the trimmed one.
 CORPUS = DATA / "processed" / "benchmark" / "HI-Small_transactions.parquet"
@@ -88,6 +89,48 @@ def main() -> None:
         emit_from=window[S.TIMESTAMP].min(), emit_until=window[S.TIMESTAMP].max(),
     )
     print(json.dumps(summary, indent=2), flush=True)
+
+    # Labels for the window, so a consumer can recompute these numbers instead
+    # of trusting them. They are NOT an input to scoring: the package never sees
+    # them, and the window is 2.5 hours of one corpus -- the package's own
+    # metrics.json holds the figures measured over the full test period.
+    labels = window[[S.TRANSACTION_ID, S.IS_LAUNDERING]].rename(
+        columns={S.IS_LAUNDERING: "is_laundering"}
+    )
+    labels.to_csv(OUT / "labels.csv", index=False)
+
+    scored = pd.read_csv(OUT / "scores.csv").merge(labels, on=S.TRANSACTION_ID, how="left")
+    y = scored["is_laundering"].fillna(0).to_numpy().astype(int)
+    metrics = evaluate(y, scored["raw_score"].to_numpy())
+    alerts = scored["alert"].to_numpy().astype(bool)
+    caught = int((alerts & (y == 1)).sum())
+    window_metrics = {
+        "window": {
+            "from": str(window[S.TIMESTAMP].min()),
+            "to": str(window[S.TIMESTAMP].max()),
+            "rows": int(len(scored)),
+            "positives": int(y.sum()),
+            "base_rate": float(y.mean()),
+        },
+        "pr_auc": metrics.pr_auc,
+        "roc_auc": metrics.roc_auc,
+        "recall_at_1pct": metrics.at_budget(0.01).recall,
+        "at_shipped_threshold": {
+            "alerts": int(alerts.sum()),
+            "caught": caught,
+            "recall": caught / max(1, int(y.sum())),
+            "precision": caught / max(1, int(alerts.sum())),
+        },
+        "note": (
+            "A 2.5-hour window holding few positives, so the interval around "
+            "any of these numbers is wide. The full test-period figures are in "
+            "the package's metrics.json."
+        ),
+    }
+    (OUT / "window_metrics.json").write_text(
+        json.dumps(window_metrics, indent=2), encoding="utf-8"
+    )
+    print(json.dumps(window_metrics, indent=2), flush=True)
 
 
 if __name__ == "__main__":

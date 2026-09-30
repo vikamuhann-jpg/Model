@@ -5,8 +5,8 @@
 
 dataset:
   primary: HI-Small
-  raw_dir: /mnt/c/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Dataset_/IBM_Dataset
-  processed_dir: /mnt/c/Users/vikam/flowguard_data/processed
+  raw_dir: ../../../../Dataset_/IBM_Dataset
+  processed_dir: ../../flowguard_data/processed
   # Derived at ingestion, not copied from the planning documents.
   rows: 5077237
   # Trimmed corpus. The full corpus (benchmark protocol) has 515,088: the sparse

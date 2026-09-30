@@ -24,7 +24,8 @@ synthetic corpus, less on real networks (ADR-013). One transaction cannot be
 scored in isolation; a window with its history can (``--emit-from``). So scoring
 runs as a job and the product reads its results from a database.
 
-The package's pickles are loaded as trusted local files. Do not point
+The package is read as plain data -- JSON and XGBoost's own model format.
+Nothing here unpickles. Do not point
 ``--package`` at a model directory from an untrusted source.
 """
 
@@ -32,22 +33,24 @@ from __future__ import annotations
 
 import argparse
 import json
-import pickle
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.evaluation.interpretation import local_contributions
 from flowguard.evidence import build_bundle
+from flowguard.evidence.bundle import label_for
 from flowguard.features.behaviour import behaviour_features
 from flowguard.features.gfp import GFPFeatures, read_varying_chunks, windowed_params
-from flowguard.features.transaction import TransactionFeatures
-from flowguard.graph.trace import TraceIndex, TraceLimits
-from flowguard.models.xgb import XGBModel
+from flowguard.features.transaction import CategoricalEncoder, TransactionFeatures
+from flowguard.graph.trace import TraceIndex, TraceLimits, TraceResult
+from flowguard.models.xgb import PiecewiseCalibrator, XGBModel
 
 #: Alert budget whose threshold defines ``alert`` in scores.csv.
 DEFAULT_BUDGET = "0.01"
@@ -92,10 +95,31 @@ def load_package(path: Path, budget: str = DEFAULT_BUDGET) -> Package:
     path = Path(path)
     booster = xgb.Booster()
     booster.load_model(str(path / "model.json"))
-    with (path / "calibrator.pkl").open("rb") as fh:
-        calibrator = pickle.load(fh)
-    with (path / "encoders" / "categorical.pkl").open("rb") as fh:
-        encoder = pickle.load(fh)
+    # JSON first, pickle only for packages written before it existed. The JSON
+    # pair is what a consumer outside this repository can actually read, so it
+    # is also the path exercised here rather than a second, untested one.
+    calibrator_json = path / "calibrator.json"
+    encoder_json = path / "encoders" / "categorical.json"
+    if not (calibrator_json.exists() and encoder_json.exists()):
+        # Loud, rather than a quiet fallback to the pickles. A pickle needs
+        # scikit-learn's exact version and an importable ``flowguard``, and one
+        # written under numpy 2 cannot be read under numpy 1.x at all -- so the
+        # fallback works here and fails on the machine that matters. Packages
+        # built before 2026-09-26 predate these files and need rebuilding.
+        missing = [str(p.relative_to(path)) for p in (calibrator_json, encoder_json)
+                   if not p.exists()]
+        raise ScoringError(
+            f"{path.name} is missing {missing}, so it could only be loaded by "
+            "unpickling. Rebuild it with run_validation, which writes both, or "
+            "regenerate the two files from the pickles on the machine that wrote them."
+        )
+
+    calibrator = PiecewiseCalibrator.from_json(
+        json.loads(calibrator_json.read_text(encoding="utf-8"))
+    )
+    encoder = CategoricalEncoder.from_json(
+        json.loads(encoder_json.read_text(encoding="utf-8"))
+    )
 
     # Rebuild the training objects rather than re-implementing their maths:
     # XGBModel.predict is the exact code path validation measured.
@@ -137,7 +161,7 @@ def load_package(path: Path, budget: str = DEFAULT_BUDGET) -> Package:
 
 def read_transactions(path: Path) -> pd.DataFrame:
     path = Path(path)
-    tx = pd.read_parquet(path) if path.suffix == ".parquet" else pd.read_csv(path)
+    tx = read_table(path) if path.suffix == ".parquet" else pd.read_csv(path)
     missing = {
         S.TRANSACTION_ID,
         S.TIMESTAMP,
@@ -164,35 +188,60 @@ def read_transactions(path: Path) -> pd.DataFrame:
 
 
 def graph_features(
-    tx: pd.DataFrame, cache: Path | None = None, params: dict | None = None
+    tx: pd.DataFrame,
+    cache: Path | None = None,
+    params: dict | None = None,
+    rows: pd.Index | None = None,
+    columns: list[str] | None = None,
 ) -> pd.DataFrame:
     """Graph features for every row of ``tx``, indexed like ``tx``.
+
+    ``columns`` fixes which graph columns come back. Without it the cache is read
+    for whatever *varies in that cache*, which is right when training and wrong
+    when scoring: a column the model needs can be constant on another corpus or
+    in another window, and then simply vanishes. On LI-Small 25 of the shipped
+    model's columns do, so scoring any corpus but the training one failed.
 
     With ``cache``, reuse part files extracted earlier over this same frame --
     their row ids are positions in it. Without one, extract now: slow, and the
     reason scoring is a batch job.
+
+    ``rows`` narrows the result to those rows, reading one part file at a time
+    and keeping only what it needs. History rows still have to be *present* in
+    ``tx`` -- they build the graph and the behaviour timeline -- but their
+    engineered columns are never asked for, and loading them is what made
+    scoring a 50k window cost the whole corpus in memory: 5M rows x 192 float32
+    is 3.8 GB, against 39 MB for the window itself.
     """
     if cache is not None:
-        graph = read_varying_chunks(cache)
-        absent = tx.index.difference(graph.index)
+        graph = read_varying_chunks(cache, rows=rows, columns=columns)
+        wanted = tx.index if rows is None else pd.Index(rows)
+        absent = wanted.difference(graph.index)
         if len(absent):
             raise ScoringError(
-                f"graph cache covers {len(tx) - len(absent):,} of {len(tx):,} rows; "
-                "it must have been extracted over this exact transaction frame"
+                f"graph cache covers {len(wanted) - len(absent):,} of {len(wanted):,} "
+                "rows; it must have been extracted over this exact transaction frame"
             )
-        return graph.loc[tx.index]
+        return graph.loc[wanted]
     return GFPFeatures(params=dict(params or windowed_params(2.0))).run_streaming(
         S.feature_view(tx)
     )
 
 
 def feature_matrix(
-    pkg: Package, tx: pd.DataFrame, graph: pd.DataFrame
+    pkg: Package, tx: pd.DataFrame, graph: pd.DataFrame, rows: pd.Index | None = None
 ) -> pd.DataFrame:
-    tabular = pkg.extractor.run(S.feature_view(tx))
-    parts = [tabular, graph]
+    """The package's feature matrix for ``rows`` (default: all of ``tx``).
+
+    Behaviour features are always computed over the whole of ``tx``: they are an
+    account's history, so a row scored without the rows before it is a different
+    row. Only the *output* is narrowed.
+    """
+    wanted = tx.index if rows is None else pd.Index(rows)
+    tabular = pkg.extractor.run(S.feature_view(tx.loc[wanted]))
+    parts = [tabular, graph.loc[wanted]]
     if pkg.graph.get("behaviour"):
-        parts.append(behaviour_features(S.feature_view(tx)))
+        parts.append(behaviour_features(S.feature_view(tx)).loc[wanted])
     X = pd.concat(parts, axis=1)
     missing = [c for c in pkg.columns if c not in X.columns]
     if missing:
@@ -204,6 +253,36 @@ def feature_matrix(
             "currency_received, and that graph features used the training window."
         )
     return X[pkg.columns]
+
+
+#: Named drivers written into ``scores.csv`` for each alert.
+TOP_FEATURES = 3
+
+
+def top_features(
+    pkg: Package, X: pd.DataFrame, alert: np.ndarray, n: int = TOP_FEATURES
+) -> np.ndarray:
+    """The ``n`` features that pushed each alert's score up, named and signed.
+
+    A row of scores.csv is the only thing some consumers ever see, so an alert
+    that arrives without a reason cannot be triaged. Contributions are TreeSHAP
+    from the scoring model itself, computed for the alerts alone -- the full
+    matrix is one float per feature per row, which for a whole corpus is larger
+    than the corpus.
+    """
+    out = np.full(len(X), "", dtype=object)
+    if not alert.any():
+        return out
+
+    contributions = local_contributions(pkg.model, X.loc[alert])
+    params = pkg.graph.get("params")
+    for position, (_, row) in zip(np.flatnonzero(alert), contributions.iterrows()):
+        drivers = row[row > 0].sort_values(ascending=False).head(n)
+        out[position] = "; ".join(
+            f"{label_for(str(feature), params) or feature} (+{value:.3f})"
+            for feature, value in drivers.items()
+        )
+    return out
 
 
 def score_frame(pkg: Package, tx: pd.DataFrame, X: pd.DataFrame) -> pd.DataFrame:
@@ -230,7 +309,25 @@ def score_frame(pkg: Package, tx: pd.DataFrame, X: pd.DataFrame) -> pd.DataFrame
     rank[order] = np.arange(1, len(out) + 1)
     out["rank"] = rank
     out["alert"] = out["score"] >= pkg.threshold
+    out["top_features"] = top_features(pkg, X, out["alert"].to_numpy())
     return out
+
+
+def _rows_of(
+    X: pd.DataFrame,
+    rows: pd.Index,
+    features_for: Callable[[pd.Index], pd.DataFrame] | None,
+) -> pd.DataFrame:
+    """``X`` for ``rows``, building the ones it does not hold."""
+    missing = rows.difference(X.index)
+    if not len(missing):
+        return X.loc[rows]
+    if features_for is None:
+        raise ScoringError(
+            f"{len(missing):,} traced row(s) have no features and no way to build "
+            "them; pass features_for="
+        )
+    return pd.concat([X.loc[rows.intersection(X.index)], features_for(missing)]).loc[rows]
 
 
 def export_cases(
@@ -240,15 +337,26 @@ def export_cases(
     scores: pd.DataFrame,
     out_dir: Path,
     n_cases: int,
+    features_for: Callable[[pd.Index], pd.DataFrame] | None = None,
 ) -> list[str]:
-    """Evidence bundles for the highest-ranked alerts, one per subject account."""
+    """Evidence bundles for the highest-ranked alerts, one per subject account.
+
+    A trace follows hops, not time, so it can reach any row of ``tx`` -- rows
+    that were never scored and whose graph features are therefore not in ``X``.
+    ``features_for`` fetches those few rows on demand; without it, ``X`` must
+    already cover everything a trace can reach.
+    """
     if n_cases <= 0:
         return []
     index = TraceIndex(tx)
-    written: list[str] = []
+
+    # Trace first, fetch once. Every trace that needs history rows would
+    # otherwise re-read the whole feature cache on its own -- ten cases, twenty
+    # one part files each. The traces themselves are in-memory and cheap.
+    traced: list[tuple[int, TraceResult]] = []
     seen: set[str] = set()
     for i in scores.sort_values("rank").index:
-        if len(written) >= n_cases or not scores.at[i, "alert"]:
+        if len(traced) >= n_cases or not scores.at[i, "alert"]:
             break
         subject = scores.at[i, "source_account"]
         if subject in seen:
@@ -257,8 +365,17 @@ def export_cases(
         result = index.trace(
             subject, horizon=CASE_HORIZON, at=tx.at[i, S.TIMESTAMP], limits=CASE_LIMITS
         )
-        if result.n_edges == 0:
-            continue
+        if result.n_edges:
+            traced.append((i, result))
+
+    if traced and features_for is not None:
+        wanted = pd.Index([]).append([r.edges.index for _, r in traced]).unique()
+        missing = wanted.difference(X.index)
+        if len(missing):
+            X = pd.concat([X, features_for(missing)])
+
+    written: list[str] = []
+    for i, result in traced:
         bundle = build_bundle(
             result,
             score=float(scores.at[i, "score"]),
@@ -271,7 +388,9 @@ def export_cases(
                 "uses_payment_type": pkg.uses_payment_type,
             },
             # By index, not position: edges keep the source frame's index.
-            contributions=local_contributions(pkg.model, X.loc[result.edges.index]),
+            contributions=local_contributions(
+                pkg.model, _rows_of(X, result.edges.index, features_for)
+            ),
             transactions=tx,
             gfp_params=pkg.graph["params"],
         )
@@ -299,20 +418,31 @@ def run(
     started = time.perf_counter()
     pkg = load_package(package, budget)
     tx = read_transactions(transactions)
-    X = feature_matrix(pkg, tx, graph_features(tx, graph_cache, pkg.graph["params"]))
 
     emit = pd.Series(True, index=tx.index)
     if emit_from is not None:
         emit &= tx[S.TIMESTAMP] >= pd.Timestamp(emit_from)
     if emit_until is not None:
         emit &= tx[S.TIMESTAMP] <= pd.Timestamp(emit_until)
-    scores = score_frame(pkg, tx[emit], X[emit])
+
+    # Features for the scored rows only. History rows still shape those features
+    # -- they are in `tx`, so they build the graph and the behaviour timeline --
+    # but materialising their engineered columns made a 50k-row window cost the
+    # whole corpus: 3.8 GB against 39 MB, which no 6 GB machine can pay.
+    def features_for(rows: pd.Index) -> pd.DataFrame:
+        graph = graph_features(tx, graph_cache, pkg.graph["params"], rows=rows,
+                               columns=[c for c in pkg.columns if c.startswith("gfp_")])
+        return feature_matrix(pkg, tx, graph, rows=rows)
+
+    X = features_for(tx.index[emit])
+    scores = score_frame(pkg, tx[emit], X)
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     scores.sort_values("rank").to_csv(out_dir / "scores.csv", index=False)
-    # Full frames: a case's trace may run back into the history rows.
-    cases = export_cases(pkg, tx, X, scores, out_dir, n_cases)
+    # A trace can reach history rows, whose features are not in X; those few are
+    # built on demand.
+    cases = export_cases(pkg, tx, X, scores, out_dir, n_cases, features_for)
 
     summary = {
         "model_id": pkg.model_id,

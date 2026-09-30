@@ -1,0 +1,95 @@
+{
+  "variant": "HI-Medium (contiguous prefix)",
+  "budget_minutes": 20,
+  "corpus_rows_offered": 4000000,
+  "rows_reached": 3000000,
+  "fraction_reached": 0.75,
+  "checkpoints": [
+    {
+      "rows": 500000,
+      "tx_per_s": 12516.0,
+      "elapsed_s": 39.9,
+      "block_seconds": 39.9
+    },
+    {
+      "rows": 750000,
+      "tx_per_s": 12745.0,
+      "elapsed_s": 58.8,
+      "block_seconds": 18.9
+    },
+    {
+      "rows": 1000000,
+      "tx_per_s": 12340.0,
+      "elapsed_s": 81.0,
+      "block_seconds": 22.2
+    },
+    {
+      "rows": 1250000,
+      "tx_per_s": 11418.0,
+      "elapsed_s": 109.5,
+      "block_seconds": 28.5
+    },
+    {
+      "rows": 1500000,
+      "tx_per_s": 9020.0,
+      "elapsed_s": 166.3,
+      "block_seconds": 56.8
+    },
+    {
+      "rows": 1750000,
+      "tx_per_s": 7120.0,
+      "elapsed_s": 245.8,
+      "block_seconds": 79.5
+    },
+    {
+      "rows": 2000000,
+      "tx_per_s": 5599.0,
+      "elapsed_s": 357.2,
+      "block_seconds": 111.4
+    },
+    {
+      "rows": 2250000,
+      "tx_per_s": 4550.0,
+      "elapsed_s": 494.5,
+      "block_seconds": 137.3
+    },
+    {
+      "rows": 2500000,
+      "tx_per_s": 3708.0,
+      "elapsed_s": 674.2,
+      "block_seconds": 179.7
+    },
+    {
+      "rows": 2750000,
+      "tx_per_s": 3096.0,
+      "elapsed_s": 888.2,
+      "block_seconds": 214.0
+    },
+    {
+      "rows": 3000000,
+      "tx_per_s": 2585.0,
+      "elapsed_s": 1160.5,
+      "block_seconds": 272.3
+    }
+  ],
+  "block_cost_ratios": [
+    0.47,
+    1.17,
+    1.28,
+    1.99,
+    1.4,
+    1.4,
+    1.23,
+    1.31,
+    1.19,
+    1.27
+  ],
+  "cost_is_super_linear": true,
+  "end_cumulative_tx_per_s": 2585.0,
+  "full_variant_rows": 31970000,
+  "projected_hours_floor_for_full_variant": 3.4,
+  "projection_note": "A floor, not an estimate. Throughput decays monotonically as vertices accumulate, and the per-block cost ratios above show the decay is super-linear, so the true cost of the full variant is strictly worse.",
+  "p8_threshold_tx_per_s": 1000,
+  "p8_passes_at_this_scale": true,
+  "verdict": "Sustains 2,585 tx/s at 3,000,000 rows; reached 75.0% of a 4,000,000-row prefix in 20 minutes. HI-Medium at 32M rows is impractical on this hardware."
+}

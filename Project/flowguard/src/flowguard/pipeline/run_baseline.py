@@ -18,6 +18,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from flowguard.data.io import read_table, write_table
 
 from flowguard.data import schema as S
 from flowguard.evaluation.metrics import evaluate, per_group_recall
@@ -52,7 +53,7 @@ def run(
 
     _print_header(f"FlowGuard baseline ladder -- {variant}")
     tx_path = processed_dir / f"{variant}_transactions.parquet"
-    df = pd.read_parquet(tx_path)
+    df = read_table(tx_path)
     if sample:
         # Head-sampling would be time-biased; take an even stride instead.
         df = df.iloc[:: max(1, len(df) // sample)].reset_index(drop=True)
