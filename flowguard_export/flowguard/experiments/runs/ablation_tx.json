@@ -1,0 +1,52 @@
+{
+  "arms": [
+    {
+      "name": "A1",
+      "description": "transaction features, payment_type included",
+      "include_payment_type": true,
+      "include_gfp": false,
+      "n_features": 13,
+      "pr_auc_runs": [
+        0.03758102347489008,
+        0.0451894861029844,
+        0.040418695790920646,
+        0.041026770493110064,
+        0.04362164786411588
+      ],
+      "pr_auc_mean": 0.04156752474520421,
+      "pr_auc_sd": 0.002951374314216798,
+      "recall_at_1pct_mean": 0.40971302428256073
+    },
+    {
+      "name": "A2",
+      "description": "transaction features, payment_type REMOVED",
+      "include_payment_type": false,
+      "include_gfp": false,
+      "n_features": 12,
+      "pr_auc_runs": [
+        0.006637099593084946,
+        0.006506621224601085,
+        0.006356785506812342,
+        0.0069639231705028865,
+        0.006346742467907547
+      ],
+      "pr_auc_mean": 0.0065622343925817615,
+      "pr_auc_sd": 0.0002543115762557267,
+      "recall_at_1pct_mean": 0.12141280353200883
+    }
+  ],
+  "pooled_seed_sd": 0.0016028429452362625,
+  "two_sigma": 0.003205685890472525,
+  "comparisons": [
+    {
+      "arms": [
+        "A1",
+        "A2"
+      ],
+      "label": "cost of removing the payment_type artifact",
+      "delta": 0.035005290352622453,
+      "two_sigma": 0.003205685890472525,
+      "verdict": "REAL"
+    }
+  ]
+}

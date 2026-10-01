@@ -1,0 +1,28 @@
+input: 50,263 test-period rows, 2022-09-08 16:13:00+00:00 .. 2022-09-08 18:46:00+00:00
+  192 of 235 GFP features vary; reading only those
+{
+  "model_id": "flowguard_V2_v1",
+  "git_commit": "d59a1254c41d203119f7264c1d16015c95a84b4c",
+  "feature_schema_hash": "7c58a20d069f9985",
+  "uses_payment_type": false,
+  "threshold": 0.01364365965127945,
+  "threshold_source": "validation @ 1.0% alert budget",
+  "n_transactions": 50263,
+  "n_alerts": 630,
+  "history_transactions": 5028082,
+  "case_ids": [
+    "FG-06436b78",
+    "FG-6fef29de",
+    "FG-1e2cb533",
+    "FG-2cf77da2",
+    "FG-dcdbcfa9",
+    "FG-1e270556",
+    "FG-14cf0822",
+    "FG-85f4a314",
+    "FG-82b960dd",
+    "FG-b21ffd83"
+  ],
+  "scored_at": "2026-09-22T12:35:51Z",
+  "seconds": 449.5
+}
+exit 0

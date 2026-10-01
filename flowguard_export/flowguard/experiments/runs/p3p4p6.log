@@ -1,0 +1,61 @@
+
+============================================================
+HI-Small
+============================================================
+5,077,237 rows | 155 of 215 graph features vary
+train 3,554,066 val 761,749 test 761,422 | test positives 906
+  tier0: PR-AUC 0.0069 recall@1% 0.1192 | 89,524 tx/s
+  tier1: PR-AUC 0.1362 recall@1% 0.5596
+  K=   1%  recall 0.1185 ( 20.9% of full)     29,947 tx/s  throughput PASS  recall FAIL
+  K=   2%  recall 0.1692 ( 29.9% of full)     17,981 tx/s  throughput PASS  recall FAIL
+  K=   5%  recall 0.2925 ( 51.6% of full)      8,178 tx/s  throughput PASS  recall FAIL
+  K=  10%  recall 0.3922 ( 69.2% of full)      4,285 tx/s  throughput PASS  recall FAIL
+
+============================================================
+ETH
+============================================================
+1,250,000 rows | 161 of 215 graph features vary
+train 875,000 val 187,505 test 187,495 | test positives 257
+  tier0: PR-AUC 0.0024 recall@1% 0.0233 | 75,190 tx/s
+  tier1: PR-AUC 0.0022 recall@1% 0.0428
+  K=   1%  recall 0.0428 (143.5% of full)     11,731 tx/s  throughput PASS  recall PASS
+  K=   2%  recall 0.0337 (113.0% of full)      6,362 tx/s  throughput PASS  recall PASS
+  K=   5%  recall 0.0246 ( 82.6% of full)      2,681 tx/s  throughput PASS  recall FAIL
+  K=  10%  recall 0.0311 (104.3% of full)      1,365 tx/s  throughput PASS  recall PASS
+
+wrote /mnt/c/Users/vikam/flowguard_data/p3_cascade.json
+P3 DONE
+P3 EXIT: 0
+5,077,237 rows | 155 of 215 graph features vary
+train 3,554,066 val 761,749 test 761,422 | features 167
+
+=== P4 typology hinting ===
+  tr: 1,529 annotated
+  va: 461 annotated
+  te: 564 annotated
+  seed 42: macro-F1 0.2389  ECE 0.1710
+  seed 7: macro-F1 0.2580  ECE 0.1478
+  seed 123: macro-F1 0.2600  ECE 0.1845
+
+  macro-F1 0.2523 vs random 0.1258
+  delta +0.1265 vs 2 sigma 0.1405 -> P4-a FAIL
+  ECE 0.1678 -> P4-b FAIL
+    BIPARTITE        F1 0.091
+    CYCLE            F1 0.079
+    FAN-IN           F1 0.257
+    FAN-OUT          F1 0.338
+    GATHER-SCATTER   F1 0.558
+    RANDOM           F1 0.013
+    SCATTER-GATHER   F1 0.342
+    STACK            F1 0.340
+
+=== P6 unsupervised spike ===
+  supervised PR-AUC 0.1400
+  isolation forest PR-AUC 0.0093
+  positives caught by IF and missed by supervised: [18, 20, 22] (mean 20.0)
+  ensemble PR-AUC 0.0395  delta -0.1004 vs 2 sigma 0.1101
+  P6-a PASS | P6-b FAIL
+
+wrote /mnt/c/Users/vikam/flowguard_data/p4p6.json
+P4P6 DONE
+P4P6 EXIT: 0

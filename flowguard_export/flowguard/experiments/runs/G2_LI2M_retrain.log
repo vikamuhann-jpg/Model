@@ -1,0 +1,12 @@
+loaded 2,000,493 transactions, 468 positives
+reusing 2,000,493 cached GFP rows in /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_paper_b1_LI2M
+  167 of 235 GFP features vary; reading only those
+dropped 8 timestamp-statistic columns
+behaviour features in 4s
+split {'train': 1200395, 'val': 400444, 'test': 399654}; 181 features; test positives 143
+  seed 42: F1 0.0063 (oracle 0.0127)  PR-AUC 0.0021
+  seed 7: F1 0.0038 (oracle 0.0205)  PR-AUC 0.0054
+  seed 123: F1 0.0059 (oracle 0.0205)  PR-AUC 0.0031
+
+F1 0.0053 ± 0.0013  PR-AUC 0.0035 ± 0.0017
+wrote /mnt/c/Users/vikam/flowguard_data/runs/G2_LI2M_retrain.json

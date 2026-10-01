@@ -1,0 +1,45 @@
+slice 2018-03-01..2018-04-30  2,024,455 rows  506,613 accounts  366 illicit
+
+capabilities — ETH-Phishing
+  [yes] account_level_labels       506,613 labelled accounts
+  [NO ] account_reference_table
+  [NO ] cross_currency
+  [yes] currency                   1 distinct
+  [NO ] payment_type
+  [yes] self_transfers             0.0% of rows
+  [yes] transaction_level_labels   base rate 0.0000%
+  [NO ] typology_annotations
+  disabled here:
+    E0_rule_baseline             needs payment_type
+    entity_features              needs account_reference_table
+    per_typology_recall          needs typology_annotations
+    purge_boundary_policy        needs typology_annotations
+    tx_cross_currency_feature    needs cross_currency
+    tx_payment_type_feature      needs payment_type
+    unseen_pattern_split         needs typology_annotations
+
+account partition: 247 illicit usable for training, 119 held out for evaluation (151,586 eval accounts)
+train=1,417,118 val=303,670 test=303,667
+
+=== reusing GFP chunks ===
+  189 of 215 GFP features vary; reading only those
+  chunks cover 1,250,000 of 2,024,455 rows (61.7%); truncating the slice to that contiguous prefix
+  after truncation: 148 illicit for training, 75 held out (98,742 eval accounts)
+  train=875,001 val=187,511 test=187,488
+189 varying graph features
+  T1 seed 42: account PR-AUC 0.0032
+  T1 seed 7: account PR-AUC 0.0029
+  T1 seed 123: account PR-AUC 0.0031
+T1: 9 feat  account PR-AUC 0.0031 +/- 0.0002
+  T2 seed 42: account PR-AUC 0.0529
+  T2 seed 7: account PR-AUC 0.0551
+  T2 seed 123: account PR-AUC 0.0521
+T2: 198 feat  account PR-AUC 0.0533 +/- 0.0015
+  T3 seed 42: account PR-AUC 0.0589
+  T3 seed 7: account PR-AUC 0.0593
+  T3 seed 123: account PR-AUC 0.0712
+T3: 208 feat  account PR-AUC 0.0631 +/- 0.0070
+
+T2 - T1 = +0.0503   2 sigma = 0.0017   => REAL
+T3 - T2 = +0.0098   2 sigma = 0.0085   => REAL
+exit 0

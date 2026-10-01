@@ -45,3 +45,9 @@ Project/flowguard/linuxone_with_data.zip
 # licence -- point people at Kaggle instead of redistributing it.
 Project/flowguard/linuxone/data/*
 !Project/flowguard/linuxone/data/.gitkeep
+
+flowguard_colab/
+flowguard_colab.zip
+*.whl
+*.zip
+*.gz

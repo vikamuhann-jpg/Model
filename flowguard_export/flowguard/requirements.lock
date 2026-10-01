@@ -1,0 +1,37 @@
+# Resolved on WSL2 Ubuntu 24.04 / CPython 3.12 -- the only platform where
+# snapml's GraphFeaturePreprocessor backend exists. See docs/ADR-001.
+# Regenerate: scripts/setup_wsl.sh then pip freeze
+cloudpickle==3.1.2
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.65.0
+iniconfig==2.3.0
+joblib==1.6.0
+kiwisolver==1.5.1
+llvmlite==0.49.0
+matplotlib==3.11.2
+narwhals==2.26.0
+networkx==3.6.1
+numba==0.67.0
+numpy==2.5.3
+packaging==26.3
+pandas==3.0.6
+pillow==12.3.0
+pluggy==1.6.0
+pyarrow==25.0.1
+Pygments==2.21.0
+pyparsing==3.3.2
+pytest==9.1.1
+python-dateutil==2.9.0.post0
+PyYAML==6.0.3
+scikit-learn==1.9.1
+scipy==1.18.1
+setuptools==84.0.0
+shap==0.52.0
+six==1.17.0
+slicer==0.0.8
+snapml==1.17.2
+threadpoolctl==3.7.0
+tqdm==4.70.1
+wheel==0.48.0
+xgboost==3.4.1

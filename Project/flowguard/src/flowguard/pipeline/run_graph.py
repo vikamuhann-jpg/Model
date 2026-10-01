@@ -99,8 +99,7 @@ def run(
             # The part files are the cache. Writing a monolithic copy as well
             # would double the disk and re-introduce the 4.4 GB peak that
             # chunking exists to avoid.
-            print(f"  cache = {self_parts} ({len(list(chunk_dir.glob('part_*.parquet')))} parts)"
-                  .replace("{self_parts}", str(chunk_dir)))
+            print(f"  cache = {chunk_dir} ({len(list(chunk_dir.glob('part_*.parquet')))} parts)")
 
     # Drop all-constant columns: GFP emits a fixed feature block regardless of
     # which patterns actually occur, so many are structurally zero here.
@@ -136,6 +135,7 @@ def run(
         return pd.concat([tabular, varying.loc[part.index]], axis=1)
 
     X_train, X_val, X_test = build(train_df), build(val_df), build(test_df)
+    n_varying = int(varying.shape[1])
     del varying
     gc.collect()
     print(f"combined feature count: {X_train.shape[1]}", flush=True)
@@ -185,7 +185,7 @@ def run(
                 "family": "gfp+tx",
                 "count": X_train.shape[1],
                 "gfp": gfp.to_metadata(),
-                "gfp_varying": int(varying.shape[1]),
+                "gfp_varying": n_varying,
             },
             model=model.to_metadata(),
             metrics={
@@ -253,6 +253,7 @@ def main(argv: list[str] | None = None) -> int:
         args.registry,
         seed=args.seed,
         sample=args.sample,
+        head=args.head,
         cache=args.cache,
         window_days=args.window_days,
         experiment_id=args.experiment_id,

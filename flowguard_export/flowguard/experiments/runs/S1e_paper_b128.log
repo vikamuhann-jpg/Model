@@ -1,0 +1,17 @@
+loaded 5,078,345 transactions, 5,177 positives
+extracting GFP, batch_size=128 -> /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_paper_b128
+    2,000,000/5,078,345 (39.4%)     5,763 tx/s  ~8.9 min left
+    4,000,000/5,078,345 (78.8%)     3,266 tx/s  ~5.5 min left
+  wrote 21 parts to /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_paper_b128
+  1824s, 2,785 tx/s
+  192 of 235 GFP features vary; reading only those
+split {'train': 3047216, 'val': 1015565, 'test': 1015564}; 205 features; test positives 1,797
+  seed 42: F1 0.4987 (oracle 0.5175)  PR-AUC 0.4844
+  seed 7: F1 0.5235 (oracle 0.5510)  PR-AUC 0.5250
+  seed 123: F1 0.5561 (oracle 0.5658)  PR-AUC 0.5381
+  seed 2024: F1 0.5121 (oracle 0.5475)  PR-AUC 0.5128
+  seed 31337: F1 0.5279 (oracle 0.5512)  PR-AUC 0.5182
+
+F1 0.5237 ± 0.0214  PR-AUC 0.5157 ± 0.0199
+wrote /mnt/c/Users/vikam/flowguard_data/runs/S1e_paper_b128.json
+exit 0
