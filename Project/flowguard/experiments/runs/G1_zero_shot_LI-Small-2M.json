@@ -1,0 +1,82 @@
+{
+  "package": "flowguard_V2_v1",
+  "variant": "LI-Small-2M",
+  "cache": "gfp_paper_b1_LI2M",
+  "package_threshold": 0.01364365965127945,
+  "threshold_source": "validation @ 1.0% alert budget",
+  "validation": {
+    "rows": 400444,
+    "positives": 104,
+    "pr_auc": 0.0034965181204384267,
+    "roc_auc": 0.9090559082472207,
+    "f1_oracle": 0.028846153846153844,
+    "recall_at_1pct": 0.19230769230769232,
+    "precision_at_1pct": 0.004995004995004995,
+    "shipped_threshold": {
+      "alert_rate": 0.007646512371267893,
+      "recall": 0.15384615384615385,
+      "precision": 0.005225342913128674,
+      "f1": 0.01010739102969046
+    },
+    "recall_at_1pct_by_rail": {
+      "ACH": {
+        "positives": 62,
+        "recall": 0.27419354838709675
+      },
+      "Bitcoin": {
+        "positives": 5,
+        "recall": 0.0
+      },
+      "Cash": {
+        "positives": 7,
+        "recall": 0.14285714285714285
+      },
+      "Cheque": {
+        "positives": 19,
+        "recall": 0.05263157894736842
+      },
+      "Credit Card": {
+        "positives": 11,
+        "recall": 0.09090909090909091
+      }
+    }
+  },
+  "test": {
+    "rows": 399654,
+    "positives": 143,
+    "pr_auc": 0.004873885431348528,
+    "roc_auc": 0.9038188696170578,
+    "f1_oracle": 0.031088082901554407,
+    "recall_at_1pct": 0.13286713286713286,
+    "precision_at_1pct": 0.0047535651738804105,
+    "shipped_threshold": {
+      "alert_rate": 0.013369064240568091,
+      "recall": 0.16783216783216784,
+      "precision": 0.004491858506457047,
+      "f1": 0.008749544294567991
+    },
+    "recall_at_1pct_by_rail": {
+      "ACH": {
+        "positives": 78,
+        "recall": 0.21794871794871795
+      },
+      "Bitcoin": {
+        "positives": 4,
+        "recall": 0.0
+      },
+      "Cash": {
+        "positives": 10,
+        "recall": 0.0
+      },
+      "Cheque": {
+        "positives": 27,
+        "recall": 0.07407407407407407
+      },
+      "Credit Card": {
+        "positives": 24,
+        "recall": 0.0
+      }
+    },
+    "f1_local_val_threshold": 0.02069857697283312
+  }
+}

@@ -1,0 +1,16 @@
+corpus 5,077,237 rows
+index built in 12.3s over 515,078 accounts
+horizon 2: p50  118.12 ms | p95   145.84 ms | max  1272.05 ms | mean   161.5 edges | truncated 33.0%
+horizon 3: p50  118.38 ms | p95   144.44 ms | max   186.03 ms | mean   311.4 edges | truncated 34.2%
+horizon 4: p50  137.14 ms | p95   168.53 ms | max   190.91 ms | mean   490.5 edges | truncated 34.2%
+
+P1-c (p95 < 2000 ms at horizon 4): PASS -- 168.53 ms
+
+busiest account 70:100428660: forward trace from 70:100428660 | horizon 3 | 2,588 transactions, 183 terminal accounts | TRUNCATED: 9 vertices hit the degree cap
+ depth  n_transactions  n_accounts       amount
+     1              64          63  86013521.49
+     2            1073         155 210267435.30
+     3            1451         186 837523975.82
+
+P1 BENCH DONE
+EXIT: 0

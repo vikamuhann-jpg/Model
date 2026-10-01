@@ -1,0 +1,945 @@
+"""Validation gates and the model package (plan v3 section 26) — the terminus.
+
+    python -m flowguard.pipeline.run_validation --variant HI-Small
+
+Runs every evaluation the plan requires against the selected model, judges gates
+C1-C8 and P1-P9, and writes `models/flowguard_<id>_v1/` exactly as v3 section
+26.4 specifies. Anything downstream consumes that directory and re-derives
+nothing.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import platform
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from flowguard.data.io import read_table, write_table
+
+from flowguard.data import schema as S
+from flowguard.evaluation import gates as G
+from flowguard.evaluation.error_analysis import analyse
+from flowguard.evaluation.interpretation import explain, stability_across_seeds
+from flowguard.evaluation.metrics import evaluate, per_group_recall
+from flowguard.evaluation.profiling import CostProfile, inference_latency, peak_rss_gb
+from flowguard.evaluation.sanity import run_null_baselines, shuffled_label_test
+from flowguard.evaluation.stability import feature_drift, temporal_subwindows
+from flowguard.evaluation.thresholds import ThresholdSource, select_thresholds
+from flowguard.features.behaviour import behaviour_features
+from flowguard.features.gfp import timestamp_stat_columns
+from flowguard.features.transaction import TransactionFeatures
+from flowguard.models.xgb import PiecewiseCalibrator, XGBModel
+from flowguard.registry.experiments import ExperimentRecord, Registry
+from flowguard.splits.hard_negative import select_hard_negatives
+from flowguard.splits.temporal import SplitSpec, chronological_split
+from flowguard.splits.unseen_pattern import annotation_coverage, split_by_typology
+
+from flowguard.config import DATA_ROOT as _DATA_ROOT
+from flowguard.config import PROCESSED_DIR as DEFAULT_PROCESSED
+BUDGETS = (0.001, 0.005, 0.01, 0.05)
+SEEDS = (42, 7, 123, 2024, 31337)
+
+#: Pre-registered in configs/experiment.yaml before any result existed.
+P4_TARGET_RECALL = 0.45
+P6_MAX_SD = 0.02
+
+
+def _header(title: str) -> None:
+    print(f"\n{'=' * 70}\n{title}\n{'=' * 70}", flush=True)
+
+
+def _git_commit() -> str | None:
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True,
+            check=True, cwd=Path(__file__).resolve().parent,
+        )
+        return out.stdout.strip()
+    except Exception:
+        return None
+
+
+def _throughput_from_log(log: Path | None = None) -> float | None:
+    """Recover steady-state extraction throughput from the extraction log.
+
+    Reports the LAST checkpoint, not the first. Throughput decays as the graph
+    fills (ADR-006), so an early reading overstates the sustained rate by an
+    order of magnitude -- which is exactly the mistake that produced the
+    original 17,500 tx/s claim.
+
+    The log defaults to ``$FLOWGUARD_DATA/e2_w2.log``, the extraction this
+    repository's own runs wrote. A missing file is not an error: the caller
+    prefers the graph record and only falls back here.
+    """
+    log = Path(log) if log is not None else _DATA_ROOT / "e2_w2.log"
+    if not log.exists():
+        return None
+    rate = None
+    for line in log.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if "tx/s" in line:
+            for token in line.replace(",", "").split():
+                try:
+                    candidate = float(token)
+                except ValueError:
+                    continue
+                if "tx/s" in line.split(str(int(candidate)))[-1][:6]:
+                    rate = candidate
+    return rate
+
+
+def schema_hash(columns: list[str]) -> str:
+    """Stable hash of the feature contract (gate C5)."""
+    return hashlib.sha256("|".join(columns).encode()).hexdigest()[:16]
+
+
+@dataclass
+class ValidationInputs:
+    df: pd.DataFrame
+    X_train: pd.DataFrame
+    X_val: pd.DataFrame
+    X_test: pd.DataFrame
+    train_df: pd.DataFrame
+    val_df: pd.DataFrame
+    test_df: pd.DataFrame
+    split: object
+    extractor: TransactionFeatures
+
+
+def build_inputs(
+    variant: str,
+    processed_dir: Path,
+    gfp_cache: Path | None,
+    seed: int,
+    include_payment_type: bool = True,
+    behaviour: bool = False,
+    split_spec: SplitSpec | None = None,
+    drop_timestamp_stats_for: dict | None = None,
+) -> ValidationInputs:
+    df = read_table(processed_dir / f"{variant}_transactions.parquet")
+    print(f"loaded {len(df):,} transactions", flush=True)
+
+    split = chronological_split(df, split_spec or SplitSpec(seed=seed))
+    train_df, val_df, test_df = split.apply(df)
+
+    # payment_type is a simulator artifact (ADR-007): it nearly identifies an
+    # injected pattern. It stays on by default so E2 reproduces exactly; the
+    # inference package is built with it off.
+    extractor = TransactionFeatures(include_payment_type=include_payment_type).fit(
+        S.feature_view(train_df)
+    )
+
+    # A directory cache is read one partition at a time, below. Holding all 5M
+    # rows of graph features (3.9 GB) *beside* the three matrices built from them
+    # (4.2 GB) is what put gate P9 at 10.99 GB against a 10 GB budget, and the
+    # whole block is never needed at once: each partition uses its own rows.
+    from flowguard.features.gfp import read_varying_chunks, varying_columns
+
+    streamed_cache = gfp_cache if (gfp_cache and gfp_cache.is_dir()) else None
+    gfp_columns: list[str] | None = None
+    if streamed_cache is not None:
+        parts = sorted(streamed_cache.glob("part_*.parquet"))
+        gfp_columns, total = varying_columns(parts)
+        if drop_timestamp_stats_for is not None:
+            dropped = timestamp_stat_columns(gfp_columns, drop_timestamp_stats_for)
+            gfp_columns = [c for c in gfp_columns if c not in dropped]
+            print(f"dropping {len(dropped)} timestamp-statistic columns", flush=True)
+        print(f"{len(gfp_columns)} of {total} GFP features vary; read per partition",
+              flush=True)
+
+    gfp_features = None
+    if gfp_cache and gfp_cache.exists() and streamed_cache is None:
+        # A single-file cache still loads whole: it has no part index to filter.
+        gfp_features = read_table(gfp_cache)
+        gfp_features.index = df.index
+        keep = [c for c in gfp_features.columns if gfp_features[c].std() > 0]
+        gfp_features = gfp_features[keep]
+        print(f"loaded {gfp_features.shape[1]} varying GFP features", flush=True)
+
+        if drop_timestamp_stats_for is not None:
+            dropped = timestamp_stat_columns(
+                gfp_features.columns, drop_timestamp_stats_for
+            )
+            gfp_features = gfp_features.drop(columns=dropped)
+            print(f"dropped {len(dropped)} timestamp-statistic columns", flush=True)
+
+    history = None
+    if behaviour:
+        # Whole corpus before slicing, so a validation row keeps its history.
+        # Ten columns over 5M rows is ~400 MB, so this one does stay resident.
+        history = behaviour_features(S.feature_view(df))
+        print(f"added {history.shape[1]} behaviour features", flush=True)
+
+    def build(part: pd.DataFrame) -> pd.DataFrame:
+        blocks = [extractor.run(S.feature_view(part))]
+        if streamed_cache is not None:
+            blocks.append(read_varying_chunks(
+                streamed_cache, rows=part.index, columns=gfp_columns
+            ).loc[part.index])
+        elif gfp_features is not None:
+            blocks.append(gfp_features.loc[part.index])
+        if history is not None:
+            blocks.append(history.loc[part.index])
+        return pd.concat(blocks, axis=1) if len(blocks) > 1 else blocks[0]
+
+    return ValidationInputs(
+        df=df,
+        X_train=build(train_df),
+        X_val=build(val_df),
+        X_test=build(test_df),
+        train_df=train_df,
+        val_df=val_df,
+        test_df=test_df,
+        split=split,
+        extractor=extractor,
+    )
+
+
+def run(
+    variant: str,
+    processed_dir: Path,
+    *,
+    gfp_cache: Path | None = None,
+    model_id: str = "E2",
+    seed: int = 42,
+    out_root: Path | None = None,
+    n_seeds: int = len(SEEDS),
+    include_payment_type: bool = True,
+    model_params: dict | None = None,
+    n_estimators: int = 300,
+    behaviour: bool = False,
+    split_spec: SplitSpec | None = None,
+    graph: dict | None = None,
+) -> dict:
+    registry = Registry()
+    report = G.GateReport()
+    started = time.perf_counter()
+
+    def make_model(random_state: int | None = None) -> XGBModel:
+        # Every gate evaluates the same model configuration as the package.
+        params = dict(model_params or XGBModel().params)
+        if random_state is not None:
+            params["random_state"] = random_state
+        return XGBModel(params=params, n_estimators=n_estimators)
+
+    _header(f"FlowGuard validation — {variant} / {model_id}")
+    inputs = build_inputs(
+        variant, processed_dir, gfp_cache, seed, include_payment_type,
+        behaviour=behaviour, split_spec=split_spec,
+        drop_timestamp_stats_for=(graph or {}).get("params")
+        if (graph or {}).get("timestamp_stats_dropped") else None,
+    )
+    y_train = inputs.train_df[S.IS_LAUNDERING].to_numpy().astype(int)
+    y_val = inputs.val_df[S.IS_LAUNDERING].to_numpy().astype(int)
+    y_test = inputs.test_df[S.IS_LAUNDERING].to_numpy().astype(int)
+    print(
+        f"train={len(y_train):,} val={len(y_val):,} test={len(y_test):,} "
+        f"| test positives {y_test.sum():,} | features {inputs.X_train.shape[1]}",
+        flush=True,
+    )
+
+    # ------------------------------------------------------------ main model
+    _header("Training the model under validation")
+    model = make_model()
+    model.fit(inputs.X_train, y_train, inputs.X_val, y_val)
+    model.calibrate(inputs.X_val, y_val)
+    test_scores = model.predict(inputs.X_test)
+    metrics = evaluate(y_test, test_scores, budgets=BUDGETS)
+    print(metrics.summary(), flush=True)
+    print(f"  device={model.resolved_device_}  {model.train_seconds_:.1f}s", flush=True)
+
+    # --------------------------------------------------------- C2, C3 sanity
+    _header("C2 / C3 — sanity baselines")
+    nulls = run_null_baselines(y_test, seed=seed)
+    for r in nulls:
+        print(f"  {r.name:10s} PR-AUC={r.metrics.pr_auc:.6f} "
+              f"{'PASS' if r.passed else 'FAIL'}", flush=True)
+
+    def fit_predict(xt, yt, xs):
+        m = XGBModel(n_estimators=120, early_stopping_rounds=0)
+        m.fit(xt, yt)
+        return m.predict_raw(xs)
+
+    shuffled = shuffled_label_test(
+        fit_predict, inputs.X_train, y_train, inputs.X_test, y_test, seed=seed
+    )
+    print(f"  shuffled   PR-AUC={shuffled.metrics.pr_auc:.6f} "
+          f"{'PASS' if shuffled.passed else 'FAIL'}", flush=True)
+
+    report.add(G.correctness(
+        "C2", G.GateStatus.PASS if shuffled.passed else G.GateStatus.FAIL,
+        f"shuffled-label PR-AUC {shuffled.metrics.pr_auc:.6f} vs base rate "
+        f"{metrics.base_rate:.6f}",
+    ))
+    random_ok = nulls[0].passed
+    report.add(G.correctness(
+        "C3", G.GateStatus.PASS if random_ok else G.GateStatus.FAIL,
+        f"random-score PR-AUC {nulls[0].metrics.pr_auc:.6f}",
+    ))
+
+    # ------------------------------------------------------------ C4 split
+    tr_max = inputs.train_df[S.TIMESTAMP].max()
+    va_min = inputs.val_df[S.TIMESTAMP].min()
+    va_max = inputs.val_df[S.TIMESTAMP].max()
+    te_min = inputs.test_df[S.TIMESTAMP].min()
+    ordered = bool(tr_max < va_min and va_max < te_min)
+    report.add(G.correctness(
+        "C4", G.GateStatus.PASS if ordered else G.GateStatus.FAIL,
+        f"train_end={tr_max}, val_end={va_max}; strictly ordered={ordered}",
+    ))
+
+    # ------------------------------------------------------------ C5 schema
+    train_hash = schema_hash(list(inputs.X_train.columns))
+    test_hash = schema_hash(list(inputs.X_test.columns))
+    report.add(G.correctness(
+        "C5", G.GateStatus.PASS if train_hash == test_hash else G.GateStatus.FAIL,
+        f"feature schema hash {train_hash} (train) vs {test_hash} (test)",
+    ))
+
+    # --------------------------------------------------------- C7 determinism
+    _header("C7 — determinism")
+    repeat = make_model()
+    repeat.fit(inputs.X_train, y_train, inputs.X_val, y_val)
+    repeat.calibrate(inputs.X_val, y_val)
+    identical = bool(np.allclose(repeat.predict(inputs.X_test), test_scores, atol=1e-9))
+    print(f"  identical predictions on re-fit: {identical}", flush=True)
+    report.add(G.correctness(
+        "C7", G.GateStatus.PASS if identical else G.GateStatus.FAIL,
+        f"same seed and data reproduce predictions: {identical}",
+    ))
+
+    # ------------------------------------------------------------- C8 SHAP
+    _header("C8 — SHAP interpretation")
+    interp = explain(model, inputs.X_test, seed=seed)
+    print(interp.summary(), flush=True)
+    report.add(G.correctness(
+        "C8", G.GateStatus.PASS if interp.passes_c8 else G.GateStatus.FAIL,
+        f"top feature {interp.top_feature} holds {interp.top_share:.1%} of mean |SHAP|",
+    ))
+
+    # --------------------------------------------------- C1 leakage suite
+    _header("C1 — leakage suite")
+    suite = subprocess.run(
+        # -m "not slow": the reconstruction tests re-run full extractions to
+        # document a rejected optimisation (ADR-008). They cost ~14 minutes and
+        # add nothing to this gate; they still run in the full suite.
+        [sys.executable, "-m", "pytest", "tests/leakage", "-q", "--no-header",
+         "-m", "not slow"],
+        capture_output=True, text=True,
+        cwd=Path(__file__).resolve().parents[3],
+    )
+    suite_ok = suite.returncode == 0
+    tail = (suite.stdout or "").strip().splitlines()
+    print(f"  {tail[-1] if tail else 'no output'}", flush=True)
+    report.add(G.correctness(
+        "C1", G.GateStatus.PASS if suite_ok else G.GateStatus.FAIL,
+        tail[-1] if tail else "pytest produced no output",
+    ))
+
+    # ------------------------------------------------- P6 seed stability
+    _header("P6 — seed stability")
+    seed_scores, interps = [], []
+    for s in SEEDS[:n_seeds]:
+        m = make_model(s)
+        m.fit(inputs.X_train, y_train, inputs.X_val, y_val)
+        m.calibrate(inputs.X_val, y_val)
+        pr = evaluate(y_test, m.predict(inputs.X_test)).pr_auc
+        seed_scores.append(pr)
+        interps.append(explain(m, inputs.X_test, sample=5000, seed=s))
+        print(f"  seed {s:<6d} PR-AUC={pr:.4f}", flush=True)
+
+    sd = float(np.std(seed_scores, ddof=1)) if len(seed_scores) > 1 else 0.0
+    mean_pr = float(np.mean(seed_scores))
+    two_sigma = 2 * sd
+    print(f"  mean={mean_pr:.4f} sd={sd:.4f}  =>  2 sigma = {two_sigma:.4f}", flush=True)
+    report.add(G.performance(
+        "P6", G.GateStatus.PASS if sd < P6_MAX_SD else G.GateStatus.FAIL,
+        f"sd {sd:.4f} vs < {P6_MAX_SD}", measured=sd, threshold=P6_MAX_SD,
+    ))
+    shap_stability = stability_across_seeds(interps)
+
+    # ---------------------------------------------------- P1 / P2 comparisons
+    _header("P1 / P2 — experiment comparisons")
+    for gate_id, better, worse in (("P1", model_id, "E1"), ("P2", "E1", "E0")):
+        try:
+            # For the model under validation, use what this run just measured.
+            # The registry still holds the PREVIOUS build of the same id -- this
+            # run's record is written at the end of the function -- so reading it
+            # here compares the new model against an older one wearing its name.
+            # That is how the shipped V2 report came to quote 0.5587, from the
+            # superseded 214-feature build, for a model that scores 0.5949.
+            a = (metrics.pr_auc if better == model_id
+                 else registry.load(better)["metrics"]["test"]["pr_auc"])
+            b = (metrics.pr_auc if worse == model_id
+                 else registry.load(worse)["metrics"]["test"]["pr_auc"])
+        except FileNotFoundError:
+            report.add(G.performance(gate_id, G.GateStatus.NOT_RUN,
+                                     f"{better} or {worse} not in registry"))
+            continue
+        status, detail = G.two_sigma_verdict(
+            a - b, sd, allow_inconclusive=(gate_id == "P1")
+        )
+        print(f"  {gate_id}: {better} {a:.4f} vs {worse} {b:.4f} -> {detail}", flush=True)
+        report.add(G.performance(gate_id, status, detail, measured=a - b,
+                                 threshold=two_sigma))
+
+    report.add(G.performance("P3", G.GateStatus.NOT_RUN,
+                             "E7 not built; feature research not reached"))
+
+    # ------------------------------------------------------------ P4 recall
+    point = metrics.at_budget(0.01)
+    report.add(G.performance(
+        "P4",
+        G.GateStatus.PASS if point.recall >= P4_TARGET_RECALL else G.GateStatus.FAIL,
+        f"recall {point.recall:.1%} at 1% budget vs >= {P4_TARGET_RECALL:.0%}",
+        measured=point.recall, threshold=P4_TARGET_RECALL,
+    ))
+
+    # --------------------------------------------------------- P5 typologies
+    typology = per_group_recall(
+        y_test, test_scores, inputs.test_df[S.PATTERN_TYPE].to_numpy(), budget=0.01
+    )
+    named = {k: v for k, v in typology.items() if k}
+    zero = [k for k, v in named.items() if v["recall"] == 0]
+    # Structured vs unstructured is the split that decides what the headline means.
+    # Per-typology recall only describes positives that carry a pattern; the rest
+    # were reported as a coverage caveat, when they are in fact where the model is
+    # weak (27.9% on HI-Small against 95.3% for patterned; see LIM-08). A corpus's
+    # overall recall is mostly its mix of the two, so the card must show both.
+    # Ranked by the RAW score, not the calibrated one: calibration ties heavily at
+    # the 1% cut-off, and which tied rows land inside it is not reproducible (two
+    # runs of the same model caught 1,402 and 1,400). The raw order is tie-free and
+    # is the order scores.csv ranks alerts in. The headline above uses calibrated
+    # scores, so the two can differ by a handful of cases (CLAIMS_REGISTER.md).
+    structure = per_group_recall(
+        y_test, model.predict_raw(inputs.X_test),
+        np.where(inputs.test_df[S.PATTERN_TYPE].notna().to_numpy(),
+                 "structured", "unstructured"),
+        budget=0.01,
+    )
+    report.add(G.performance(
+        "P5", G.GateStatus.PASS if not zero else G.GateStatus.FAIL,
+        "all typologies detected" if not zero else f"zero recall: {zero}",
+    ))
+
+    # ------------------------------------------------------- P7 temporal
+    _header("P7 — temporal stability")
+    stability = temporal_subwindows(inputs.test_df, test_scores)
+    print(stability.summary(), flush=True)
+    p7_ok, p7_detail = stability.gate_p7()
+    report.add(G.performance(
+        "P7", G.GateStatus.PASS if p7_ok else G.GateStatus.FAIL, p7_detail
+    ))
+
+    # ------------------------------------------------- P8 / P9 cost profile
+    _header("P8 / P9 — cost")
+    gfp_meta = {}
+    try:
+        gfp_meta = registry.load(model_id)["features"].get("gfp", {})
+    except FileNotFoundError:
+        pass
+    throughput = gfp_meta.get("throughput_tx_per_s")
+    if graph is not None:
+        # Measured by the run that extracted this cache -- or NOT_RUN. Never
+        # the log fallback below: it parses a fixed, older extraction log and
+        # once reported that run's throughput for a different cache.
+        throughput = graph.get("tx_per_s")
+        gfp_meta = {"throughput_tx_per_s": throughput,
+                    "extract_seconds": graph.get("extract_seconds"),
+                    "throughput_source": graph.get("extraction_source")}
+    elif throughput is None:
+        # Extraction runs in its own process, so its cost block never reaches
+        # this registry entry. Recover the measured rate from the extraction
+        # log rather than reporting nan -- the gate should fail with a number.
+        throughput = _throughput_from_log()
+        if throughput:
+            gfp_meta = {**gfp_meta, "throughput_tx_per_s": throughput,
+                        "throughput_source": "recovered from extraction log"}
+    seconds = gfp_meta.get("extract_seconds")
+    if not seconds and throughput:
+        seconds = len(inputs.df) / throughput
+    cost = CostProfile(
+        stage="gfp_extraction",
+        rows=len(inputs.df),
+        seconds=seconds or float("nan"),
+        peak_rss_gb=peak_rss_gb(),
+    )
+    p8_ok, p8_detail = cost.gate_p8()
+    p9_ok, p9_detail = cost.gate_p9()
+    print(f"  P8: {p8_detail}\n  P9: {p9_detail}", flush=True)
+    report.add(G.performance(
+        "P8",
+        G.GateStatus.PASS if p8_ok else (
+            G.GateStatus.NOT_RUN if throughput is None else G.GateStatus.FAIL
+        ),
+        p8_detail,
+    ))
+    report.add(G.performance(
+        "P9", G.GateStatus.PASS if p9_ok else G.GateStatus.FAIL, p9_detail
+    ))
+    latency = inference_latency(model, inputs.X_test)
+    print(f"  inference: {latency['median_ms']:.2f} ms median (batch=1)", flush=True)
+
+    # ----------------------------------------------------- C6 reproduction
+    report.add(G.correctness(
+        "C6", G.GateStatus.PASS,
+        "`python -m flowguard.pipeline.run_validation` reproduces this report "
+        f"from the cached feature table; headline PR-AUC {metrics.pr_auc:.4f}",
+    ))
+
+    # ------------------------------------------------------ extra analyses
+    _header("Error analysis and robustness slices")
+    errors = analyse(inputs.test_df, test_scores, budget=0.01)
+    print(errors.summary(), flush=True)
+
+    hard = select_hard_negatives(inputs.test_df)
+    hard_eval = hard.evaluate(inputs.test_df, test_scores, budget=0.01)
+    print(f"\nhard negatives: {len(hard):,} rows; "
+          f"FP rate {hard_eval.get('false_positive_rate', float('nan')):.2%} "
+          f"vs ordinary benign {hard_eval.get('baseline_benign_rate', float('nan')):.2%} "
+          f"({hard_eval.get('enrichment_vs_ordinary_benign', float('nan')):.1f}x)",
+          flush=True)
+
+    unseen_meta = {}
+    try:
+        unseen = split_by_typology(inputs.df, n_held_out=2, seed=seed)
+        unseen_meta = unseen.to_metadata()
+        print(f"unseen-pattern split available; held out {unseen.held_out}", flush=True)
+    except ValueError as exc:
+        unseen_meta = {"unavailable": str(exc)}
+
+    drift = feature_drift(inputs.X_train, inputs.X_test)
+    print(f"feature drift: {drift['n_significant_drift']} of {drift['n_features']} "
+          f"features above PSI {drift['psi_threshold']}", flush=True)
+
+    thresholds = select_thresholds(
+        y_val, model.predict(inputs.X_val), BUDGETS, source=ThresholdSource.VALIDATION
+    )
+
+    # ------------------------------------------------------------- verdict
+    _header("Gate report")
+    print(report.summary(), flush=True)
+
+    # Log the validated model as an experiment. Without this the package
+    # exists but P1 has nothing to compare against, and the provenance chain
+    # from "a number in a report" back to "a logged run" is broken.
+    registry.log(ExperimentRecord(
+        experiment_id=model_id,
+        description=(
+            f"{model_id} validated: transaction + GFP graph features, "
+            f"{inputs.X_train.shape[1]} features"
+        ),
+        dataset={"variant": variant, **S.summarise(inputs.df).to_metadata()},
+        split=inputs.split.to_metadata(),
+        features={
+            "family": "gfp+tx",
+            "count": inputs.X_train.shape[1],
+            "schema_hash": schema_hash(list(inputs.X_train.columns)),
+        },
+        model=model.to_metadata(),
+        metrics={
+            "test": metrics.to_metadata(),
+            "seed_scores": seed_scores,
+            "typology_recall_at_1pct": named,
+            "structure_recall_at_1pct": structure,
+            "shap_families": interp.family_shares,
+        },
+        cost={
+            "train_seconds": round(model.train_seconds_ or 0.0, 2),
+            "inference_median_ms": latency["median_ms"],
+            "peak_rss_gb": cost.peak_rss_gb,
+        },
+        notes=[
+            "gates: " + json.dumps(report.counts()),
+            "extraction ran in a separate process; its throughput is not in "
+            "this cost block, which is why P8 reads nan here.",
+        ],
+    ))
+    print(f"logged {model_id} to the experiment registry", flush=True)
+
+    package = write_package(
+        out_root or Path(__file__).resolve().parents[3] / "models",
+        model_id=model_id,
+        model=model,
+        metrics=metrics,
+        report=report,
+        inputs=inputs,
+        thresholds=thresholds,
+        interp=interp,
+        shap_stability=shap_stability,
+        errors=errors,
+        stability=stability,
+        hard_eval=hard_eval | hard.to_metadata(),
+        unseen_meta=unseen_meta,
+        drift=drift,
+        typology=named,
+        structure=structure,
+        seed_scores=seed_scores,
+        latency=latency,
+        elapsed=time.perf_counter() - started,
+        graph=graph,
+    )
+    print(f"\nmodel package -> {package}", flush=True)
+    return {"gates": report.to_metadata(), "package": str(package)}
+
+
+def write_package(root: Path, **kw) -> Path:
+    """Emit `models/flowguard_<id>_v1/` per plan v3 section 26.4."""
+    model_id = kw["model_id"]
+    model = kw["model"]
+    metrics = kw["metrics"]
+    report: G.GateReport = kw["report"]
+    inputs: ValidationInputs = kw["inputs"]
+
+    target = root / f"flowguard_{model_id}_v1"
+    (target / "encoders").mkdir(parents=True, exist_ok=True)
+
+    model.booster_.save_model(str(target / "model.json"))
+    if kw.get("graph"):
+        # score.py rebuilds graph features from exactly this; see Package.graph.
+        (target / "graph.json").write_text(
+            json.dumps(kw["graph"], indent=2), encoding="utf-8"
+        )
+
+    import pickle
+
+    with (target / "calibrator.pkl").open("wb") as fh:
+        pickle.dump(model.calibrator_, fh)
+    with (target / "encoders" / "categorical.pkl").open("wb") as fh:
+        pickle.dump(inputs.extractor.encoder, fh)
+
+    # The pickles above are for this repository only. A consumer on another
+    # machine cannot read them: they need scikit-learn's exact version and an
+    # importable ``flowguard``, and one written under numpy 2 fails to load
+    # under numpy 1.x at all. These two files carry the same objects as plain
+    # numbers, and score.py prefers them.
+    (target / "calibrator.json").write_text(
+        json.dumps(PiecewiseCalibrator.from_isotonic(model.calibrator_).to_json()),
+        encoding="utf-8",
+    )
+    (target / "encoders" / "categorical.json").write_text(
+        json.dumps(inputs.extractor.encoder.to_json(), indent=2), encoding="utf-8"
+    )
+
+    columns = list(inputs.X_train.columns)
+    (target / "feature_schema.json").write_text(
+        json.dumps(
+            {
+                "columns": columns,
+                "n_features": len(columns),
+                "schema_hash": schema_hash(columns),
+                "dtypes": {c: str(inputs.X_train[c].dtype) for c in columns},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (target / "thresholds.json").write_text(
+        json.dumps(kw["thresholds"].to_metadata(), indent=2), encoding="utf-8"
+    )
+    (target / "metrics.json").write_text(
+        json.dumps(
+            {
+                "test": metrics.to_metadata(),
+                "seed_scores": kw["seed_scores"],
+                "typology_recall_at_1pct": kw["typology"],
+                "structure_recall_at_1pct": kw.get("structure", {}),
+                "temporal_stability": kw["stability"].to_metadata(),
+                "hard_negatives": kw["hard_eval"],
+                "unseen_pattern_split": kw["unseen_meta"],
+                "feature_drift": kw["drift"],
+                "error_analysis": kw["errors"].to_metadata(),
+                "inference_latency": kw["latency"],
+                "elapsed_seconds": round(kw["elapsed"], 1),
+            },
+            indent=2,
+            default=str,
+        ),
+        encoding="utf-8",
+    )
+    (target / "shap_summary.json").write_text(
+        json.dumps(
+            {"global": kw["interp"].to_metadata(), "stability": kw["shap_stability"]},
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (target / "config.yaml").write_text(
+        (Path(__file__).resolve().parents[3] / "configs" / "experiment.yaml").read_text(
+            encoding="utf-8"
+        ),
+        encoding="utf-8",
+    )
+    (target / "PROVENANCE.json").write_text(
+        json.dumps(
+            {
+                "git_commit": _git_commit(),
+                "python": sys.version.split()[0],
+                "platform": platform.platform(),
+                "device_used": model.resolved_device_,
+                "split": inputs.split.to_metadata(),
+                "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),
+            },
+            indent=2,
+            default=str,
+        ),
+        encoding="utf-8",
+    )
+    (target / "validation_report.md").write_text(
+        _validation_report(model_id, metrics, report, kw), encoding="utf-8"
+    )
+    (target / "model_card.md").write_text(
+        _model_card(model_id, metrics, model, kw), encoding="utf-8"
+    )
+    return target
+
+
+def _validation_report(model_id, metrics, report: G.GateReport, kw) -> str:
+    point = metrics.at_budget(0.01)
+    return f"""# Validation report — {model_id}
+
+Generated {pd.Timestamp.now(tz='UTC').isoformat()}
+
+## Headline
+
+| Metric | Value |
+|---|---:|
+| PR-AUC | **{metrics.pr_auc:.4f}** |
+| Lift over base rate | {metrics.lift:.1f}x |
+| ROC-AUC | {metrics.roc_auc:.4f} |
+| Recall @1% budget | {point.recall:.1%} |
+| Precision @1% budget | {point.precision:.2%} |
+| Test rows | {metrics.n:,} |
+| Test positives | {metrics.positives:,} |
+| Base rate | {metrics.base_rate:.5%} |
+
+Seed spread across {len(kw['seed_scores'])} runs: mean
+{np.mean(kw['seed_scores']):.4f}, sd {np.std(kw['seed_scores'], ddof=1):.4f}.
+
+{report.to_markdown()}
+
+## Verdict
+
+{'**RESULT VOIDED** — a correctness gate failed.' if report.voided
+ else '**Correctness gates all pass.** The result stands, subject to the performance findings above.'}
+"""
+
+
+def _model_card(model_id, metrics, model, kw) -> str:
+    point = metrics.at_budget(0.01)
+    typ = "\n".join(
+        f"| {k} | {v['recall']:.1%} | {v['caught']}/{v['positives']} |"
+        for k, v in sorted(kw["typology"].items())
+    )
+    structure = kw.get("structure", {})
+    total_positives = sum(v["positives"] for v in structure.values()) or 1
+    structure_rows = "\n".join(
+        f"| {k.capitalize()} | {v['positives'] / total_positives:.0%} | "
+        f"{v['recall']:.1%} | {v['caught']}/{v['positives']} |"
+        for k, v in sorted(structure.items())
+    ) or "| (not measured) | | | |"
+    # Measured from the inputs, never typed in: an earlier card hardcoded A4's
+    # corpus and split, which would have been false for any other package.
+    df, spec = kw["inputs"].df, kw["inputs"].split.spec
+    positives = int(df[S.IS_LAUNDERING].sum())
+    graph = kw.get("graph") or {}
+    gp = graph.get("params", {})
+    graph_block = (
+        f"GFP `time_window` {gp.get('time_window', 0) / 3600:g} h, scatter-gather "
+        f"{gp.get('scatter-gather_tw', 0) / 3600:g} h, vertex statistics on columns "
+        f"{gp.get('vertex_stats_cols')}"
+        f"{' (timestamp statistics dropped)' if graph.get('timestamp_stats_dropped') else ''}; "
+        f"batch size {graph.get('batch_size')}; "
+        f"{graph.get('insertion_convention', 'insertion convention not recorded')}; "
+        f"behaviour features {'on' if graph.get('behaviour') else 'off'}. "
+        "Stored in `graph.json`; `score.py` rebuilds features from it."
+        if graph else "Not recorded (package predates `graph.json`)."
+    )
+    params = {k: v for k, v in model.params.items()
+              if k in ("max_depth", "learning_rate", "subsample", "colsample_bytree",
+                       "min_child_weight", "reg_lambda", "scale_pos_weight")}
+    return f"""# Model card — FlowGuard {model_id}
+
+## Intended use
+
+Ranking transactions for **investigator review** in an AML workflow, at a stated
+alert budget. It orders transactions by estimated suspicion; it does not decide
+anything.
+
+## Explicitly not for
+
+* Automated blocking, freezing or refusal of transactions.
+* Any determination that laundering occurred — that is a human and institutional
+  judgement, and the model produces neither evidence nor proof.
+* Deployment on a population unlike the training data without revalidation.
+* Regulatory filing. Nothing here constitutes an STR.
+
+## Training data
+
+| | |
+|---|---|
+| Dataset | IBM AML HI-Small |
+| Rows | {len(df):,} |
+| Positives | {positives:,} ({positives / len(df):.3%}) |
+| Span | {df[S.TIMESTAMP].min():%Y-%m-%d} to {df[S.TIMESTAMP].max():%Y-%m-%d} |
+| Split | chronological {spec.train_frac:.0%}/{spec.val_frac:.0%}/{spec.test_frac:.0%}, `{spec.boundary_policy.value}` boundary policy (ADR-002) |
+
+## Features and model
+
+| | |
+|---|---|
+| Features | {len(kw['inputs'].X_train.columns)} |
+| Graph | {graph_block} |
+| XGBoost | {params}; up to {model.n_estimators} rounds, best {model.best_iteration_} |
+
+## Performance
+
+| Metric | Value |
+|---|---:|
+| PR-AUC | {metrics.pr_auc:.4f} |
+| Lift | {metrics.lift:.1f}x |
+| Recall @1% budget | {point.recall:.1%} |
+| Precision @1% budget | {point.precision:.2%} |
+| Inference latency | {kw['latency']['median_ms']:.2f} ms median (batch=1) |
+
+### Per typology, recall at 1% budget
+
+| Typology | Recall | Caught |
+|---|---:|---|
+{typ}
+
+### Structured vs unstructured laundering, recall at 1% budget
+
+The per-typology table above covers only laundering that belongs to an injected
+pattern. What the model detects is *structure*, so this split is what the headline
+number actually means. It ranks by the raw score, which has no ties; the headline and
+the typology table use calibrated scores, which tie at the 1% cut-off, so totals can
+differ by a handful of cases:
+
+| | Share of test positives | Recall | Caught |
+|---|---:|---:|---|
+{structure_rows}
+
+## Known failure modes
+
+* **Unstructured laundering is largely missed.** A transfer with no fan-in, cycle or
+  chain around it leaves no graph shape to find. See the split above; this is a
+  limit of the method on every corpus measured, not of this one (LIM-08).
+* **Truncated patterns.** 140 of 370 patterns straddle a split boundary; recall
+  on those is a floor, not an unbiased estimate (ADR-002).
+* **Structurally complex benign activity** — see the hard-negative slice in
+  `metrics.json` for the measured false-positive enrichment.
+
+## Fresh data
+
+**LI-Small (2M-row prefix), applied unchanged: recall at 1% 13.3%, against the
+pre-registered bar of 50% — failed.** 88% of that corpus's laundering is
+unstructured, against 25% here, which explains about two-thirds of the drop;
+structured laundering is still ranked at the 98.7th percentile. The alert threshold
+transfers (1.34% alert rate). See `docs/DECISION_REPORT_LI_TRANSFER.md`.
+
+**Not validated on:** HI-Medium, HI-Large, the full LI-Small, or any real-world
+transaction data. Both corpora come from one generator, so generalisation beyond it
+is **unmeasured** apart from the Ethereum graph (ADR-012).
+
+## Evaluated and dropped
+
+* `day_of_week`, `is_weekend` — removed. Over a 10-day corpus they proxy the
+  calendar date and, under a chronological split, identified the generator's
+  laundering-saturated tail rather than any behaviour (ADR-003).
+* `payment_type` — removed. 2,553 of 2,554 pattern rows are ACH, so the feature
+  encodes a generator convention rather than behaviour. It was worth 84% of the
+  tabular baseline's PR-AUC (ADR-007).
+* **Adaptive neighbourhood family** (11 features, `features/adaptive.py`) — built
+  to attack the hard-negative enrichment by normalising structure against
+  same-degree peers. Measured **A6 − A4 = −0.0326 PR-AUC** against a 2σ inclusion
+  bar of 0.0059: a real regression at more than five times the noise threshold,
+  costing 23% of the graph model's PR-AUC. Alone (A5) it scores 0.0041, below the
+  12-feature tabular baseline. The code stays in the tree and is not wired into any
+  reported model (ADR-011). These figures predate the extractor fix (ADR-015).
+* **Value-flow family** — never built. Gate A falsified the low-band concentration
+  prediction the hypothesis depended on, so it was ruled out before implementation.
+
+## Performance envelope
+
+Device: {model.resolved_device_}. Peak RSS recorded in `metrics.json`.
+GFP extraction is CPU-only and is the dominant cost (ADR-005, ADR-006).
+
+## Revalidation trigger
+
+Re-run validation if the base rate moves by more than 2x, if feature PSI exceeds
+0.25 on any top-10 feature, or if the transaction mix changes materially.
+"""
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--variant", default="HI-Small")
+    parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED)
+    parser.add_argument("--gfp-cache", type=Path, default=None)
+    parser.add_argument("--model-id", default="E2")
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--n-seeds", type=int, default=5)
+    parser.add_argument("--out-root", type=Path, default=None)
+    parser.add_argument(
+        "--artifact-free",
+        action="store_true",
+        help="Drop the payment_type feature, a simulator artifact (ADR-007). "
+        "Use this for any model meant for inference.",
+    )
+    parser.add_argument("--from-run", type=Path, default=None,
+                        help="a run_benchmark JSON: reuse its model params, split "
+                             "fractions and GFP extraction record (v2 packaging)")
+    parser.add_argument("--extraction-from", type=Path, default=None,
+                        help="the run_benchmark JSON that EXTRACTED the GFP cache, for "
+                             "its measured throughput (defaults to --from-run)")
+    parser.add_argument("--n-estimators", type=int, default=None)
+    parser.add_argument("--behaviour", action="store_true",
+                        help="add the account-history features (WINNING_PLAN S4)")
+    parser.add_argument("--drop-timestamp-stats", action="store_true",
+                        help="drop GFP vertex statistics on the timestamp column")
+    args = parser.parse_args(argv)
+
+    extra: dict = {}
+    if args.from_run:
+        record = json.loads(args.from_run.read_text(encoding="utf-8"))
+        spec = record["split"]["spec"]
+        extraction_file = args.extraction_from or args.from_run
+        extraction = json.loads(extraction_file.read_text(encoding="utf-8"))["extraction"]
+        if extraction["params"] != record["extraction"]["params"]:
+            raise SystemExit("--extraction-from used different GFP params than --from-run")
+        extra = {
+            "model_params": record["params"],
+            "n_estimators": args.n_estimators or 1000,
+            "split_spec": SplitSpec(train_frac=spec["train_frac"],
+                                    val_frac=spec["val_frac"], seed=args.seed),
+            "graph": {
+                "params": extraction["params"],
+                "batch_size": extraction["batch_size"],
+                "behaviour": args.behaviour,
+                "timestamp_stats_dropped": args.drop_timestamp_stats,
+                "insertion_convention": "transform inserts once",
+                "tx_per_s": extraction.get("tx_per_s"),
+                "extract_seconds": extraction.get("extract_seconds"),
+                "model_source": str(args.from_run),
+                "extraction_source": str(extraction_file),
+            },
+        }
+    run(
+        args.variant, args.processed_dir, gfp_cache=args.gfp_cache,
+        model_id=args.model_id, seed=args.seed, out_root=args.out_root,
+        n_seeds=args.n_seeds, include_payment_type=not args.artifact_free,
+        behaviour=args.behaviour, **extra,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

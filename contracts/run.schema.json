@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flowguard/run.schema.json",
+  "title": "Scoring run summary (run.json)",
+  "description": "Written once per scoring run, next to scores.csv. Store it with the run: it says which model produced the scores, so a dashboard can show and filter by it.",
+  "type": "object",
+  "required": [
+    "model_id", "git_commit", "feature_schema_hash", "uses_payment_type",
+    "threshold", "threshold_source", "n_transactions", "n_alerts",
+    "case_ids", "scored_at", "seconds"
+  ],
+  "properties": {
+    "model_id": {"type": "string", "description": "e.g. flowguard_A4_v1."},
+    "git_commit": {"type": ["string", "null"], "description": "Commit the model was trained at."},
+    "feature_schema_hash": {"type": "string", "description": "Changes whenever the model's inputs change."},
+    "uses_payment_type": {"type": "boolean", "description": "Should be false for any production model (ADR-007)."},
+    "threshold": {"type": "number", "description": "Score at or above which `alert` is true."},
+    "threshold_source": {"type": "string"},
+    "n_transactions": {"type": "integer", "minimum": 0},
+    "n_alerts": {"type": "integer", "minimum": 0},
+    "case_ids": {"type": "array", "items": {"type": "string"}, "description": "Evidence bundles written to cases/."},
+    "scored_at": {"type": "string", "description": "ISO-8601 UTC."},
+    "seconds": {"type": "number"}
+  }
+}

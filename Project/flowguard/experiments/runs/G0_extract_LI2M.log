@@ -1,0 +1,14 @@
+2,000,493 rows, 468 positives
+extracting GFP, batch_size=1 -> /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_paper_b1_LI2M
+      250,000/2,000,493 (12.5%)    18,867 tx/s  ~1.5 min left
+      500,000/2,000,493 (25.0%)    19,483 tx/s  ~1.3 min left
+      750,000/2,000,493 (37.5%)    12,622 tx/s  ~1.7 min left
+    1,000,000/2,000,493 (50.0%)     8,726 tx/s  ~1.9 min left
+    1,250,000/2,000,493 (62.5%)     6,010 tx/s  ~2.1 min left
+    1,500,000/2,000,493 (75.0%)     4,239 tx/s  ~2.0 min left
+    1,750,000/2,000,493 (87.5%)     2,845 tx/s  ~1.5 min left
+    2,000,000/2,000,493 (100.0%)     2,103 tx/s  ~0.0 min left
+  wrote 9 parts to /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_paper_b1_LI2M
+  952s, 2,102 tx/s
+  167 of 235 GFP features vary; reading only those
+EXTRACTION DONE 2101.5555883120232

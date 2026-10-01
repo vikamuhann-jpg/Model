@@ -1,0 +1,29 @@
+loading GFP features (two-pass, column-selective)
+  155 of 215 GFP features vary; reading only those
+GFP block: 5,077,237 x 155
+
+A2: 12 feat  PR-AUC 0.0065 +/- 0.0001  R@1% 11.8%  P@1% 1.41%
+   hard-negative enrichment 1.02x   C8 PASS (tx_amount 27.2%)
+
+E2: 167 feat  PR-AUC 0.1400 +/- 0.0030  R@1% 53.5%  P@1% 6.37%
+   hard-negative enrichment 2.10x   C8 PASS (gfp_f185 17.7%)
+
+E2x: 168 feat  PR-AUC 0.2048 +/- 0.0065  R@1% 66.2%  P@1% 7.88%
+   hard-negative enrichment 2.29x   C8 PASS (tx_payment_type_code 18.1%)
+
+======================================================================
+PRE-REGISTERED PREDICTION: gains concentrate in low amount bands
+======================================================================
+amount band                              A2       E2     delta
+(-0.000999, 144.172]                  0.0%     2.4%     +2.4%
+(144.172, 613.914]                    0.0%    14.3%    +14.3%
+(613.914, 2670.728]                   0.0%    47.6%    +47.6%
+(2670.728, 17157.762]                14.7%    60.2%    +45.5%
+(17157.762, 626035501453.45]         17.2%    59.4%    +42.2%
+
+E2 - A2 = +0.1335   2 sigma = 0.0032   => REAL
+mean recall gain, 3 lowest bands : +21.4%
+mean recall gain, 2 highest bands: +43.8%
+PREDICTION NOT SUPPORTED
+
+wrote /mnt/c/Users/vikam/flowguard_data/e2_final.json

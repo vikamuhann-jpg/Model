@@ -1,0 +1,25 @@
+
+ETH phishing slice (1.25M edges)
+  vertices          330,849
+  edges             1,250,000
+  mean degree       7.56
+  median degree     1
+  p99.00   degree  38
+  p99.90   degree  1,034
+  p99.99   degree  9,962
+  MAX degree        11,152
+  top-5 degrees     [np.int64(11152), np.int64(10474), np.int64(10440), np.int64(10250), np.int64(10203)]
+  share of edge endpoints in top 0.01% of vertices: 13.3%
+
+HI-Medium prefix (1.25M edges)
+  vertices          1,013,373
+  edges             1,250,000
+  mean degree       2.47
+  median degree     2
+  p99.00   degree  7
+  p99.90   degree  11
+  p99.99   degree  16
+  MAX degree        9,179
+  top-5 degrees     [np.int64(9179), np.int64(5842), np.int64(1829), np.int64(830), np.int64(822)]
+  share of edge endpoints in top 0.01% of vertices: 1.0%
+EXIT: 0

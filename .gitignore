@@ -1,0 +1,53 @@
+# This is the AI repository. Frontend, backend and database live in a separate
+# repository that consumes contracts/ and sample_outputs/ from this one.
+
+# Data and wheelhouse live outside the repo (C:\Users\vikam\flowguard_data).
+# Project/flowguard/data is a junction to it.
+Project/flowguard/data/
+Project/flowguard/.venv/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.parquet
+*.csv
+!tests/**/*.csv
+!sample_outputs/*.csv
+
+# Raw corpora (4.4 GB) stay local. The whole Dataset_ folder is excluded --
+# excluding only Dataset_/IBM_Dataset/ is how a 310 MB archive once reached a
+# commit.
+Dataset_/
+
+# Reference material (papers/, websites/, docs/*.pdf) IS tracked -- this is a
+# private repository. Saved web pages keep their HTML; the *_files/ asset dumps
+# (thousands of files) stay out.
+websites/*_files/
+
+# Models: only the inference package ships. Research packages stay local.
+Project/flowguard/models/*
+!Project/flowguard/models/.gitkeep
+!Project/flowguard/models/flowguard_V2_v1/
+
+Project/flowguard/experiments/*/
+Project/flowguard/reports/**/*
+!Project/flowguard/reports/**/.gitkeep
+
+# Self-contained LinuxONE bundle (~100 MB, contains the corpus). Never commit:
+# GitHub rejects >100 MB blobs, and a 310 MB archive already reached a commit once.
+Project/flowguard/linuxone_with_data.zip
+
+# The corpus may sit in linuxone/data/ so the folder is self-contained on disk
+# for zipping and handover. It must never reach git: HI-Small_Trans.csv.gz is
+# 89.8 MB, history is forever, and the IBM AML-World corpus carries its own
+# licence -- point people at Kaggle instead of redistributing it.
+Project/flowguard/linuxone/data/*
+!Project/flowguard/linuxone/data/.gitkeep
+
+flowguard_colab/
+flowguard_colab.zip
+*.whl
+*.zip
+*.gz

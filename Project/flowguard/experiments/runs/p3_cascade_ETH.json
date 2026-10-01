@@ -1,0 +1,49 @@
+{
+  "ETH": {
+    "rows": 1250000,
+    "test_rows": 187495,
+    "test_positives": 257,
+    "n_graph_features": 161,
+    "full_extraction_recall": 0.029831387808041506,
+    "tier0_rate": 48054.11851828866,
+    "tier1_rate": 139.0,
+    "by_k": {
+      "0.01": {
+        "recall": 0.04280155642023346,
+        "recall_sd": 0.02429960310660855,
+        "pr_auc": 0.004251053160183055,
+        "retained_fraction": 1.4347826086956519,
+        "end_to_end_tx_per_s": 10781.401840251105,
+        "gate_a_pass": true,
+        "gate_b_pass": true
+      },
+      "0.02": {
+        "recall": 0.03372243839169909,
+        "recall_sd": 0.011887355888341998,
+        "pr_auc": 0.004167496773154158,
+        "retained_fraction": 1.1304347826086956,
+        "end_to_end_tx_per_s": 6071.838485895568,
+        "gate_a_pass": true,
+        "gate_b_pass": true
+      },
+      "0.05": {
+        "recall": 0.02464332036316472,
+        "recall_sd": 0.005943677944170999,
+        "pr_auc": 0.003912237969884271,
+        "retained_fraction": 0.826086956521739,
+        "end_to_end_tx_per_s": 2627.968249961499,
+        "gate_a_pass": true,
+        "gate_b_pass": false
+      },
+      "0.1": {
+        "recall": 0.0311284046692607,
+        "recall_sd": 0.014029382394801514,
+        "pr_auc": 0.0036116238473591373,
+        "retained_fraction": 1.0434782608695652,
+        "end_to_end_tx_per_s": 1350.9235626420289,
+        "gate_a_pass": true,
+        "gate_b_pass": true
+      }
+    }
+  }
+}

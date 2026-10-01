@@ -1,0 +1,116 @@
+{
+  "variant": "HI-Small",
+  "budget": 0.01,
+  "test_rows": 1015564,
+  "positives": 1797,
+  "all": {
+    "positives": 1797,
+    "caught": 1404,
+    "recall": 0.7813021702838063,
+    "median_percentile": 99.9
+  },
+  "patterned": {
+    "positives": 1339,
+    "caught": 1276,
+    "recall": 0.9529499626587006,
+    "median_percentile": 99.9
+  },
+  "untagged": {
+    "positives": 458,
+    "caught": 128,
+    "recall": 0.2794759825327511,
+    "median_percentile": 97.3
+  },
+  "patterned_on_ach": {
+    "positives": 1338,
+    "caught": 1276,
+    "recall": 0.953662182361734,
+    "median_percentile": 99.9
+  },
+  "untagged_on_ach": {
+    "positives": 315,
+    "caught": 126,
+    "recall": 0.4,
+    "median_percentile": 98.6
+  },
+  "untagged_off_ach": {
+    "positives": 143,
+    "caught": 2,
+    "recall": 0.013986013986013986,
+    "median_percentile": 85.3
+  },
+  "by_typology": {
+    "BIPARTITE": {
+      "positives": 74,
+      "caught": 68,
+      "recall": 0.918918918918919
+    },
+    "CYCLE": {
+      "positives": 109,
+      "caught": 104,
+      "recall": 0.9541284403669725
+    },
+    "FAN-IN": {
+      "positives": 137,
+      "caught": 129,
+      "recall": 0.9416058394160584
+    },
+    "FAN-OUT": {
+      "positives": 140,
+      "caught": 137,
+      "recall": 0.9785714285714285
+    },
+    "GATHER-SCATTER": {
+      "positives": 401,
+      "caught": 386,
+      "recall": 0.9625935162094763
+    },
+    "RANDOM": {
+      "positives": 86,
+      "caught": 79,
+      "recall": 0.9186046511627907
+    },
+    "SCATTER-GATHER": {
+      "positives": 252,
+      "caught": 247,
+      "recall": 0.9801587301587301
+    },
+    "STACK": {
+      "positives": 140,
+      "caught": 126,
+      "recall": 0.9
+    }
+  },
+  "by_rail": {
+    "ACH": {
+      "positives": 1653,
+      "caught": 1402,
+      "recall": 0.8481548699334543,
+      "median_percentile": 99.9
+    },
+    "Bitcoin": {
+      "positives": 13,
+      "caught": 0,
+      "recall": 0.0,
+      "median_percentile": 89.7
+    },
+    "Cash": {
+      "positives": 22,
+      "caught": 0,
+      "recall": 0.0,
+      "median_percentile": 85.0
+    },
+    "Cheque": {
+      "positives": 71,
+      "caught": 2,
+      "recall": 0.028169014084507043,
+      "median_percentile": 85.3
+    },
+    "Credit Card": {
+      "positives": 38,
+      "caught": 0,
+      "recall": 0.0,
+      "median_percentile": 84.9
+    }
+  }
+}

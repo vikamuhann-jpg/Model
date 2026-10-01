@@ -1,0 +1,101 @@
+{
+  "variant": "LI-Small-2M",
+  "budget": 0.01,
+  "test_rows": 399654,
+  "positives": 143,
+  "all": {
+    "positives": 143,
+    "caught": 19,
+    "recall": 0.13286713286713286,
+    "median_percentile": 93.0
+  },
+  "patterned": {
+    "positives": 17,
+    "caught": 7,
+    "recall": 0.4117647058823529,
+    "median_percentile": 98.7
+  },
+  "untagged": {
+    "positives": 126,
+    "caught": 12,
+    "recall": 0.09523809523809523,
+    "median_percentile": 91.9
+  },
+  "patterned_on_ach": {
+    "positives": 17,
+    "caught": 7,
+    "recall": 0.4117647058823529,
+    "median_percentile": 98.7
+  },
+  "untagged_on_ach": {
+    "positives": 61,
+    "caught": 10,
+    "recall": 0.16393442622950818,
+    "median_percentile": 96.3
+  },
+  "untagged_off_ach": {
+    "positives": 65,
+    "caught": 2,
+    "recall": 0.03076923076923077,
+    "median_percentile": 87.6
+  },
+  "by_typology": {
+    "FAN-IN": {
+      "positives": 6,
+      "caught": 4,
+      "recall": 0.6666666666666666
+    },
+    "GATHER-SCATTER": {
+      "positives": 1,
+      "caught": 0,
+      "recall": 0.0
+    },
+    "RANDOM": {
+      "positives": 2,
+      "caught": 0,
+      "recall": 0.0
+    },
+    "SCATTER-GATHER": {
+      "positives": 2,
+      "caught": 2,
+      "recall": 1.0
+    },
+    "STACK": {
+      "positives": 6,
+      "caught": 1,
+      "recall": 0.16666666666666666
+    }
+  },
+  "by_rail": {
+    "ACH": {
+      "positives": 78,
+      "caught": 17,
+      "recall": 0.21794871794871795,
+      "median_percentile": 96.7
+    },
+    "Bitcoin": {
+      "positives": 4,
+      "caught": 0,
+      "recall": 0.0,
+      "median_percentile": 93.1
+    },
+    "Cash": {
+      "positives": 10,
+      "caught": 0,
+      "recall": 0.0,
+      "median_percentile": 86.8
+    },
+    "Cheque": {
+      "positives": 27,
+      "caught": 2,
+      "recall": 0.07407407407407407,
+      "median_percentile": 87.6
+    },
+    "Credit Card": {
+      "positives": 24,
+      "caught": 0,
+      "recall": 0.0,
+      "median_percentile": 87.7
+    }
+  }
+}

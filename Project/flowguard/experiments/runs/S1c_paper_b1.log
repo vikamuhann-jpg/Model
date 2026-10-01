@@ -1,0 +1,35 @@
+loaded 5,078,345 transactions, 5,177 positives
+extracting GFP, batch_size=1 -> /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_paper_b1
+      250,000/5,078,345 ( 4.9%)    16,635 tx/s  ~4.8 min left
+      500,000/5,078,345 ( 9.8%)    12,704 tx/s  ~6.0 min left
+      750,000/5,078,345 (14.8%)     6,137 tx/s  ~11.8 min left
+    1,000,000/5,078,345 (19.7%)     3,893 tx/s  ~17.5 min left
+    1,250,000/5,078,345 (24.6%)     2,988 tx/s  ~21.4 min left
+    1,500,000/5,078,345 (29.5%)     2,313 tx/s  ~25.8 min left
+    1,750,000/5,078,345 (34.5%)     1,879 tx/s  ~29.5 min left
+    2,000,000/5,078,345 (39.4%)     1,596 tx/s  ~32.1 min left
+    2,250,000/5,078,345 (44.3%)     1,360 tx/s  ~34.7 min left
+    2,500,000/5,078,345 (49.2%)     1,223 tx/s  ~35.1 min left
+    2,750,000/5,078,345 (54.2%)     1,102 tx/s  ~35.2 min left
+    3,000,000/5,078,345 (59.1%)       992 tx/s  ~34.9 min left
+    3,250,000/5,078,345 (64.0%)       893 tx/s  ~34.1 min left
+    3,500,000/5,078,345 (68.9%)       796 tx/s  ~33.0 min left
+    3,750,000/5,078,345 (73.8%)       721 tx/s  ~30.7 min left
+    4,000,000/5,078,345 (78.8%)       666 tx/s  ~27.0 min left
+    4,250,000/5,078,345 (83.7%)       625 tx/s  ~22.1 min left
+    4,500,000/5,078,345 (88.6%)       582 tx/s  ~16.6 min left
+    4,750,000/5,078,345 (93.5%)       551 tx/s  ~9.9 min left
+    5,000,000/5,078,345 (98.5%)       536 tx/s  ~2.4 min left
+  wrote 21 parts to /mnt/c/Users/vikam/flowguard_data/processed/benchmark/gfp_paper_b1
+  9539s, 532 tx/s
+  192 of 235 GFP features vary; reading only those
+split {'train': 3047216, 'val': 1015565, 'test': 1015564}; 205 features; test positives 1,797
+  seed 42: F1 0.4795 (oracle 0.5172)  PR-AUC 0.4792
+  seed 7: F1 0.5286 (oracle 0.5484)  PR-AUC 0.5226
+  seed 123: F1 0.5428 (oracle 0.5452)  PR-AUC 0.5196
+  seed 2024: F1 0.5003 (oracle 0.5157)  PR-AUC 0.4871
+  seed 31337: F1 0.5373 (oracle 0.5420)  PR-AUC 0.5127
+
+F1 0.5177 ± 0.0269  PR-AUC 0.5043 ± 0.0198
+wrote /mnt/c/Users/vikam/flowguard_data/runs/S1c_paper_b1.json
+exit 0

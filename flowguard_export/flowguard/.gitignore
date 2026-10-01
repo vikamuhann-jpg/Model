@@ -1,0 +1,34 @@
+# The data junction -> C:/Users/vikam/flowguard_data (outside OneDrive).
+# LEADING SLASH IS REQUIRED: a bare "data/" matches any directory named data at
+# any depth, which silently excluded src/flowguard/data/ -- four core modules.
+/data/
+*.parquet
+*.csv
+!tests/**/*.csv
+# The experiment registry is the provenance behind every reported number. The
+# README always said it was tracked; this rule silently kept it out until 2026-09-22.
+!experiments/results.csv
+
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+models/*
+!models/.gitkeep
+# The shipped inference model is the one package that goes into git. This file
+# overrides the root .gitignore for everything under Project/flowguard/, so the
+# exception has to live here as well.
+!models/flowguard_V2_v1/
+experiments/*/
+!experiments/.gitkeep
+# Benchmark run records (JSON + logs, ~50 KB): the provenance of every number in
+# README and STATUS. Indexed in experiments/runs/README.md.
+!experiments/runs/
+reports/**/*
+!reports/**/.gitkeep
+
+# Raw corpora live in ../../Dataset_/IBM_Dataset (~39 GB). Never tracked.

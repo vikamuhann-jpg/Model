@@ -1,0 +1,18 @@
+# Machine-local path defaults, resolved per platform by flowguard/config.py.
+#
+# Override any path at runtime with environment variables:
+#   FLOWGUARD_PROCESSED_DIR  — directory holding *_transactions.parquet
+#   FLOWGUARD_RAW_DIR        — directory holding raw IBM CSV/TXT files
+#   FLOWGUARD_GFP_CACHE      — path to the GFP feature parquet cache
+#
+# The linux entries are WSL2 mount-paths; the win32 entries are native Windows.
+# Add a "default" key if you want a single path that works on both (e.g. CI).
+
+processed_dir:
+  default: ../../flowguard_data/processed
+
+raw_dir:
+  default: ../../../../Dataset_/IBM_Dataset
+
+gfp_cache:
+  default: ../../flowguard_data/gfp_cache/HI-Small_2d.parquet

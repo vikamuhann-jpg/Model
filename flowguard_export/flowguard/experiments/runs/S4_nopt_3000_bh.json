@@ -1,0 +1,170 @@
+{
+  "protocol": "GFP paper: untrimmed, 60/20/20, batched GFP",
+  "extraction": {
+    "batch_size": 1,
+    "window_days": null,
+    "params": {
+      "num_threads": 8,
+      "time_window": 86400,
+      "vertex_stats": true,
+      "vertex_stats_tw": 86400,
+      "vertex_stats_cols": [
+        3,
+        4
+      ],
+      "vertex_stats_feats": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        8,
+        9,
+        10
+      ],
+      "fan": true,
+      "fan_tw": 86400,
+      "degree": true,
+      "degree_tw": 86400,
+      "scatter-gather": true,
+      "scatter-gather_tw": 21600,
+      "temp-cycle": true,
+      "temp-cycle_tw": 86400,
+      "lc-cycle": true,
+      "lc-cycle_tw": 86400,
+      "lc-cycle_len": 10
+    }
+  },
+  "include_payment_type": false,
+  "behaviour_features": true,
+  "split": {
+    "spec": {
+      "train_frac": 0.6,
+      "val_frac": 0.2,
+      "test_frac": 0.2,
+      "boundary_policy": "hard_cut",
+      "purge_buffer": null,
+      "seed": 42
+    },
+    "boundaries": {
+      "train_end": "2022-09-06T13:36:00+00:00",
+      "val_end": "2022-09-08T16:12:00+00:00"
+    },
+    "sizes": {
+      "train": 3047216,
+      "val": 1015565,
+      "test": 1015564
+    },
+    "patterns_spanning_boundary": 155,
+    "purged_rows": 0,
+    "notes": [
+      "hard cut; 155 pattern(s) truncated at a boundary and may be undetectable in test by construction"
+    ]
+  },
+  "n_features": 214,
+  "params": {
+    "objective": "binary:logistic",
+    "eval_metric": "aucpr",
+    "tree_method": "hist",
+    "max_depth": 8,
+    "learning_rate": 0.03,
+    "subsample": 0.8,
+    "colsample_bytree": 0.75,
+    "min_child_weight": 1,
+    "reg_lambda": 0.01,
+    "n_jobs": 8,
+    "random_state": 42,
+    "scale_pos_weight": 2
+  },
+  "tuning": {
+    "params_from": "/mnt/c/Users/vikam/flowguard_data/runs/S2_tuned_b128.json"
+  },
+  "runs": [
+    {
+      "seed": 42,
+      "val_pr_auc": 0.5377393294895345,
+      "f1_val_threshold": 0.5818939845145921,
+      "f1_oracle": 0.6002048480710139,
+      "pr_auc": 0.5736360424857171,
+      "roc_auc": 0.9669497364232905,
+      "recall_at_1pct": 0.7200890372843628,
+      "best_iteration": 629,
+      "device": "cuda",
+      "fit_seconds": 97.2
+    },
+    {
+      "seed": 7,
+      "val_pr_auc": 0.5463507426737659,
+      "f1_val_threshold": 0.555008210180624,
+      "f1_oracle": 0.6094240837696335,
+      "pr_auc": 0.5780541084062669,
+      "roc_auc": 0.9691173756141274,
+      "recall_at_1pct": 0.7212020033388982,
+      "best_iteration": 782,
+      "device": "cuda",
+      "fit_seconds": 107.8
+    },
+    {
+      "seed": 123,
+      "val_pr_auc": 0.5361709958421694,
+      "f1_val_threshold": 0.5704225352112676,
+      "f1_oracle": 0.6101240362051625,
+      "pr_auc": 0.5834160524592675,
+      "roc_auc": 0.965859756369015,
+      "recall_at_1pct": 0.7228714524207012,
+      "best_iteration": 589,
+      "device": "cuda",
+      "fit_seconds": 90.2
+    },
+    {
+      "seed": 2024,
+      "val_pr_auc": 0.5426956217423715,
+      "f1_val_threshold": 0.49834671705243266,
+      "f1_oracle": 0.5861372812920592,
+      "pr_auc": 0.5542312558474232,
+      "roc_auc": 0.9661518653992653,
+      "recall_at_1pct": 0.7111853088480802,
+      "best_iteration": 793,
+      "device": "cuda",
+      "fit_seconds": 108.0
+    },
+    {
+      "seed": 31337,
+      "val_pr_auc": 0.5416640568611161,
+      "f1_val_threshold": 0.5132262051915946,
+      "f1_oracle": 0.5979032803517078,
+      "pr_auc": 0.5611117067939028,
+      "roc_auc": 0.9649910936570294,
+      "recall_at_1pct": 0.7061769616026711,
+      "best_iteration": 691,
+      "device": "cuda",
+      "fit_seconds": 101.5
+    }
+  ],
+  "summary": {
+    "f1_val_threshold": {
+      "mean": 0.5437795304301021,
+      "sd": 0.036353441299991955
+    },
+    "f1_oracle": {
+      "mean": 0.6007587059379154,
+      "sd": 0.009811274846708191
+    },
+    "pr_auc": {
+      "mean": 0.5700898331985156,
+      "sd": 0.012100564336187593
+    },
+    "roc_auc": {
+      "mean": 0.9666139654925455,
+      "sd": 0.0015649189473826972
+    },
+    "recall_at_1pct": {
+      "mean": 0.7163049526989427,
+      "sd": 0.007249246107727135
+    },
+    "val_pr_auc": {
+      "mean": 0.5409241493217916,
+      "sd": 0.004057987138844174
+    }
+  }
+}

@@ -1,0 +1,34 @@
+[1/5] loading LI-Small_Trans.csv
+      6,924,049 transactions
+[2/5] parsing LI-Small_Patterns.txt
+      117 patterns, 1,023 transactions labelled
+[3/5] loading LI-Small_accounts.csv
+      712,688 accounts
+[4/5] trimming the generator's sparse tail
+      no sparse tail detected
+[5/6] validating
+validation: PASS
+  [info ] unique_transaction_id: all ids unique
+  [info ] timestamp_parseable: all timestamps parsed
+  [info ] non_negative_amount: no negative amounts
+  [info ] endpoints_present: all endpoints present
+  [info ] positives_present: 3565 positives (0.0515%)
+  [info ] zero_amount: 0 zero-value transfers (0.0000%)
+  [warn ] duplicate_natural_key: 8 rows share a natural key (0.0001%); pattern attachment cannot disambiguate these
+  [info ] self_transfers: 804477 same-account transfers (11.62%); legitimate, excluded from the graph by policy
+  [info ] cross_currency: 98876 cross-currency transfers (1.4280%)
+  [warn ] temporal_resolution: span 16 days 15:28:00, 14533 distinct timestamps (476 tx per stamp); within-stamp order is undefined
+capabilities — LI-Small
+  [NO ] account_level_labels
+  [yes] account_reference_table    712,688 accounts
+  [yes] cross_currency
+  [yes] currency                   15 distinct
+  [yes] payment_type               7 distinct rails
+  [yes] self_transfers             11.6% of rows
+  [yes] transaction_level_labels   base rate 0.0515%
+  [yes] typology_annotations       8 typologies, 29% of positives annotated
+  disabled here:
+    account_level_metrics        needs account_level_labels
+[6/6] writing canonical parquet
+
+wrote /mnt/c/Users/vikam/flowguard_data/processed/benchmark/LI-Small_dataset_summary.json

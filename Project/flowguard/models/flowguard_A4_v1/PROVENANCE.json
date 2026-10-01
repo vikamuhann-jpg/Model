@@ -1,0 +1,31 @@
+{
+  "git_commit": "d230c50ef73e93e3d48cf20e5d30f1d8fcbdc1f4",
+  "python": "3.12.3",
+  "platform": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "device_used": "cuda",
+  "split": {
+    "spec": {
+      "train_frac": 0.7,
+      "val_frac": 0.15,
+      "test_frac": 0.15000000000000005,
+      "boundary_policy": "hard_cut",
+      "purge_buffer": null,
+      "seed": 42
+    },
+    "boundaries": {
+      "train_end": "2022-09-07T14:52:00+00:00",
+      "val_end": "2022-09-09T03:14:00+00:00"
+    },
+    "sizes": {
+      "train": 3554066,
+      "val": 761749,
+      "test": 761422
+    },
+    "patterns_spanning_boundary": 137,
+    "purged_rows": 0,
+    "notes": [
+      "hard cut; 137 pattern(s) truncated at a boundary and may be undetectable in test by construction"
+    ]
+  },
+  "generated_at": "2026-09-21T13:22:44.193356+00:00"
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flowguard/transaction.schema.json",
+  "title": "Transaction (scoring input)",
+  "description": "One row of the input file given to `python -m flowguard.pipeline.score`. Accepted as CSV or parquet. Rows need not be sorted; scoring replays them in timestamp order.",
+  "type": "object",
+  "required": [
+    "transaction_id",
+    "timestamp",
+    "source_account",
+    "destination_account",
+    "amount",
+    "currency",
+    "amount_received",
+    "currency_received"
+  ],
+  "properties": {
+    "transaction_id": {"type": "string", "description": "Unique per row. Carried through to every output."},
+    "timestamp": {"type": "string", "description": "ISO-8601. Treated as UTC when no offset is given."},
+    "source_account": {"type": "string", "description": "Sending account. Use one stable id per real account: graph features are built from these ids."},
+    "destination_account": {"type": "string", "description": "Receiving account, same id space as source_account."},
+    "amount": {"type": "number", "minimum": 0, "description": "Amount sent, in `currency`."},
+    "currency": {"type": "string"},
+    "amount_received": {"type": "number", "minimum": 0, "description": "Required by the shipped model: it derives amount_ratio from it."},
+    "currency_received": {"type": "string", "description": "Required by the shipped model: it derives is_cross_currency from it."},
+    "payment_type": {"type": "string", "description": "Optional. NOT a model feature (it is a simulator artifact, ADR-007). Used only to attach the coverage warning to evidence bundles."},
+    "is_self_transfer": {"type": "integer", "enum": [0, 1], "description": "Optional. Derived from source == destination when absent."}
+  }
+}

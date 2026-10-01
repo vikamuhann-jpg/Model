@@ -1,0 +1,2007 @@
+# FlowGuard: Full End-to-End Research and Implementation Plan
+
+## 1. Project Title
+
+> **FlowGuard: A Graph-Based, Temporal and Resource-Efficient Anti-Money Laundering Detection System**
+
+### Core idea
+
+FlowGuard will analyze financial transactions as a **dynamic transaction graph**, extract graph-based and temporal behavioural features, and use machine-learning models to identify potentially suspicious transactions.
+
+The project will begin by reproducing an established **Graph Feature Preprocessor (GFP) + XGBoost** approach. After creating a reliable baseline, you will design and evaluate new features or algorithms to improve:
+
+* Suspicious-transaction detection
+* Detection of complex laundering patterns
+* False-positive reduction
+* Feature-extraction speed
+* Memory efficiency
+* Explainability
+* Real-time processing capability
+
+The research will follow three stages:
+
+```text
+REPRODUCE
+    ↓
+ANALYSE LIMITATIONS
+    ↓
+DESIGN AND EVALUATE IMPROVEMENTS
+```
+
+---
+
+# 2. Problem Statement
+
+Traditional AML systems often rely on:
+
+* Fixed transaction-amount thresholds
+* Rule-based alerts
+* Individual transaction analysis
+* Manually defined suspicious patterns
+
+However, money laundering may involve a sequence of transactions distributed across several accounts.
+
+For example:
+
+```text
+Account A
+   │ ₹10,00,000
+   ▼
+Account B
+   │ ₹9,80,000
+   ▼
+Account C
+   │ ₹9,50,000
+   ▼
+Account D
+```
+
+Individually, each transaction may appear ordinary. However, the complete transaction path may indicate layering or fund movement.
+
+Therefore, FlowGuard will investigate:
+
+> **How can graph-based, temporal and value-flow information improve AML detection while maintaining acceptable processing time, memory usage and false-positive rates?**
+
+---
+
+# 3. Research Objectives
+
+## Primary objective
+
+Develop a reproducible graph-based AML detection pipeline using synthetic financial transactions and evaluate whether additional temporal, value-flow and adaptive graph features improve upon an existing GFP-based baseline.
+
+## Secondary objectives
+
+1. Build a clean and reproducible AML data pipeline.
+2. Convert financial transactions into a directed temporal graph.
+3. Reproduce the relevant GFP feature-extraction approach.
+4. Train a transaction-only XGBoost baseline.
+5. Train a graph-feature-based XGBoost baseline.
+6. Analyse false positives and false negatives.
+7. Design new features based on observed limitations.
+8. Measure accuracy and computational efficiency.
+9. Perform ablation studies.
+10. Build an explainable AML risk-scoring interface.
+11. Demonstrate the complete system using an API and dashboard.
+
+---
+
+# 4. Important Research Clarification
+
+Your uploaded IBM material provides two different but related resources:
+
+### IBM synthetic AML data material
+
+The IBM presentation describes synthetic financial transactions, interconnected entities and laundering patterns such as fan-in, fan-out, cycles, scatter-gather and gather-scatter. It also references IBM’s AML data repository and AMLSim.  
+
+### Graph Feature Preprocessor paper
+
+The GFP paper describes graph-pattern-based features and vertex-statistical features that can be combined with gradient-boosting models. It reports improvements in minority-class F1 scores when graph features are added to XGBoost or LightGBM. 
+
+However:
+
+> **Do not assume that the AMLSim dataset and the exact datasets used in the GFP paper are identical.**
+
+Before implementation, you must verify:
+
+* Dataset compatibility
+* Available transaction columns
+* Label format
+* Timestamp format
+* Graph structure
+* GFP implementation availability
+* Exact GFP version and configuration
+
+Until this is verified, describe your first implementation as:
+
+> **A GFP-based or GFP-inspired graph-feature AML baseline**
+
+Do not claim exact reproduction prematurely.
+
+---
+
+# 5. Overall System Architecture
+
+```text
+                 ┌──────────────────────┐
+                 │   AML Data Source    │
+                 │  AMLSim / IBM Data   │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │   Raw Data Layer    │
+                 │ Immutable Data      │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │ Data Validation and │
+                 │ Data Quality Checks │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │ Canonical Data Model│
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │ Temporal Data Split │
+                 │ Train/Val/Test      │
+                 └──────────┬───────────┘
+                            │
+              ┌─────────────┴──────────────┐
+              │                            │
+              ▼                            ▼
+   ┌────────────────────┐       ┌────────────────────┐
+   │ Transaction-Based  │       │ Graph Construction │
+   │ Features           │       │ Account Nodes      │
+   └─────────┬──────────┘       │ Transactions Edges │
+             │                  └─────────┬──────────┘
+             ▼                            │
+   ┌────────────────────┐                 ▼
+   │ Transaction-Only   │       ┌────────────────────┐
+   │ XGBoost Baseline    │       │ Existing GFP       │
+   └─────────┬──────────┘       │ Feature Extraction │
+             │                  └─────────┬──────────┘
+             │                            │
+             │                            ▼
+             │                  ┌────────────────────┐
+             │                  │ Graph Feature      │
+             │                  │ Table              │
+             │                  └─────────┬──────────┘
+             │                            │
+             └─────────────┬──────────────┘
+                           ▼
+                 ┌──────────────────────┐
+                 │ XGBoost Risk Model   │
+                 └──────────┬───────────┘
+                            ▼
+                 ┌──────────────────────┐
+                 │ Risk Score and      │
+                 │ Suspicious Label    │
+                 └──────────┬───────────┘
+                            ▼
+                 ┌──────────────────────┐
+                 │ Explanation Engine  │
+                 │ SHAP + Graph Paths  │
+                 └──────────┬───────────┘
+                            ▼
+                 ┌──────────────────────┐
+                 │ API and Dashboard   │
+                 └──────────────────────┘
+```
+
+---
+
+# 6. Phase 0 — Freeze the Research Rules
+
+Before writing the models, define the rules that every experiment must follow.
+
+## Fix the following items
+
+| Item               | Decision to freeze                         |
+| ------------------ | ------------------------------------------ |
+| Primary dataset    | AMLSim or verified IBM AML dataset         |
+| Dataset version    | Exact download or generation configuration |
+| Prediction target  | Suspicious transaction classification      |
+| Data split         | Time-based train/validation/test split     |
+| Random seed        | For example, `42`                          |
+| Hardware           | CPU, RAM and optional GPU configuration    |
+| Python version     | Fixed Python version                       |
+| Model versions     | XGBoost, NetworkX or other libraries       |
+| Evaluation metrics | PR-AUC, F1, recall, precision and latency  |
+| Feature naming     | Standardized feature names                 |
+| Experiment naming  | Unique experiment IDs                      |
+| Output format      | CSV, Parquet and JSON metadata             |
+
+### Main research rule
+
+> **Every new model must use the same dataset, prediction target, data split and evaluation procedure.**
+
+This prevents unfair comparisons.
+
+---
+
+# 7. Phase 1 — Select and Acquire the Dataset
+
+## Recommended initial dataset
+
+Use one controlled IBM AML dataset as the primary experimental dataset.
+
+Possible candidates include:
+
+1. IBM AMLSim-generated transactions
+2. IBM synthetic AML datasets
+3. AML HI or AML LI datasets associated with the GFP research
+4. A second dataset for later cross-dataset validation
+
+## Dataset selection checklist
+
+Before proceeding, verify:
+
+* Does every transaction have a timestamp?
+* Are source and destination accounts available?
+* Is there a laundering label?
+* Are laundering patterns available?
+* Are transaction amounts available?
+* Is the dataset sufficiently large?
+* Can the dataset be processed using your available hardware?
+* Can the data be legally redistributed in your project?
+
+## Expected transaction schema
+
+Your canonical transaction table should eventually contain fields similar to:
+
+| Column                | Description                   |
+| --------------------- | ----------------------------- |
+| `transaction_id`      | Unique transaction identifier |
+| `timestamp`           | Transaction time              |
+| `source_account`      | Sender account                |
+| `destination_account` | Receiver account              |
+| `amount`              | Transaction amount            |
+| `currency`            | Currency type                 |
+| `payment_type`        | ACH, wire, cash, cheque, etc. |
+| `is_laundering`       | Ground-truth label            |
+| `scenario_id`         | Optional laundering scenario  |
+| `pattern_type`        | Optional pattern label        |
+
+The exact column names should be adapted to the selected dataset.
+
+---
+
+# 8. Phase 2 — Create the Project Structure
+
+Use a modular project structure from the beginning.
+
+```text
+flowguard/
+│
+├── README.md
+├── requirements.txt
+├── pyproject.toml
+├── .gitignore
+│
+├── configs/
+│   ├── dataset.yaml
+│   ├── features.yaml
+│   ├── model.yaml
+│   └── experiment.yaml
+│
+├── data/
+│   ├── raw/
+│   │   ├── amlsim/
+│   │   └── ibm_aml/
+│   │
+│   ├── interim/
+│   │
+│   ├── processed/
+│   │
+│   └── splits/
+│
+├── notebooks/
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_data_quality.ipynb
+│   ├── 03_graph_analysis.ipynb
+│   └── 04_baseline_analysis.ipynb
+│
+├── src/
+│   └── flowguard/
+│       ├── data/
+│       │   ├── loader.py
+│       │   ├── validator.py
+│       │   ├── cleaner.py
+│       │   └── schema.py
+│       │
+│       ├── graph/
+│       │   ├── builder.py
+│       │   ├── temporal_graph.py
+│       │   ├── graph_statistics.py
+│       │   └── motif_extractor.py
+│       │
+│       ├── features/
+│       │   ├── transaction_features.py
+│       │   ├── gfp_features.py
+│       │   ├── temporal_features.py
+│       │   ├── value_flow_features.py
+│       │   └── adaptive_features.py
+│       │
+│       ├── models/
+│       │   ├── rules.py
+│       │   ├── xgboost_model.py
+│       │   └── anomaly_models.py
+│       │
+│       ├── evaluation/
+│       │   ├── metrics.py
+│       │   ├── error_analysis.py
+│       │   ├── latency.py
+│       │   └── experiment_registry.py
+│       │
+│       ├── explainability/
+│       │   ├── shap_explainer.py
+│       │   └── graph_explainer.py
+│       │
+│       └── api/
+│           └── app.py
+│
+├── experiments/
+│   ├── EXP001/
+│   ├── EXP002/
+│   └── results.csv
+│
+├── models/
+│
+├── reports/
+│   ├── data_quality/
+│   ├── metrics/
+│   ├── graphs/
+│   └── error_analysis/
+│
+└── tests/
+    ├── test_data.py
+    ├── test_graph.py
+    ├── test_features.py
+    └── test_models.py
+```
+
+---
+
+# 9. Phase 3 — Data Ingestion and Raw Storage
+
+## Workflow
+
+```text
+Dataset download or generation
+          ↓
+Checksum calculation
+          ↓
+Raw file preservation
+          ↓
+Dataset metadata creation
+          ↓
+Data loading
+```
+
+## Store the following metadata
+
+```json
+{
+  "dataset_name": "AMLSim",
+  "dataset_version": "v1",
+  "download_date": "YYYY-MM-DD",
+  "file_name": "transactions.csv",
+  "sha256": "file_checksum",
+  "row_count": 0,
+  "source": "IBM repository",
+  "generation_config": "config_reference"
+}
+```
+
+## Rule
+
+Never overwrite the raw dataset.
+
+Any cleaning or transformation must create a new file in the `interim` or `processed` directory.
+
+---
+
+# 10. Phase 4 — Data Understanding and Quality Analysis
+
+Before creating graphs, conduct exploratory data analysis.
+
+## Transaction-level analysis
+
+Calculate:
+
+* Total number of transactions
+* Total number of accounts
+* Minimum, maximum and average transaction amount
+* Amount percentiles
+* Number of payment types
+* Time range
+* Number of missing values
+* Duplicate transaction count
+* Suspicious-to-normal transaction ratio
+
+## Account-level analysis
+
+Calculate:
+
+* Number of incoming transactions per account
+* Number of outgoing transactions per account
+* Total incoming amount
+* Total outgoing amount
+* Number of counterparties
+* Account activity frequency
+* High-degree accounts
+* Accounts associated with known laundering patterns
+
+## Temporal analysis
+
+Analyse:
+
+* Transactions per minute
+* Transactions per hour
+* Daily transaction volume
+* Transaction bursts
+* Time gaps between transactions
+* Time taken for funds to move through multiple accounts
+
+## Graph-level analysis
+
+Calculate:
+
+* Number of nodes
+* Number of edges
+* Average degree
+* In-degree distribution
+* Out-degree distribution
+* Connected components
+* Strongly connected components
+* Cycle-related statistics
+* Graph density
+* Approximate path lengths
+
+## Deliverables
+
+```text
+data_quality_report.html
+dataset_summary.json
+transaction_distribution.png
+account_activity.png
+graph_statistics.json
+temporal_activity.png
+```
+
+---
+
+# 11. Phase 5 — Data Validation and Canonical Schema
+
+Create a single standard schema regardless of the original dataset format.
+
+## Validation rules
+
+### Required-field validation
+
+Check whether these fields exist:
+
+```text
+transaction_id
+timestamp
+source_account
+destination_account
+amount
+label
+```
+
+### Data-quality checks
+
+Check for:
+
+* Missing source accounts
+* Missing destination accounts
+* Missing amounts
+* Invalid timestamps
+* Negative transaction amounts
+* Duplicate transaction IDs
+* Self-transactions
+* Invalid account references
+* Unsupported currencies
+* Invalid labels
+* Inconsistent ordering
+
+## Canonical representation
+
+```python
+{
+    "transaction_id": "...",
+    "timestamp": "...",
+    "source_account": "...",
+    "destination_account": "...",
+    "amount": 1000.0,
+    "currency": "USD",
+    "payment_type": "WIRE",
+    "label": 0
+}
+```
+
+## Data-quality policy
+
+Do not silently remove problematic records.
+
+Create a quality report showing:
+
+* Number of rejected records
+* Reason for rejection
+* Number of corrected records
+* Number of retained records
+
+---
+
+# 12. Phase 6 — Define the Prediction Unit
+
+For the first complete implementation, use:
+
+> **Transaction-level suspicious-activity classification**
+
+The model will predict:
+
+```text
+0 → Non-suspicious transaction
+1 → Suspicious transaction
+```
+
+The model output should include:
+
+```text
+transaction_id
+risk_score
+predicted_label
+actual_label
+prediction_timestamp
+model_version
+```
+
+Later, FlowGuard can be extended to:
+
+```text
+Transaction risk
+      ↓
+Account risk
+      ↓
+Suspicious path
+      ↓
+Investigation case
+```
+
+Do not implement all prediction levels simultaneously in the first version.
+
+---
+
+# 13. Phase 7 — Leakage-Safe Temporal Splitting
+
+This is one of the most important parts of the project.
+
+For a transaction at time `T`, the model must only use information available at or before `T`.
+
+```text
+Prediction time = T
+       ↓
+Use only information known ≤ T
+```
+
+## Initial split
+
+Use a chronological split such as:
+
+```text
+Earliest 70% → Training
+Next 15%     → Validation
+Latest 15%   → Testing
+```
+
+The percentages can be adjusted after inspecting the dataset, but they must be fixed before comparing models.
+
+## Important rules
+
+* Do not randomly shuffle transactions across time.
+* Do not use future transactions to calculate historical features.
+* Do not calculate global graph statistics using the complete dataset.
+* Do not use future labels to construct features.
+* Fit scalers or encoders only on the training data.
+* Apply class-balancing methods only to the training partition.
+
+## Additional evaluation splits
+
+### A. Standard temporal split
+
+Measures future-like performance.
+
+### B. Unseen-pattern split
+
+Train on some laundering patterns and test on different or composite patterns.
+
+### C. Hard-negative split
+
+Include legitimate but structurally complex activities, such as:
+
+* Payroll
+* Treasury transfers
+* Merchant settlement
+* Supply-chain payments
+* Regular business fund movements
+
+This evaluates whether the model can distinguish suspicious graph structures from legitimate complex behaviour.
+
+---
+
+# 14. Phase 8 — Implement Baseline Models
+
+Build the baselines in increasing complexity.
+
+---
+
+## Model M0 — Rule-Based Baseline
+
+Implement simple rules such as:
+
+* High transaction velocity
+* Unusually high amount
+* Large number of counterparties
+* Rapid inflow followed by outflow
+* Excessive fan-in or fan-out
+* Short-time fund movement
+
+Example:
+
+```text
+If transaction velocity > threshold:
+    flag transaction
+
+If amount deviation > threshold:
+    flag transaction
+```
+
+This is the control group, not the final solution.
+
+Record:
+
+* Number of alerts
+* Precision
+* Recall
+* False-positive rate
+* Processing time
+
+---
+
+## Model M1 — Transaction-Only XGBoost
+
+Use only transaction and account-level features.
+
+### Candidate features
+
+| Feature                | Description                            |
+| ---------------------- | -------------------------------------- |
+| `amount`               | Transaction amount                     |
+| `amount_log`           | Log-transformed amount                 |
+| `hour`                 | Hour of transaction                    |
+| `day_of_week`          | Day of week                            |
+| `source_tx_count`      | Source transaction count               |
+| `destination_tx_count` | Destination transaction count          |
+| `source_inflow`        | Historical source inflow               |
+| `source_outflow`       | Historical source outflow              |
+| `destination_inflow`   | Historical destination inflow          |
+| `counterparty_count`   | Number of counterparties               |
+| `amount_deviation`     | Deviation from account’s normal amount |
+| `velocity_1h`          | Number of recent transactions          |
+| `velocity_24h`         | Daily transaction velocity             |
+
+### Output
+
+```text
+Transaction features
+       ↓
+XGBoost
+       ↓
+Risk score
+```
+
+This model answers:
+
+> How well can tabular machine learning perform without graph-pattern information?
+
+---
+
+## Model M2 — Existing GFP + XGBoost
+
+This is the primary research baseline.
+
+```text
+Transactions
+      ↓
+Directed temporal graph
+      ↓
+GFP or verified GFP-inspired extractor
+      ↓
+Graph-based feature table
+      ↓
+XGBoost
+      ↓
+Transaction risk score
+```
+
+The GFP paper describes feature families involving:
+
+* Fan-in and fan-out structures
+* Scatter-gather patterns
+* Cycle-related patterns
+* Temporal graph patterns
+* Vertex-level transaction statistics
+* Aggregated graph features
+
+The exact features must be implemented according to the verified GFP paper, source code and version. The paper reports that graph features are added to basic transaction features before training gradient-boosting models. 
+
+---
+
+# 15. Phase 9 — Build the Transaction Graph
+
+Represent the financial system as a directed graph.
+
+```text
+Account = Node
+Transaction = Directed Edge
+```
+
+Example:
+
+```text
+A ──₹10,00,000──▶ B
+B ──₹9,80,000───▶ C
+C ──₹9,50,000───▶ D
+```
+
+## Edge attributes
+
+Each edge should store:
+
+```text
+transaction_id
+timestamp
+amount
+currency
+payment_type
+label
+```
+
+## Graph representation
+
+For the initial prototype, you can use:
+
+* Python dictionaries
+* Adjacency lists
+* NetworkX for small-scale analysis
+* Pandas or Polars for tabular operations
+* PyArrow or Parquet for intermediate storage
+
+For larger datasets, consider:
+
+* CSR-style graph structures
+* Incremental adjacency maps
+* Specialized graph-processing libraries
+* Disk-backed storage
+* Streaming processing
+
+## Important design decision
+
+Do not construct the entire future graph when calculating features for an earlier transaction.
+
+The graph must evolve according to transaction time:
+
+```text
+Transaction 1 arrives
+       ↓
+Graph updated
+       ↓
+Features calculated
+       ↓
+Transaction scored
+       ↓
+Transaction 2 arrives
+```
+
+---
+
+# 16. Phase 10 — Implement Existing Graph Features
+
+Implement or integrate the established graph-feature families first.
+
+## A. Fan-in features
+
+Measure how multiple accounts send funds to one account.
+
+Possible features:
+
+```text
+number_of_incoming_accounts
+incoming_transaction_count
+incoming_amount_sum
+incoming_amount_mean
+incoming_amount_variance
+```
+
+## B. Fan-out features
+
+Measure how one account distributes funds to many accounts.
+
+```text
+number_of_outgoing_accounts
+outgoing_transaction_count
+outgoing_amount_sum
+outgoing_amount_mean
+```
+
+## C. Cycle-related features
+
+Detect whether funds participate in cycles such as:
+
+```text
+A → B → C → A
+```
+
+Potential features:
+
+```text
+cycle_detected
+cycle_length
+number_of_cycles
+transaction_in_cycle
+shortest_cycle_length
+```
+
+## D. Scatter-gather features
+
+Detect structures where funds move from one account to several intermediaries and eventually gather at another account.
+
+```text
+Source
+ ├──▶ B
+ ├──▶ C
+ └──▶ D
+       │
+       ▼
+    Target
+```
+
+## E. Vertex-statistical features
+
+Calculate historical statistics for the source and destination accounts:
+
+* Sum
+* Mean
+* Minimum
+* Maximum
+* Median
+* Variance
+* Skewness
+* Kurtosis
+* Inflow statistics
+* Outflow statistics
+
+The GFP paper explains that incremental statistical calculations can maintain account-level statistics efficiently as transactions are added or removed. 
+
+## F. Degree and neighbourhood features
+
+Examples:
+
+```text
+source_in_degree
+source_out_degree
+destination_in_degree
+destination_out_degree
+source_neighbour_count
+destination_neighbour_count
+```
+
+## Output
+
+Create one feature row for every transaction:
+
+```text
+transaction_id
+basic_features...
+fan_in_features...
+fan_out_features...
+cycle_features...
+scatter_gather_features...
+vertex_statistics...
+```
+
+---
+
+# 17. Phase 11 — Train the First Complete System
+
+## Complete M2 pipeline
+
+```text
+Raw AML data
+      ↓
+Validation
+      ↓
+Canonical schema
+      ↓
+Temporal split
+      ↓
+Temporal graph construction
+      ↓
+Graph feature extraction
+      ↓
+Feature table
+      ↓
+XGBoost training
+      ↓
+Validation and threshold selection
+      ↓
+Test evaluation
+      ↓
+Risk scores and explanations
+```
+
+## M2 completion criteria
+
+M2 is complete only when you have:
+
+* A reproducible data-loading process
+* A documented graph-construction process
+* A verified feature-extraction process
+* A trained XGBoost model
+* Saved model weights
+* Test predictions
+* Evaluation metrics
+* Feature importance results
+* Runtime measurements
+* Error-analysis reports
+
+---
+
+# 18. Phase 12 — Evaluation Framework
+
+Because AML data is highly imbalanced, accuracy should not be the primary metric.
+
+## Machine-learning metrics
+
+Measure:
+
+* Precision
+* Recall
+* F1-score
+* PR-AUC
+* ROC-AUC
+* Confusion matrix
+
+## AML-specific metrics
+
+Measure:
+
+* Recall at a fixed alert budget
+* Precision at top K
+* Recall at top K
+* Number of alerts generated
+* False positives per 1,000 transactions
+* False-positive rate
+* Suspicious-pattern detection rate
+* Suspicious-path detection rate
+
+## System-performance metrics
+
+Measure separately:
+
+| Component          | Measurement                   |
+| ------------------ | ----------------------------- |
+| Data loading       | Time in seconds               |
+| Graph construction | Time in seconds               |
+| Feature extraction | Time per transaction or batch |
+| Model inference    | Time per transaction or batch |
+| Total pipeline     | End-to-end latency            |
+| Throughput         | Transactions per second       |
+| CPU usage          | Percentage                    |
+| Memory usage       | Peak RAM                      |
+| Storage usage      | Disk consumption              |
+
+The GFP research evaluates graph-feature extraction and model throughput separately from the model itself, making this separation useful for your experiments. 
+
+---
+
+# 19. Phase 13 — Error Analysis
+
+After obtaining baseline results, analyse where the model fails.
+
+## False-positive categories
+
+Examples:
+
+* Legitimate payroll fan-out
+* Merchant settlement
+* Corporate treasury movement
+* Normal business supply-chain activity
+* High-volume but legitimate accounts
+* Shared service accounts
+
+## False-negative categories
+
+Examples:
+
+* Slow layering
+* Long-distance fund movement
+* Low-value dispersed transfers
+* Previously unseen patterns
+* Transactions outside the selected time window
+* Complex multi-hop activity
+
+## Error-analysis table
+
+| Transaction ID | Actual label | Predicted label | Pattern         | Error reason                   | Potential improvement             |
+| -------------- | -----------: | --------------: | --------------- | ------------------------------ | --------------------------------- |
+| TX001          |            0 |               1 | Payroll fan-out | Legitimate high-degree account | Add account context               |
+| TX002          |            1 |               0 | Slow layering   | Narrow time window             | Add multi-scale temporal features |
+
+This stage should determine which new feature or algorithm you investigate next.
+
+---
+
+# 20. Phase 14 — Explainability
+
+Use SHAP for the XGBoost model.
+
+## Explanation output
+
+For each flagged transaction, display:
+
+```text
+Transaction ID: TX1001
+Risk score: 0.94
+Prediction: Suspicious
+```
+
+### Top contributing features
+
+```text
+1. cycle_participation_score
+2. source_velocity_1h
+3. fan_out_count
+4. destination_inflow_deviation
+5. counterparty_growth_rate
+```
+
+## Graph explanation
+
+Also display:
+
+* Source account
+* Destination account
+* Relevant neighbouring accounts
+* Detected graph pattern
+* Transaction path
+* Time interval
+* Amount flow
+* Contributing features
+
+The objective is not merely to say:
+
+> “This transaction is suspicious.”
+
+It should explain:
+
+> “This transaction was flagged because it participated in a short-time multi-hop flow with unusual fan-out and abnormal account-level activity.”
+
+---
+
+# 21. Phase 15 — Establish the Computational Baseline
+
+Record the cost of every stage.
+
+```text
+Data loading          = X seconds
+Data validation       = Y seconds
+Graph construction    = Z seconds
+GFP feature extraction= A seconds
+XGBoost inference     = B seconds
+Total                 = C seconds
+Peak memory           = D MB
+Throughput            = E transactions/second
+```
+
+This is necessary because your future contribution may improve either:
+
+* Detection quality
+* Runtime
+* Memory efficiency
+* Explainability
+* Or a combination of these
+
+Do not report only model accuracy.
+
+---
+
+# 22. Phase 16 — Create an Experiment Registry
+
+Every experiment should generate a machine-readable record.
+
+```json
+{
+  "experiment_id": "EXP_001",
+  "dataset": "AMLSim_v1",
+  "split": "temporal_70_15_15",
+  "feature_set": "transaction_features",
+  "model": "XGBoost",
+  "random_seed": 42,
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1_score": 0.0,
+  "pr_auc": 0.0,
+  "latency_ms": 0.0,
+  "throughput": 0.0,
+  "peak_memory_mb": 0.0,
+  "git_commit": "commit_hash"
+}
+```
+
+## Recommended experiment naming
+
+```text
+EXP001_RULE_BASELINE
+EXP002_TRANSACTION_XGB
+EXP003_GFP_XGB
+EXP004_GFP_TEMPORAL
+EXP005_GFP_VALUE_FLOW
+EXP006_ADAPTIVE_GRAPH
+```
+
+Tools you may use:
+
+* JSON or CSV initially
+* MLflow for experiment tracking
+* Git for code versioning
+* DVC for dataset versioning
+* SQLite for a lightweight experiment registry
+
+---
+
+# 23. Phase 17 — Research Innovation Stage
+
+Do not implement all novel ideas simultaneously.
+
+Investigate one improvement at a time.
+
+## Research direction A — Temporal Flow Motifs
+
+Existing graph features may detect structural patterns but may not fully capture the timing of fund movement.
+
+Develop features such as:
+
+* Time between consecutive hops
+* Time from source to final destination
+* Transaction burst duration
+* Average time between intermediaries
+* Time-decayed path activity
+* Temporal ordering of graph motifs
+* Multi-scale time-window statistics
+
+Example:
+
+```text
+A → B at 10:00
+B → C at 10:02
+C → D at 10:04
+```
+
+Potential feature:
+
+```text
+rapid_three_hop_transfer = 1
+```
+
+---
+
+## Research direction B — Value-Flow Features
+
+Structural features may identify a path without understanding how much value is preserved or lost.
+
+Develop:
+
+* Amount-retention ratio
+* Inflow-to-outflow ratio
+* Value dissipation
+* Amount splitting score
+* Amount aggregation score
+* Flow conservation deviation
+* Percentage of funds transferred onward
+* Source-to-final amount ratio
+
+Example:
+
+```text
+A sends ₹10,00,000 to B
+B sends ₹9,80,000 to C
+C sends ₹9,50,000 to D
+```
+
+Potential features:
+
+```text
+retention_ratio = 950000 / 1000000
+value_loss_ratio = 1 - retention_ratio
+```
+
+---
+
+## Research direction C — Behavioural Novelty
+
+Instead of only checking whether a pattern exists, measure whether it is unusual for a specific account.
+
+Potential features:
+
+* New-counterparty score
+* New payment-type score
+* Deviation from historical behaviour
+* Sudden degree increase
+* Sudden amount-distribution change
+* Account activity novelty
+* Rare-pattern score
+
+Example:
+
+> An account normally sends money to two known suppliers but suddenly sends funds to 25 new accounts.
+
+---
+
+## Research direction D — Risk-Adaptive Graph Expansion
+
+Instead of exploring the same neighbourhood size for every transaction, use a risk-based expansion strategy.
+
+```text
+Incoming transaction
+        ↓
+Initial one-hop analysis
+        ↓
+Low-risk?
+   ┌────┴────┐
+   │         │
+  Yes        No
+   │         │
+Stop     Expand to 2-hop
+             ↓
+        High risk?
+             ↓
+        Expand further
+```
+
+Potential benefit:
+
+* Less computation for ordinary transactions
+* More graph context for suspicious transactions
+* Reduced average feature-extraction cost
+
+This must be evaluated carefully because adaptive exploration can introduce selection bias or miss suspicious patterns.
+
+---
+
+## Research direction E — Multi-Resolution Temporal Features
+
+Use multiple time windows:
+
+```text
+5 minutes
+1 hour
+6 hours
+1 day
+7 days
+```
+
+Extract features at each resolution:
+
+* Transaction count
+* Amount sum
+* Counterparty count
+* Fan-in
+* Fan-out
+* Cycle participation
+* Flow velocity
+
+This may help detect both:
+
+* Rapid laundering
+* Slow layering
+
+---
+
+## Research direction F — Heterogeneous Graph Features
+
+Represent different entity types separately:
+
+```text
+Person
+Company
+Bank account
+Merchant
+Supplier
+```
+
+Instead of treating every node as an identical account, introduce:
+
+* Node type
+* Relationship type
+* Ownership relationship
+* Employment relationship
+* Supplier relationship
+* Account relationship
+
+This direction should only be attempted if the selected dataset contains the required entity information.
+
+---
+
+# 24. Phase 18 — Controlled Ablation Studies
+
+For each new feature group, compare:
+
+```text
+Baseline
+Baseline + Feature Group A
+Baseline + Feature Group B
+Baseline + Feature Group C
+Baseline + A + B
+Final selected combination
+```
+
+## Example experiment matrix
+
+| Experiment | Features                   | Model   |
+| ---------- | -------------------------- | ------- |
+| E1         | Transaction only           | XGBoost |
+| E2         | GFP features               | XGBoost |
+| E3         | GFP + temporal features    | XGBoost |
+| E4         | GFP + value-flow features  | XGBoost |
+| E5         | GFP + behavioural features | XGBoost |
+| E6         | GFP + adaptive expansion   | XGBoost |
+| E7         | Selected combined features | XGBoost |
+
+## Rules
+
+* Keep the dataset fixed.
+* Keep the split fixed.
+* Keep the model family fixed where possible.
+* Keep the evaluation threshold-selection process fixed.
+* Add one feature group at a time.
+* Report both benefits and drawbacks.
+
+A new feature is useful only if it provides measurable value.
+
+---
+
+# 25. Phase 19 — Main Comparison Table
+
+Your final results table should look like this:
+
+| Model                     | PR-AUC | Precision | Recall | F1 | False positives | Latency | Throughput | Peak RAM |
+| ------------------------- | -----: | --------: | -----: | -: | --------------: | ------: | ---------: | -------: |
+| Rule-based baseline       |      — |         — |      — |  — |               — |       — |          — |        — |
+| Transaction-only XGBoost  |      — |         — |      — |  — |               — |       — |          — |        — |
+| GFP + XGBoost             |      — |         — |      — |  — |               — |       — |          — |        — |
+| GFP + temporal features   |      — |         — |      — |  — |               — |       — |          — |        — |
+| GFP + value-flow features |      — |         — |      — |  — |               — |       — |          — |        — |
+| Adaptive graph method     |      — |         — |      — |  — |               — |       — |          — |        — |
+| Final FlowGuard model     |      — |         — |      — |  — |               — |       — |          — |        — |
+
+Do not fill in results until the experiments have actually been performed.
+
+---
+
+# 26. Phase 20 — Cross-Dataset Validation
+
+Once the model works on the primary dataset, test it on a second dataset.
+
+```text
+              FlowGuard
+                  │
+       ┌──────────┼──────────┐
+       ▼          ▼          ▼
+     AMLSim    IBM AML     Other AML
+```
+
+The purpose is to determine whether the model has learned general AML behaviour or merely memorized the structure of one synthetic dataset.
+
+Compare:
+
+* Feature availability
+* Data-schema differences
+* Performance changes
+* Pattern-transfer performance
+* Runtime differences
+* Robustness to unseen transaction distributions
+
+---
+
+# 27. Phase 21 — Final Model Selection
+
+Choose the final architecture based on measured results.
+
+The final model might contain:
+
+```text
+Existing GFP features
+        +
+Temporal flow features
+        +
+Value-flow features
+        +
+Risk-adaptive graph expansion
+        +
+XGBoost
+```
+
+However, this combination should be selected **only if the experiments demonstrate that it is beneficial**.
+
+The final architecture should be based on evidence, not assumptions.
+
+---
+
+# 28. Phase 22 — Build the Demonstration Application
+
+After the research pipeline is stable, create a usable demonstration.
+
+## Backend
+
+Use:
+
+* FastAPI
+* Python
+* XGBoost
+* Pandas or Polars
+* Graph processing module
+* SHAP explanation module
+
+## Frontend
+
+Use one of:
+
+* Streamlit for a quick research demo
+* React for a more polished interface
+
+## Suggested dashboard pages
+
+### Page 1 — Transaction Risk Scoring
+
+Upload a CSV or enter a transaction.
+
+Display:
+
+```text
+Transaction ID
+Risk score
+Risk category
+Predicted label
+Top contributing features
+```
+
+### Page 2 — Transaction Network
+
+Display:
+
+* Account nodes
+* Transaction edges
+* Suspicious path
+* Amount flow
+* Transaction timestamps
+* Detected motifs
+
+### Page 3 — Alert Investigation
+
+Display:
+
+* Alert ID
+* Related accounts
+* Related transactions
+* Risk score
+* Pattern type
+* Explanation
+* Investigation status
+
+### Page 4 — Model Performance
+
+Display:
+
+* PR-AUC
+* F1-score
+* Recall
+* Precision
+* False-positive rate
+* Latency
+* Throughput
+* Memory usage
+
+### Page 5 — Model Comparison
+
+Compare:
+
+```text
+Rules
+Transaction-only XGBoost
+GFP + XGBoost
+FlowGuard
+```
+
+---
+
+# 29. Phase 23 — API Design
+
+## Endpoint 1: Health check
+
+```http
+GET /health
+```
+
+## Endpoint 2: Score a transaction
+
+```http
+POST /score
+```
+
+Input:
+
+```json
+{
+  "transaction_id": "TX1001",
+  "source_account": "A",
+  "destination_account": "B",
+  "amount": 10000,
+  "timestamp": "2026-01-01T10:00:00"
+}
+```
+
+Output:
+
+```json
+{
+  "transaction_id": "TX1001",
+  "risk_score": 0.91,
+  "predicted_label": 1,
+  "risk_category": "high",
+  "detected_patterns": [
+    "fan_out",
+    "rapid_flow"
+  ],
+  "top_features": [
+    "velocity_1h",
+    "fan_out_count",
+    "amount_deviation"
+  ],
+  "model_version": "flowguard_v1"
+}
+```
+
+## Endpoint 3: Explain a transaction
+
+```http
+GET /transactions/{transaction_id}/explanation
+```
+
+## Endpoint 4: Retrieve related graph
+
+```http
+GET /transactions/{transaction_id}/graph
+```
+
+## Endpoint 5: Compare models
+
+```http
+GET /evaluation/summary
+```
+
+---
+
+# 30. Phase 24 — Testing and Reproducibility
+
+Create tests for every major component.
+
+## Data tests
+
+* Required columns exist
+* Timestamps are valid
+* Amounts are valid
+* Transaction IDs are unique
+* Labels are valid
+
+## Graph tests
+
+* Every transaction creates the correct edge
+* Edge direction is correct
+* Temporal ordering is maintained
+* Self-loops are handled correctly
+* Motif detection works on small known examples
+
+## Feature tests
+
+Create small synthetic graphs where the expected output is known.
+
+Example:
+
+```text
+A → B
+A → C
+A → D
+```
+
+Expected:
+
+```text
+out_degree(A) = 3
+fan_out(A) = True
+```
+
+## Model tests
+
+* Feature columns are consistent
+* Training and inference schemas match
+* Model output is reproducible
+* Missing features are handled correctly
+
+## Reproducibility checklist
+
+* Freeze dependencies
+* Save configurations
+* Save random seeds
+* Save dataset checksums
+* Save model parameters
+* Save experiment metadata
+* Record Git commit IDs
+
+---
+
+# 31. Suggested Technology Stack
+
+| Component            | Recommended tool                |
+| -------------------- | ------------------------------- |
+| Programming language | Python                          |
+| Data processing      | Pandas or Polars                |
+| File format          | Parquet                         |
+| Graph prototyping    | NetworkX                        |
+| Graph storage        | Adjacency lists or dictionaries |
+| Machine learning     | XGBoost                         |
+| Explainability       | SHAP                            |
+| Data validation      | Pandera or custom validation    |
+| Experiment tracking  | MLflow or JSON registry         |
+| Version control      | Git and GitHub                  |
+| Dataset versioning   | DVC, if necessary               |
+| API                  | FastAPI                         |
+| Dashboard            | Streamlit                       |
+| Visualisation        | Matplotlib, Plotly or PyVis     |
+| Testing              | Pytest                          |
+| Packaging            | `venv` or Conda                 |
+| Deployment           | Docker                          |
+
+Start with a simple Python implementation. Optimisation and distributed processing should come only after the baseline works.
+
+---
+
+# 32. Suggested Execution Timeline
+
+## Week 1 — Dataset and project setup
+
+* Finalize dataset
+* Verify source and labels
+* Create project structure
+* Download and preserve raw data
+* Create dataset metadata
+* Build initial data loader
+
+### Deliverable
+
+```text
+Raw dataset + data loader + dataset report
+```
+
+---
+
+## Week 2 — Data quality and exploration
+
+* Implement validation
+* Create canonical schema
+* Perform exploratory analysis
+* Analyse transaction imbalance
+* Study temporal and graph distributions
+
+### Deliverable
+
+```text
+Data quality report + EDA notebook
+```
+
+---
+
+## Week 3 — Baseline models
+
+* Implement rule-based baseline
+* Create transaction-level features
+* Train transaction-only XGBoost
+* Build temporal train/validation/test split
+* Create initial evaluation framework
+
+### Deliverable
+
+```text
+M0 rules + M1 transaction XGBoost
+```
+
+---
+
+## Week 4 — Graph construction
+
+* Build directed transaction graph
+* Implement incremental graph updates
+* Add degree and neighbourhood features
+* Create graph visualisations
+* Validate graph construction on small examples
+
+### Deliverable
+
+```text
+Temporal graph module + graph statistics
+```
+
+---
+
+## Week 5 — GFP baseline
+
+* Verify GFP paper and source implementation
+* Freeze GFP configuration
+* Implement or integrate graph-pattern features
+* Extract graph features
+* Train GFP + XGBoost
+
+### Deliverable
+
+```text
+M2 graph-feature-based AML baseline
+```
+
+---
+
+## Week 6 — Evaluation and error analysis
+
+* Calculate PR-AUC, F1, recall and precision
+* Measure latency and memory
+* Perform false-positive analysis
+* Perform false-negative analysis
+* Add SHAP explanations
+
+### Deliverable
+
+```text
+Baseline benchmark + error-analysis report
+```
+
+---
+
+## Week 7 — Novel feature experiments
+
+Start with one or two research directions:
+
+* Temporal flow features
+* Value-flow features
+* Behavioural novelty features
+* Multi-resolution features
+
+### Deliverable
+
+```text
+Feature-ablation experiments
+```
+
+---
+
+## Week 8 — Adaptive and efficiency experiments
+
+* Test risk-adaptive graph expansion
+* Measure graph-extraction cost
+* Compare memory usage
+* Evaluate the accuracy-efficiency trade-off
+
+### Deliverable
+
+```text
+Efficiency report + adaptive feature experiments
+```
+
+---
+
+## Week 9 — Final model and cross-dataset testing
+
+* Select useful features
+* Run final ablation study
+* Test on a second dataset if available
+* Freeze the final model
+* Document limitations
+
+### Deliverable
+
+```text
+Final FlowGuard model + research results
+```
+
+---
+
+## Week 10 — Application and presentation
+
+* Build FastAPI backend
+* Build Streamlit dashboard
+* Add transaction investigation view
+* Add graph visualisation
+* Add model comparison page
+* Prepare final report and presentation
+
+### Deliverable
+
+```text
+Working FlowGuard demonstration
+```
+
+---
+
+# 33. Final Research Deliverables
+
+At the end of the project, you should have:
+
+## Technical deliverables
+
+* Clean AML data pipeline
+* Canonical transaction schema
+* Leakage-safe temporal split
+* Transaction-only XGBoost model
+* GFP-based graph-feature model
+* Novel feature modules
+* Final FlowGuard model
+* Model evaluation framework
+* Experiment registry
+* SHAP explanation module
+* Graph visualisation module
+* FastAPI backend
+* Streamlit dashboard
+* Docker configuration
+* Automated tests
+
+## Research deliverables
+
+* Dataset analysis report
+* GFP implementation report
+* Baseline comparison report
+* Error-analysis report
+* Ablation-study report
+* Accuracy-efficiency trade-off analysis
+* Cross-dataset validation report
+* Limitations and future-work section
+* Final research paper or technical report
+
+---
+
+# 34. Recommended Final Research Flow
+
+```text
+                  ┌────────────────────┐
+                  │ Dataset Selection  │
+                  └─────────┬──────────┘
+                            ▼
+                  ┌────────────────────┐
+                  │ Raw Data Storage   │
+                  └─────────┬──────────┘
+                            ▼
+                  ┌────────────────────┐
+                  │ Data Validation    │
+                  │ and EDA            │
+                  └─────────┬──────────┘
+                            ▼
+                  ┌────────────────────┐
+                  │ Canonical Schema   │
+                  └─────────┬──────────┘
+                            ▼
+                  ┌────────────────────┐
+                  │ Temporal Data Split│
+                  └─────────┬──────────┘
+                            ▼
+            ┌───────────────┴────────────────┐
+            ▼                                ▼
+  ┌────────────────────┐          ┌────────────────────┐
+  │ Transaction-Only   │          │ Temporal Graph     │
+  │ Features           │          │ Construction       │
+  └─────────┬──────────┘          └─────────┬──────────┘
+            ▼                              ▼
+  ┌────────────────────┐          ┌────────────────────┐
+  │ XGBoost Baseline   │          │ GFP Feature        │
+  └─────────┬──────────┘          │ Extraction         │
+            │                     └─────────┬──────────┘
+            │                               ▼
+            │                     ┌────────────────────┐
+            │                     │ GFP + XGBoost      │
+            │                     └─────────┬──────────┘
+            │                               ▼
+            └──────────────┬────────────────┘
+                           ▼
+                 ┌────────────────────┐
+                 │ Baseline Evaluation│
+                 └─────────┬──────────┘
+                           ▼
+                 ┌────────────────────┐
+                 │ Error Analysis     │
+                 └─────────┬──────────┘
+                           ▼
+          ┌────────────────┼─────────────────┐
+          ▼                ▼                 ▼
+   Temporal Features  Value-Flow       Adaptive Graph
+                     Features          Features
+          │                │                 │
+          └────────────────┼─────────────────┘
+                           ▼
+                 ┌────────────────────┐
+                 │ Fair Comparison    │
+                 └─────────┬──────────┘
+                           ▼
+                 ┌────────────────────┐
+                 │ Ablation Studies   │
+                 └─────────┬──────────┘
+                           ▼
+                 ┌────────────────────┐
+                 │ Cross-Dataset Test │
+                 └─────────┬──────────┘
+                           ▼
+                 ┌────────────────────┐
+                 │ Final FlowGuard    │
+                 │ Model              │
+                 └─────────┬──────────┘
+                           ▼
+                 ┌────────────────────┐
+                 │ API + Dashboard    │
+                 └────────────────────┘
+```
+
+---
+
+# 35. First Practical Milestone
+
+Do not begin by implementing the complete FlowGuard system.
+
+Your first milestone should be:
+
+## **M0 — Reproducible AML Baseline**
+
+M0 is complete when you have:
+
+```text
+✓ Dataset selected and verified
+✓ Raw data preserved
+✓ Dataset metadata created
+✓ Data-quality report
+✓ Canonical transaction schema
+✓ Leakage-safe temporal split
+✓ Rule-based baseline
+✓ Transaction-only XGBoost
+✓ Temporal transaction graph
+✓ GFP implementation or verified GFP-inspired features
+✓ Graph-feature-based XGBoost
+✓ PR-AUC, F1, precision and recall
+✓ Latency and memory measurements
+✓ SHAP explanations
+✓ Error analysis
+✓ Experiment registry
+✓ Reproducible execution command
+```
+
+Only after this milestone should you begin developing new graph algorithms.
+
+## Recommended first implementation command
+
+Once the dataset and configuration are frozen, the first executable workflow should eventually look like:
+
+```bash
+python -m flowguard.pipeline.run_baseline --config configs/experiment.yaml
+```
+
+The immediate next task is to **verify the exact dataset and GFP implementation**, then create the project structure and implement the data-ingestion and validation modules.

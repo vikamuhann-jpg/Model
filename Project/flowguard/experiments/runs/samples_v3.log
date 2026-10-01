@@ -1,0 +1,68 @@
+input: 50,263 test-period rows, 2022-09-08 16:13:00+00:00 .. 2022-09-08 18:46:00+00:00
+{
+  "model_id": "flowguard_V2_v1",
+  "git_commit": "d59a1254c41d203119f7264c1d16015c95a84b4c",
+  "feature_schema_hash": "7c58a20d069f9985",
+  "uses_payment_type": false,
+  "threshold": 0.01364365965127945,
+  "threshold_source": "validation @ 1.0% alert budget",
+  "n_transactions": 50263,
+  "n_alerts": 631,
+  "history_transactions": 5028082,
+  "case_ids": [
+    "FG-06436b78",
+    "FG-6fef29de",
+    "FG-1e2cb533",
+    "FG-2cf77da2",
+    "FG-dcdbcfa9",
+    "FG-1e270556",
+    "FG-14cf0822",
+    "FG-85f4a314",
+    "FG-82b960dd",
+    "FG-b21ffd83"
+  ],
+  "scored_at": "2026-09-26T10:05:52Z",
+  "seconds": 206.1
+}
+{
+  "window": {
+    "from": "2022-09-08 16:13:00+00:00",
+    "to": "2022-09-08 18:46:00+00:00",
+    "rows": 50263,
+    "positives": 76,
+    "base_rate": 0.0015120466347014702
+  },
+  "pr_auc": 0.5683795274940179,
+  "roc_auc": 0.9886511289881108,
+  "recall_at_1pct": 0.7368421052631579,
+  "at_shipped_threshold": {
+    "alerts": 631,
+    "caught": 58,
+    "recall": 0.7631578947368421,
+    "precision": 0.0919175911251981
+  },
+  "note": "A 2.5-hour window holding few positives, so the interval around any of these numbers is wide. The full test-period figures are in the package's metrics.json."
+}
+	Command being timed: "/root/flowguard/.venv/bin/python scripts/make_sample_outputs.py"
+	User time (seconds): 218.05
+	System time (seconds): 40.43
+	Percent of CPU this job got: 127%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:23.39
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 4321968
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1748
+	Minor (reclaiming a frame) page faults: 4922354
+	Voluntary context switches: 69528
+	Involuntary context switches: 7231
+	Swaps: 0
+	File system inputs: 348024
+	File system outputs: 0
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,758 @@
+Yes. I would give that person a **separate research track** that is intentionally open-ended. Their job should **not** be to copy our baseline or immediately implement another algorithm. Their job is to investigate whether a substantially different modelling approach can outperform, complement, or simplify the existing baseline.
+
+You can give them this brief:
+
+---
+
+# Research Track B — Alternative AML Graph/ML Model
+
+## 1. Objective
+
+Research and identify **an alternative graph/ML approach for AML fund-flow detection** that can be fairly compared with our primary baseline.
+
+The goal is **not necessarily to beat the baseline on accuracy**.
+
+The alternative model may be better in:
+
+* detection quality
+* minority-class performance
+* false-positive reduction
+* unseen-pattern detection
+* latency
+* throughput
+* memory usage
+* scalability
+* explainability
+* robustness
+* ability to capture temporal/complex fund-flow behaviour
+
+The final recommendation must be based on experiments, not assumptions.
+
+---
+
+# 2. Starting Point
+
+Our primary research pipeline will use:
+
+```text
+IBM AMLSim
+      ↓
+Data preprocessing
+      ↓
+Graph construction
+      ↓
+Existing graph-feature approach / GFP baseline
+      ↓
+XGBoost
+      ↓
+AML detection
+```
+
+Your task is to investigate:
+
+> **What alternative representation, graph algorithm, feature-extraction method, or ML architecture could provide additional value?**
+
+Do not assume that the new method must replace GFP.
+
+It may instead be:
+
+```text
+GFP
+ +
+Alternative method
+```
+
+or:
+
+```text
+Alternative method
+ →
+XGBoost
+```
+
+or:
+
+```text
+Alternative graph representation
+ →
+different ML model
+```
+
+---
+
+# 3. Research Question
+
+Start broad.
+
+Investigate questions such as:
+
+> Can another graph representation capture AML fund-flow behaviour that conventional graph features miss?
+
+> Can temporal information be represented more effectively?
+
+> Can we reduce computational cost while preserving detection quality?
+
+> Can a model detect previously unseen AML patterns better?
+
+> Can a graph-learning method provide richer information than handcrafted graph features?
+
+> Can we achieve similar detection quality with a simpler/faster model?
+
+The researcher should eventually reduce these to **one clear hypothesis**.
+
+---
+
+# 4. Research Areas to Explore
+
+Don't restrict the person to one algorithm.
+
+They should investigate several families.
+
+### A. Graph Neural Networks
+
+Possible directions:
+
+* GraphSAGE
+* GAT
+* GCN
+* GIN
+* temporal GNNs
+* heterogeneous GNNs
+
+Question:
+
+> Does learned graph representation outperform handcrafted graph features?
+
+---
+
+### B. Temporal Graph Models
+
+Investigate:
+
+* temporal message passing
+* time-aware graph embeddings
+* temporal GNNs
+* temporal motifs
+* event-based graphs
+
+Question:
+
+> Does explicitly modelling transaction order and time improve AML detection?
+
+---
+
+### C. Graph Motif / Subgraph Methods
+
+Investigate:
+
+* motif detection
+* frequent subgraphs
+* temporal motifs
+* suspicious subgraph scoring
+* subgraph embeddings
+
+Question:
+
+> Can AML patterns be represented as richer subgraphs rather than only individual graph statistics?
+
+---
+
+### D. Graph Embedding Methods
+
+Investigate:
+
+* Node2Vec
+* DeepWalk
+* graph embeddings
+* temporal embeddings
+
+Question:
+
+> Can compact learned representations capture suspicious account relationships effectively?
+
+---
+
+### E. Adaptive Graph Traversal
+
+Investigate:
+
+* dynamic hop depth
+* risk-guided neighbourhood expansion
+* relevance-based subgraph extraction
+* computational-budget-aware traversal
+
+Question:
+
+> Can we avoid analysing unnecessary parts of a huge graph?
+
+---
+
+### F. Heterogeneous Graphs
+
+Investigate representing:
+
+```text
+Customer
+Account
+Transaction
+Product
+Branch
+Channel
+Merchant
+```
+
+as different entity types.
+
+Question:
+
+> Does representing the banking ecosystem as a heterogeneous graph improve contextual detection?
+
+---
+
+# 5. Important Factors for OUR Case
+
+These factors are mandatory because this isn't a generic graph benchmark.
+
+## Factor 1 — AML typologies
+
+The method should be evaluated against the PS9 scenarios:
+
+```text
+Layering
+Round-tripping
+Fan-in
+Fan-out
+Dormant-account activation
+Structuring-like fragmented behaviour
+Profile mismatch
+Composite patterns
+```
+
+---
+
+## Factor 2 — Temporal behaviour
+
+Time matters.
+
+The researcher must investigate:
+
+* time between transfers
+* transaction bursts
+* acceleration
+* ordering
+* duration of fund movement
+
+A model that ignores time should clearly justify why.
+
+---
+
+## Factor 3 — Highly imbalanced data
+
+Fraud/AML cases are usually rare compared with legitimate activity.
+
+Do not optimize for:
+
+> Accuracy
+
+alone.
+
+Focus on:
+
+* PR-AUC
+* Recall
+* Precision
+* F1
+* Precision@K
+* false positives
+
+---
+
+## Factor 4 — Hard legitimate cases
+
+This is mandatory.
+
+Test against legitimate flows that may look suspicious:
+
+```text
+Payroll
+Treasury movement
+Merchant settlements
+Large business transfers
+Normal fan-out
+Normal high-volume accounts
+```
+
+The model should not simply detect:
+
+> “complex graph = fraud.”
+
+---
+
+## Factor 5 — Unseen patterns
+
+The researcher should design at least one test where the model does not see the exact pattern during training.
+
+Example:
+
+```text
+Training:
+Layering
+Cycle
+
+Testing:
+Dormant activation + layering + fan-out
+```
+
+Question:
+
+> Can the model generalize beyond the patterns it was explicitly trained on?
+
+---
+
+# 6. Fair Comparison Rules
+
+This is extremely important.
+
+The alternative model must use:
+
+### Same dataset
+
+**IBM AMLSim** initially.
+
+### Same train/validation/test split
+
+Do not create a more favourable split.
+
+### Same preprocessing principles
+
+Unless preprocessing itself is the research contribution.
+
+### Same ground truth
+
+Do not change labels.
+
+### Same test cases
+
+Every model gets the same challenge.
+
+### Same hardware
+
+Measure performance under the same environment.
+
+### Same evaluation metrics
+
+Otherwise the comparison is not valid.
+
+---
+
+# 7. What They Need to Compare Against
+
+At minimum:
+
+```text
+Model A
+Transaction-only ML
+
+Model B
+Existing Graph Features + XGBoost
+
+Model C
+Researcher's proposed model
+```
+
+Potentially:
+
+```text
+Model D
+Proposed model + XGBoost
+
+Model E
+Proposed model + existing graph features
+```
+
+---
+
+# 8. Do Not Assume “More Complex = Better”
+
+This is a critical instruction.
+
+Suppose:
+
+```text
+GFP + XGBoost
+PR-AUC = 0.86
+Latency = 100 ms
+```
+
+and a GNN gives:
+
+```text
+PR-AUC = 0.88
+Latency = 1.8 sec
+GPU = required
+```
+
+The GNN is **not automatically the better solution**.
+
+For a real-time banking system, the trade-off matters.
+
+The researcher should report:
+
+```text
+Accuracy
+vs
+Latency
+vs
+Compute
+vs
+Memory
+vs
+Complexity
+```
+
+---
+
+# 9. Required Research Deliverable
+
+At the end of the research phase, the person should submit a short document containing:
+
+## 1. Literature Review
+
+At least:
+
+* 5–10 relevant papers
+* original algorithm/paper
+* dataset used
+* problem addressed
+* reported strengths
+* reported limitations
+
+Prefer:
+
+* peer-reviewed papers
+* IBM Research
+* IEEE
+* ACM
+* Springer
+* Nature
+* arXiv when the work is relevant but not peer-reviewed
+
+---
+
+## 2. Candidate Model Table
+
+Example:
+
+| Approach           | AML relevance | Temporal | Graph depth | Explainability | Compute    | Novelty potential |
+| ------------------ | ------------- | -------- | ----------- | -------------- | ---------- | ----------------- |
+| GraphSAGE          | High          | Low      | Medium      | Medium         | Medium     | Medium            |
+| Temporal GNN       | High          | High     | High        | Low-Medium     | High       | High              |
+| Motif features     | High          | High     | High        | High           | Low-Medium | High              |
+| Adaptive traversal | High          | High     | High        | High           | Low-Medium | High              |
+| Heterogeneous GNN  | High          | Medium   | High        | Medium         | High       | High              |
+
+The actual ratings must be justified by the literature/experiments.
+
+---
+
+# 10. Then Select One Candidate
+
+The person should answer:
+
+### Why this model?
+
+### What limitation of our baseline does it target?
+
+### What is the expected improvement?
+
+### What is the cost?
+
+### Can we implement it in the available time?
+
+### What would falsify the idea?
+
+That last question is important.
+
+For example:
+
+> “If the new method improves PR-AUC by <1% while increasing latency by >5×, we will not use it.”
+
+Now the research has a decision rule.
+
+---
+
+# 11. Experimental Plan
+
+The researcher should propose experiments before implementation.
+
+Example:
+
+### Experiment 1
+
+Baseline vs alternative on normal AMLSim test set.
+
+### Experiment 2
+
+Highly imbalanced test.
+
+### Experiment 3
+
+Hard-negative legitimate flows.
+
+### Experiment 4
+
+Unseen composite patterns.
+
+### Experiment 5
+
+Different graph depths.
+
+### Experiment 6
+
+Latency/throughput.
+
+### Experiment 7
+
+Memory usage.
+
+### Experiment 8
+
+Ablation:
+
+```text
+Model
+Model + temporal
+Model + graph
+Model + temporal + graph
+```
+
+---
+
+# 12. Metrics
+
+The researcher should report:
+
+### Detection
+
+* Precision
+* Recall
+* F1
+* PR-AUC
+
+### Investigator-oriented
+
+* Precision@K
+* false-positive rate
+* alert reduction
+
+### Graph
+
+* suspicious-path detection
+* subgraph detection rate
+* path reconstruction accuracy
+
+### System
+
+* feature extraction latency
+* inference latency
+* total latency
+* transactions/second
+* CPU
+* RAM
+* GPU, if applicable
+
+---
+
+# 13. The Researcher's Most Important Question
+
+Ask them to investigate:
+
+> **What information does our existing baseline fail to capture?**
+
+Not:
+
+> “What fancy algorithm can we add?”
+
+For example, they might discover:
+
+```text
+GFP captures topology well
+but weakly represents temporal acceleration
+```
+
+Then their solution should target **temporal representation**.
+
+Or:
+
+```text
+GFP is efficient
+but shallow graph context limits complex-pattern detection
+```
+
+Then perhaps investigate **adaptive multi-hop modelling**.
+
+Or:
+
+```text
+GNN improves recall
+but latency is too high
+```
+
+Then investigate a **lightweight graph representation**.
+
+That is how we should find the research direction.
+
+---
+
+# 14. Possible Final Outcomes
+
+The researcher does **not** have to return with:
+
+> “My model is better.”
+
+Any of these outcomes are valuable.
+
+### Outcome A — Accuracy improvement
+
+```text
+PR-AUC ↑
+Recall ↑
+```
+
+### Outcome B — Efficiency improvement
+
+```text
+similar PR-AUC
++
+lower latency
++
+lower memory
+```
+
+### Outcome C — Generalization improvement
+
+```text
+better unseen-pattern detection
+```
+
+### Outcome D — False-positive improvement
+
+```text
+similar recall
++
+fewer false positives
+```
+
+### Outcome E — Complementary model
+
+Maybe:
+
+```text
+GFP + New Method
+```
+
+is better than either alone.
+
+### Outcome F — Negative result
+
+Even:
+
+> “This method does not improve the baseline under controlled experiments.”
+
+is scientifically useful.
+
+We simply don't use it in the final system.
+
+---
+
+# 15. Very important: No implementation before research conclusion
+
+I would tell this person:
+
+> **Do not spend two weeks coding a GNN before establishing why we need it.**
+
+Their sequence should be:
+
+```text
+Research
+ ↓
+Literature
+ ↓
+Identify baseline limitation
+ ↓
+Hypothesis
+ ↓
+Candidate algorithms
+ ↓
+Feasibility analysis
+ ↓
+Experimental design
+ ↓
+Implementation
+ ↓
+Benchmark
+ ↓
+Recommendation
+```
+
+---
+
+# 16. Their final recommendation should look like this
+
+```text
+PROBLEM
+Existing baseline has limitation X.
+
+EVIDENCE
+Paper A / Paper B / Experiment X
+supports this limitation.
+
+HYPOTHESIS
+Method Y may address it because...
+
+IMPLEMENTATION
+Dataset:
+AMLSim
+
+Baseline:
+IBM GFP + XGBoost
+
+Proposed:
+Method Y + XGBoost
+
+RESULT
+PR-AUC:
+X → Y
+
+Recall:
+X → Y
+
+Latency:
+X → Y
+
+Memory:
+X → Y
+
+CONCLUSION
+Use / Do not use / Combine.
+```
+
+---
+
+# 17. Give them this exact research challenge
+
+## **Research Challenge B**
+
+> **Investigate whether an alternative graph representation, graph-learning algorithm, temporal modelling technique, or adaptive graph-feature extraction strategy can improve upon the existing AML baseline for complex fund-flow detection.**
+>
+> The research must determine **where the baseline loses information or efficiency**, propose a technically motivated alternative, and evaluate it on the **same AMLSim dataset, same temporal data split, same ground truth and same evaluation environment**.
+>
+> The goal is not necessarily to maximize accuracy. The objective is to identify the best **accuracy–false-positive–generalization–latency–compute trade-off** for real-time banking AML.
+
+---
+
+## And I would give them one final instruction
+
+> **“Don't come back with a model name. Come back with a problem that the current model cannot solve well, evidence showing why, a candidate method that should solve it, and an experiment that can prove or disprove the claim.”**
+
+That will keep their research complementary to your **M0 baseline**, rather than creating a second disconnected project.
