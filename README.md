@@ -26,7 +26,7 @@ went, and packages each alert as a self-validating evidence bundle an investigat
 
 | | |
 |---|---|
-| **Shipped model** | `flowguard_V2_v1` — PR-AUC **0.595** (seeds 0.597 ± 0.002), best F1 **0.613**, recall **78.0%** at a 1% alert budget; all 8 correctness gates pass |
+| **Shipped model** | `flowguard_V2_v1` — PR-AUC **0.595** (seeds 0.597 ± 0.002), best F1 **0.613**, recall **78.3%** at a 1% alert budget; all 8 correctness gates pass |
 | **What the 78% is made of** | **95.3%** of structured laundering (1,276 of 1,339) · **27.9%** of unstructured (128 of 458). 75% of this corpus's laundering is structured |
 | **On fresh data** | LI-Small, a corpus no decision touched: **13.3%** overall — because **88%** of its laundering is unstructured. Structured laundering is still found (ranked at the 98.7th percentile). [Decision report](docs/DECISION_REPORT_LI_TRANSFER.md) |
 | **Against IBM's benchmark** | F1 **0.614** vs the published GFP+XGBoost **63.2** — using **neither** the payment-rail artifact **nor** within-batch lookahead, both of which the published protocol includes |
@@ -117,14 +117,14 @@ own path does not.
 
 | Limitation | Evidence |
 |---|---|
-| **Blind off ACH.** Recall at 1%: ACH 84.6%; cheque 4.2%, cash, credit card and Bitcoin 0% | The corpus puts almost no laundering on other rails (144 of 1,797 test positives); removing the artifact cannot add examples |
+| **Blind off ACH.** Recall at 1%: ACH 84.9%; cheque 4.2%, cash, credit card and Bitcoin 0% | The corpus puts almost no laundering on other rails (144 of 1,797 test positives); removing the artifact cannot add examples |
 | **Extraction throughput** 532 tx/s strictly one-at-a-time (gate P8 wants 1,000) | Batches of 128 reach 2,785 tx/s at no measured accuracy cost — ≤ ~23 s of alert latency on this corpus. A deployment choice, not a pass |
 | **Peak memory** 10.99 GB (gate P9 wants ≤ 10 GB) | Training over the full 5M-row feature table |
 | **False positives on legitimate complexity** 1.5× ordinary traffic | Merchant hubs, payroll fan-out (hard-negative slice; A4 was 2.1×) |
 | **Low-value laundering is missed.** Recall at 1%: 4% below $139, 34% for $139–599 | Small transfers carry little structural signal |
 | **Synthetic data only**, one generator for the headline | Behaviour features in particular need a second corpus |
 | **Unstructured laundering is largely missed — on every corpus.** 27.9% recall here; 9.5% on LI-Small; 1–3% for unstructured laundering off ACH on either | A method limit, not a data quirk: an isolated transfer leaves no graph shape to find. Needs a second, non-graph detector (future work) |
-| **The headline does not transfer as a single number.** On a 2M-row LI-Small prefix, recall at 1% is **13.3%** against 78.0% here (pre-registered bar: 50% — failed) | About two-thirds of the drop is composition: 88% of LI-Small's laundering is unstructured, against 25% here. The rest is a genuine per-group drop (structured 95% → 41%, on 17 cases). The alert threshold does transfer (1.34%). [Decision report](docs/DECISION_REPORT_LI_TRANSFER.md) |
+| **The headline does not transfer as a single number.** On a 2M-row LI-Small prefix, recall at 1% is **13.3%** against 78.3% here (pre-registered bar: 50% — failed) | About two-thirds of the drop is composition: 88% of LI-Small's laundering is unstructured, against 25% here. The rest is a genuine per-group drop (structured 95% → 41%, on 17 cases). The alert threshold does transfer (1.34%). [Decision report](docs/DECISION_REPORT_LI_TRANSFER.md) |
 | **Cold start** — a window scored without history alerts far above budget | `score.py --emit-from` scores a window using earlier rows as history; use ≥ 2 days |
 
 ---

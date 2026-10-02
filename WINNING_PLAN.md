@@ -457,7 +457,7 @@ in ours, so they are fixed here at the source.
   three matrices built from it (~4.2 GB)**, and no partition ever needs another partition's
   rows. `read_varying_chunks` gained a `rows` filter; `build_inputs` reads per partition.
   The planned HDF5/`DataIter` rewrite was not needed. **The model is unchanged to four
-  decimals:** PR-AUC 0.5949, best F1 0.6126, recall@1% 78.0%, all correctness gates pass.
+  decimals:** PR-AUC 0.5949, best F1 0.6126, recall@1% 78.3%, all correctness gates pass.
   The same filter let `score.py` drop the duplicate read added a session earlier.
 - **P1 was comparing each build against its own predecessor.** The gate reads
   `registry.load(model_id)`, but this run's record is written at the *end* of validation,
@@ -491,18 +491,18 @@ HI-Small). Records: `runs/G1_zero_shot_LI-Small-2M.json`, `runs/G2_LI2M_retrain.
 
 | | HI-Small (shipped) | LI-Small prefix |
 |---|---:|---:|
-| Recall @1% | 78.0% | **13.3%** (19 of 143) |
+| Recall @1% | 78.3% | **13.3%** (19 of 143) |
 | PR-AUC | 0.595 | 0.0049 (14× base rate) |
 | ROC-AUC | 0.982 | 0.904 |
 | Alert rate at shipped threshold | 1.0% | **1.34% — transfers** |
 | Test positives on ACH | 92% | **55%** |
-| Recall @1% on ACH | 84.6% | 22% |
+| Recall @1% on ACH | 84.9% | 22% |
 | Recall @1% off ACH | 0–4% | 0–7% |
 
 The threshold transfers and the model still ranks well above chance, but recall collapses.
 The largest visible cause is the rail mix: **45% of this corpus's test laundering is off
 ACH**, where the model was already known to be blind (LIM-01), against 8% on HI-Small. That
-is not the whole story — ACH recall falls from 84.6% to 22% as well — so the model's
+is not the whole story — ACH recall falls from 84.9% to 22% as well — so the model's
 HI-Small strength does not carry over even on the rail it was built for.
 
 **G2 — the recipe retrained on the prefix. Invalid, not failed.** PR-AUC 0.0035 ± 0.0017,

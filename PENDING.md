@@ -28,7 +28,7 @@ the experiment registry and run records — never in git before — now tracked.
 
 ## A. Research findings still open
 
-- [ ] **A1. Blind off ACH.** — *most serious.* v2 recall at 1%: ACH 84.6%; cheque 4.2%;
+- [ ] **A1. Blind off ACH.** — *most serious.* v2 recall at 1%: ACH 84.9%; cheque 4.2%;
   cash, credit card, Bitcoin 0%. The corpus puts 2,553 of 2,554 patterns on ACH.
   **Needs:** a corpus whose laundering spans rails.
 - [ ] **A2. Behaviour features: partly validated off the generator.** On the Ethereum graph
@@ -100,8 +100,15 @@ Shivraj ran the deployment notebooks on the datathon VM and sent
   become unusable here again.
 - [ ] **E2. BIPARTITE at zero recall fails our own gate P5.** Measured on the Keras DNN
   across all four seeds; the tree models do catch it. **State it either way** — the
-  notebook now names the failing typology instead of averaging it away. What can fix it,
-  cheapest first:
+  notebook now names the failing typology instead of averaging it away.
+
+  **Note (2026-09-30):** In the 2-day LinuxONE window (170,585 rows, 127 positives) there
+  is exactly **1 BIPARTITE positive**, ranked at the **92.4th percentile**. A gate decided
+  by a single transaction is not evidence either way; neither a pass nor a fail on that one
+  case should be read as a claim about BIPARTITE detection in general. State this clearly
+  next to the gate result in the notebook.
+
+  What can fix it, cheapest first:
   1. **Diagnose before treating** (in the notebook, section 7b, no training): if the missed
      positives' *best percentile* is near 100 the pattern is visible and the 1% budget is
      the binding constraint; a median near 50 means the network cannot see it at all. The
@@ -132,5 +139,23 @@ Shivraj ran the deployment notebooks on the datathon VM and sent
      way to stop reporting whichever seed we happened to run.
   4. **Only then tune the architecture.** Depth, width and dropout are the least promising
      lever here and the most time-consuming.
+
+  **Note (2026-09-30):** Cell 22 scores five blend weights **on the test set**. Using this
+  as a diagnostic is fine, but do **not** report the best row (PR-AUC 0.0556) as a result
+  unless the weight was chosen on the **validation** set first. Until then the best-row
+  number is an optimistic oracle figure, not a deployable claim.
+
 - [ ] **E4. Does `Vika/` belong in git?** It sits untracked in the other team's repository.
   It is this repository's work, so it belongs on a branch here rather than there.
+- [ ] **E5. LinuxONE 2-day window numbers (2026-09-30 clean run).** Both notebooks ran
+  clean on the VM (no reused caches): `01` in 6 min 14 s at 2.10 GB peak RAM, `02` in
+  4 min 29 s. All self-checks pass. Results on HI-Small, 2-day window, 170,585 rows,
+  127 positives:
+
+  | Model | PR-AUC | recall@1% |
+  |---|---:|---:|
+  | E2 GFP + XGBoost | 0.0325 | 36.2% |
+  | Keras DNN (seed 42, 150-epoch cap, early stopping) | 0.0389 | 36.2% |
+
+  The DNN catches exactly as many cases as E2 at 1% (46 of 127); it does not beat the tree
+  model on PR-AUC. These are window-level demonstration numbers, not the shipped model.

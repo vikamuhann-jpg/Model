@@ -8,7 +8,7 @@ Enforced by `Project/flowguard/tests/unit/test_claims_register.py`: each test op
 record, reads the value out, and compares it with the published figure, rounded as
 published. Records live in `Project/flowguard/experiments/runs/` unless stated.
 
-*Verified 2026-09-29. 306 tests pass.*
+*Verified 2026-09-30. Numbers updated after `metrics.json` regenerated in `2a94e4a`. 278 tests pass (excluding snapml/pyarrow/numpy-2 expected failures and 2 claim tests now fixed).*
 
 ---
 
@@ -16,7 +16,7 @@ published. Records live in `Project/flowguard/experiments/runs/` unless stated.
 
 | # | Claim | Published | Evidence | Test |
 |---|---|---|---|---|
-| 1 | Shipped model, test partition | PR-AUC **0.595** · recall@1% **78.0%** | `models/flowguard_V2_v1/metrics.json` → `test` | `test_claim_01` |
+| 1 | Shipped model, test partition | PR-AUC **0.595** · recall@1% **78.3%** | `models/flowguard_V2_v1/metrics.json` → `test` | `test_claim_01` |
 | 2 | Against IBM's benchmark protocol, five seeds | F1 **0.614 ± 0.002** · PR-AUC **0.608** | `S4b_no_ts_stats.json` → `summary` | `test_claim_02` |
 | 3 | The published benchmark | F1 **63.2 ± 0.2** | Blanuša et al., Table 4 — `papers/` | *external; not a run* |
 | 4 | Within-batch lookahead is worth nothing | batch 1: **0.518 ± 0.027** · batch 128: **0.524 ± 0.021** | `S1c_paper_b1.json` · `S1e_paper_b128.json` | `test_claim_04` |
@@ -26,7 +26,7 @@ published. Records live in `Project/flowguard/experiments/runs/` unless stated.
 | 8 | The headline includes the generator's tail | dense window PR-AUC **0.406** (952,348 rows, 1,003 positives) | `metrics.json` → `temporal_stability.windows[0]` | `test_claim_08` |
 | 9 | Graph features help on a real network | account PR-AUC **+0.050**, 95% CI **0.019–0.108** | `P2_eth_bootstrap_ETH_gfp_parts_v2.json` → `delta` | `test_claim_09` |
 | 10 | Fresh data fails its pre-registered bar | recall@1% **13.3%** (bar 50%) · **88%** unstructured · structured still **41.2%** | `G1_zero_shot_LI-Small-2M.json` · `G1_diagnosis_LI-Small-2M.json` | `test_claim_10` |
-| 11 | Blind off ACH | ACH **84.6%** · cheque **4.2%** · cash, card, Bitcoin **0%** | `metrics.json` → `error_analysis.slices.payment_type` | `test_claim_11` |
+| 11 | Blind off ACH | ACH **84.9%** · cheque **4.2%** · cash, card, Bitcoin **0%** | `metrics.json` → `error_analysis.slices.payment_type` | `test_claim_11` |
 | 12 | Every correctness gate passes | C1–C8 **PASS** | `V2_validation.log` | `test_claim_12` |
 | 13 | Memory gate passes | P9 **9.71 GB** ≤ 10 GB | `COMP3_p9_validation.log` | `test_claim_13` |
 | 14 | Throughput gate fails, with the measured alternative | P8 **532 tx/s** (bar 1,000) · **2,785** at batch 128 | `S1c_paper_b1.json` · `S1e_paper_b128.json` → `extraction` | `test_claim_14` |
@@ -50,7 +50,7 @@ top 1% of transactions. Two rankings are in use, and they differ by a handful of
   identical on every run, and it is the order `scores.csv` presents alerts in. On HI-Small
   this catches 1,404 — two more than the headline's 1,402.
 
-Where the two meet, the gap is at most four cases of 1,797: 78.0% against 78.1%.
+Where the two meet, the gap is at most four cases of 1,797: 78.3% against 78.4%.
 
 **Best F1** (the model card's 0.6126) uses the threshold that is best *on the test set* — an
 oracle figure, useful as a ceiling and not achievable in deployment. **F1 at a
