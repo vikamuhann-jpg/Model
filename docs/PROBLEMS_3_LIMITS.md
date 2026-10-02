@@ -26,14 +26,14 @@ a judge cannot obtain from the published benchmark at all.
 ---
 
 ## LIM-01 · Blind to every payment rail except ACH
-**The limit.** v2's recall at a 1% alert budget is **84.6% on ACH**, **4.2% on cheque**, and
+**The limit.** v2's recall at a 1% alert budget is **84.9% on ACH**, **4.2% on cheque**, and
 **0% on cash, credit card and Bitcoin**. The cause is the corpus, not the model:
 **2,553 of 2,554 injected laundering patterns are on ACH**, and only 144 of 1,797 test
 positives are on anything else.
 
 **It is not a HI-Small quirk (measured 2026-09-29).** On a 2M-row LI-Small prefix, 45% of
 test laundering is off ACH against HI-Small's 8%, and the shipped model's recall at 1% falls
-from 78.0% to **13.3%**. On a corpus where laundering is spread across rails, this limit
+from 78.3% to **13.3%**. On a corpus where laundering is spread across rails, this limit
 is the dominant failure, not a footnote.
 
 **Why no fix exists here.** A supervised model cannot learn a rail it has almost never seen

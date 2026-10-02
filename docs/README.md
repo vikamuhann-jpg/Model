@@ -30,6 +30,7 @@ auditable.
 | [014](ADR-014-cascade-cannot-prefilter.md) | A cheap tier cannot pre-filter | accepted — figures pre-ADR-015 |
 | [015](ADR-015-gfp-double-insertion.md) | **Every edge was inserted twice; fixed** — lists every affected result | accepted |
 | [016](ADR-016-tree-range-at-scoring.md) | Score with every tree, explicitly | accepted |
+| [017](ADR-017-dropped-models.md) | Logistic Regression and Isolation Forest dropped | accepted |
 
 ## Findings and plans
 
