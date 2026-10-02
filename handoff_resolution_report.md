@@ -50,6 +50,8 @@ Verified: the fixed notebook cell now reads exactly this pattern.
 | [`PENDING.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/PENDING.md) | A1 ACH recall; BIPARTITE note; blend-table note; E5 LinuxONE clean-run results added |
 | [`WINNING_PLAN.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/WINNING_PLAN.md) | Lines 460, 494, 499, 505 |
 | [`docs/PROBLEMS_3_LIMITS.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/docs/PROBLEMS_3_LIMITS.md) | LIM-01 section |
+| `docs/STATUS.md`, `docs/PROBLEMS_1_FIXABLE.md`, `docs/flowguard_complete_directory_report.md` | Replaced 78.0% and 84.6% occurrences |
+| `Project/flowguard/tests/unit/test_claims_register.py` | Lines 52, 120, 154 updated to match new metrics |
 
 **Verification:** `Select-String` on all 5 files confirms zero occurrences of `78.0%` or `84.6%` remain.
 
