@@ -204,7 +204,7 @@ a `QuantileDMatrix`. The peak was the full-corpus graph-feature frame (~3.9 GB) 
 the three matrices built from it (~4.2 GB), and no partition ever needs another's rows, so
 `read_varying_chunks` gained a `rows` filter and `build_inputs` reads per partition. The
 HDF5/`DataIter` rewrite was not needed and is still available if the 6 GB VM becomes the
-target. The model is identical to four decimals (PR-AUC 0.5949, F1 0.6126, recall@1% 78.3%),
+target. The model is identical to four decimals (PR-AUC 0.5949, F1 0.6126, recall@1% 78.0%),
 all correctness gates still pass, and the same change let `score.py` drop a duplicate
 filtered read. Record: `runs/COMP3_p9_validation.log`, package `models/flowguard_P9_v1/`.
 
