@@ -55,6 +55,7 @@ F1's seed spread fell from 0.036 to 0.002.
 |---|---|
 | PR-AUC | **0.595** (5 seeds: mean 0.597, sd 0.0024) · lift 336× |
 | Best F1 · ROC-AUC | **0.613** · 0.982 |
+| Recall / precision at 1% budget | **78.3%** / 13.8% |
 | Recall / precision at 1% budget | **78.3%** / 13.9% |
 | Recall / precision at 0.1% budget | 46.6% / **82.5%** |
 | Dense window only (first 952k test rows, excludes the laundering-saturated tail) | PR-AUC **0.406** |
@@ -276,7 +277,7 @@ Eight of eight **correctness** gates pass, including the conditional C8. Two
   full-corpus graph-feature frame (~3.9 GB) held beside the three matrices built from it
   (~4.2 GB). Each partition only ever needs its own rows, so they are now read straight
   from the part files. The model is unchanged — PR-AUC 0.5949, best F1 0.6126, recall@1%
-  78.0%, identical to four decimals. Record: `runs/COMP3_p9_validation.log`.
+  78.3%, identical to four decimals. Record: `runs/COMP3_p9_validation.log`.
 * **P3 — a Tier B family beats E2 by 2σ.** −0.0326. **FAIL**, recorded not hidden.
 * **P4 — recall ≥ 45% @1%.** 66.2%, but ACH-only, so reported as a conditional pass
   against a target that was itself pre-registered on contaminated numbers (ADR-010).
