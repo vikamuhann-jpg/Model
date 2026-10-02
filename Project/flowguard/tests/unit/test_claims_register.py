@@ -49,7 +49,7 @@ def shown(value: float, places: int) -> float:
 def test_claim_01_shipped_model():
     test = metrics()["test"]
     assert shown(test["pr_auc"], 3) == 0.595
-    assert shown(at_budget(test)["recall"] * 100, 1) == 78.0
+    assert shown(at_budget(test)["recall"] * 100, 1) == 78.3
 
 
 def test_claim_02_benchmark_protocol_five_seeds():
@@ -117,7 +117,7 @@ def test_claim_10_fresh_data_fails_its_bar():
 
 def test_claim_11_blind_off_ach():
     rails = metrics()["error_analysis"]["slices"]["payment_type"]
-    assert shown(rails["ACH"]["recall"] * 100, 1) == 84.6
+    assert shown(rails["ACH"]["recall"] * 100, 1) == 84.9
     assert shown(rails["Cheque"]["recall"] * 100, 1) == 4.2
     for rail in ("Cash", "Credit Card", "Bitcoin"):
         assert rails[rail]["recall"] == 0.0, rail
@@ -151,7 +151,7 @@ def test_claim_16_scoring_uses_every_tree_deliberately():
 # ------------------------------------------------ the documents say the same
 
 @pytest.mark.parametrize("text", [
-    "0.595", "78.0%", "0.614 ± 0.002", "63.2", "0.249",
+    "0.595", "78.3%", "0.614 ± 0.002", "63.2", "0.249",
     "95.3%", "27.9%", "13.3%", "0.050", "0.019",
 ])
 def test_the_readme_states_the_registered_numbers(text):

@@ -174,9 +174,9 @@ grow into it.
 
 **Result, on a 2M-row chronological prefix** (the full run was abandoned; see
 `WINNING_PLAN.md`, 2026-09-29). **G1 FAILS:** recall @1% **13.3%** against the 50% bar and
-HI-Small's 78.0%. The threshold does transfer (alert rate 1.34%), and ROC-AUC stays 0.904,
+HI-Small's 78.3%. The threshold does transfer (alert rate 1.34%), and ROC-AUC stays 0.904,
 so the model still ranks above chance — but 45% of this corpus's test laundering is off
-ACH, where the model is blind (LIM-01), and even ACH recall falls from 84.6% to 22%.
+ACH, where the model is blind (LIM-01), and even ACH recall falls from 84.9% to 22%.
 **G2 is invalid rather than failed:** early stopping fired at trees 1, 2 and 37, because the
 prefix held 221 training positives against HI-Small's 2,299. **Still open:** whether a
 retrain on the *full* LI-Small (~2,100 training positives) recovers performance — one
@@ -204,7 +204,7 @@ a `QuantileDMatrix`. The peak was the full-corpus graph-feature frame (~3.9 GB) 
 the three matrices built from it (~4.2 GB), and no partition ever needs another's rows, so
 `read_varying_chunks` gained a `rows` filter and `build_inputs` reads per partition. The
 HDF5/`DataIter` rewrite was not needed and is still available if the 6 GB VM becomes the
-target. The model is identical to four decimals (PR-AUC 0.5949, F1 0.6126, recall@1% 78.0%),
+target. The model is identical to four decimals (PR-AUC 0.5949, F1 0.6126, recall@1% 78.3%),
 all correctness gates still pass, and the same change let `score.py` drop a duplicate
 filtered read. Record: `runs/COMP3_p9_validation.log`, package `models/flowguard_P9_v1/`.
 

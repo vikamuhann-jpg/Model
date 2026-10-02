@@ -14,11 +14,11 @@ raw run records are in the data folder under `runs/`.
 
 > **Read this first — the headline does not transfer.** Applied unchanged to a 2M-row
 > chronological prefix of LI-Small, a corpus no decision in this project touched, the
-> shipped model reaches **13.3% recall at a 1% alert budget** against 78.0% on HI-Small.
+> shipped model reaches **13.3% recall at a 1% alert budget** against 78.3% on HI-Small.
 > The pre-registered bar was 50%; it fails. The alert threshold does transfer (1.34%
 > alert rate) and ROC-AUC stays 0.904, so the model still ranks above chance, but 45% of
 > that corpus's laundering sits off ACH, where this model is blind, and ACH recall itself
-> falls from 84.6% to 22%. A retrain on the prefix was **invalid** rather than failed: 221
+> falls from 84.9% to 22%. A retrain on the prefix was **invalid** rather than failed: 221
 > training positives, and early stopping at 1–37 trees. Whether a retrain on the full
 > LI-Small recovers is still open. Detail: `WINNING_PLAN.md`, 2026-09-29.
 >
@@ -55,16 +55,16 @@ F1's seed spread fell from 0.036 to 0.002.
 |---|---|
 | PR-AUC | **0.595** (5 seeds: mean 0.597, sd 0.0024) · lift 336× |
 | Best F1 · ROC-AUC | **0.613** · 0.982 |
-| Recall / precision at 1% budget | **78.0%** / 13.8% |
+| Recall / precision at 1% budget | **78.3%** / 13.8% |
 | Recall / precision at 0.1% budget | 46.6% / **82.5%** |
 | Dense window only (first 952k test rows, excludes the laundering-saturated tail) | PR-AUC **0.406** |
 | Correctness gates C1–C8 | **all pass** (shuffled-label PR-AUC 0.0021 vs base rate 0.0018) |
-| Performance gates | P1, P2, P4 (78.0% ≥ 45%), P5, P6, P7, **P9 (9.71 GB, fixed 2026-09-28)** pass · **P8 (532 tx/s) fails** · P3 not run |
+| Performance gates | P1, P2, P4 (78.3% ≥ 45%), P5, P6, P7, **P9 (9.71 GB, fixed 2026-09-28)** pass · **P8 (532 tx/s) fails** · P3 not run |
 | Attribution (SHAP) | graph 49% · behaviour 43% · row-local 8%; top feature 31.0% (`bh_pair_n_prior`, first-time counterparty) |
 
 **Recall by typology at 1%:** fan-out 97.9%, scatter-gather 97.6%, gather-scatter 95.5%,
 cycle 95.4%, fan-in 93.4%, bipartite 91.9%, random 91.9%, stack 89.3%; unannotated 28.8%.
-**By rail:** ACH 84.6%; cheque 4.2%; cash, credit card and Bitcoin 0% (144 of 1,797 test
+**By rail:** ACH 84.9%; cheque 4.2%; cash, credit card and Bitcoin 0% (144 of 1,797 test
 positives are off ACH). **By amount:** 4% below $139, 34% for $139–599, 60% for $599–2,621,
 ~86% above. **Hard negatives:** false-positive rate 1.79% vs 1.18% ordinary benign (1.5×;
 A4: 2.1×).
@@ -276,7 +276,7 @@ Eight of eight **correctness** gates pass, including the conditional C8. Two
   full-corpus graph-feature frame (~3.9 GB) held beside the three matrices built from it
   (~4.2 GB). Each partition only ever needs its own rows, so they are now read straight
   from the part files. The model is unchanged — PR-AUC 0.5949, best F1 0.6126, recall@1%
-  78.0%, identical to four decimals. Record: `runs/COMP3_p9_validation.log`.
+  78.3%, identical to four decimals. Record: `runs/COMP3_p9_validation.log`.
 * **P3 — a Tier B family beats E2 by 2σ.** −0.0326. **FAIL**, recorded not hidden.
 * **P4 — recall ≥ 45% @1%.** 66.2%, but ACH-only, so reported as a conditional pass
   against a target that was itself pre-registered on contaminated numbers (ADR-010).

@@ -282,11 +282,11 @@ tests/
 |---|---|
 | **PR-AUC** | **0.595** (lift 336×) |
 | **F1 Score** | **0.614 ± 0.002** |
-| **Recall @ 1% budget** | **78.0%** |
+| **Recall @ 1% budget** | **78.3%** |
 | **ROC-AUC** | 0.982 |
 | **Structured laundering recall** | 95.3% (1276/1339) |
 | **Unstructured laundering recall** | 27.9% (128/458) |
-| **ACH recall** | 84.6% |
+| **ACH recall** | 84.9% |
 | **Non-ACH recall** | ~1% (fundamental limitation) |
 | **Peak RAM** | 9.71 GB (P9 PASS after fix) |
 | **Throughput** | 532 tx/s (P8 FAIL vs 1000 target) |
