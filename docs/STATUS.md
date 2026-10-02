@@ -56,6 +56,7 @@ F1's seed spread fell from 0.036 to 0.002.
 | PR-AUC | **0.595** (5 seeds: mean 0.597, sd 0.0024) · lift 336× |
 | Best F1 · ROC-AUC | **0.613** · 0.982 |
 | Recall / precision at 1% budget | **78.3%** / 13.8% |
+| Recall / precision at 1% budget | **78.3%** / 13.9% |
 | Recall / precision at 0.1% budget | 46.6% / **82.5%** |
 | Dense window only (first 952k test rows, excludes the laundering-saturated tail) | PR-AUC **0.406** |
 | Correctness gates C1–C8 | **all pass** (shuffled-label PR-AUC 0.0021 vs base rate 0.0018) |
