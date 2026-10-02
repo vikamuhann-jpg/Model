@@ -50,8 +50,9 @@ Verified: the fixed notebook cell now reads exactly this pattern.
 | [`PENDING.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/PENDING.md) | A1 ACH recall; BIPARTITE note; blend-table note; E5 LinuxONE clean-run results added |
 | [`WINNING_PLAN.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/WINNING_PLAN.md) | Lines 460, 494, 499, 505 |
 | [`docs/PROBLEMS_3_LIMITS.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/docs/PROBLEMS_3_LIMITS.md) | LIM-01 section |
-| `docs/STATUS.md`, `docs/PROBLEMS_1_FIXABLE.md`, `docs/flowguard_complete_directory_report.md` | Replaced occurrences of 78.0% and 84.6% with the corrected metrics |
-| `Project/flowguard/tests/unit/test_claims_register.py` | Line 52, 120, and 154 fixed to match updated metrics |
+| `docs/STATUS.md`, `docs/PROBLEMS_1_FIXABLE.md`, `docs/flowguard_complete_directory_report.md` | Replaced 78.0%/84.6% with corrected metrics — **except** lines that quote the historical `COMP3_p9_validation.log` run record (which recorded 0.7802 / 78.0%), those were **reverted back to 78.0%** after overcorrection |
+| `docs/STATUS.md:58` | Precision at 1% budget corrected 13.8% → **13.9%** (metrics.json gives 0.1385) |
+| `Project/flowguard/tests/unit/test_claims_register.py` | Lines 52, 120, and 154 fixed to match updated metrics |
 
 ---
 
@@ -102,7 +103,7 @@ Added [`PENDING.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/d
 |---|---|---|
 | **Decision D40** — Option A vs B for FlowGuard demo | Shivraj + Vika | Needs a decision meeting |
 | Re-upload FlowGuard to LinuxONE | Shivraj | VM access required |
-| Rotate IBM API key, put in `.env` | Vika | Credential rotation |
+| Rotate IBM API key, put in `.env` | **Shivraj** | IBM account belongs to our team, not Vika's |
 | Judge Q&A pack (directive §58) | Both | Requires writing |
 | Commit today's records (M45/M46, D39) | Shivraj | Git push from his machine |
-| Open PR from `feature/shivraj-system` into `main` | Shivraj | After Vika's branch is ready |
+| ~~Open PR from `winning-plan` into `main`~~ | ~~Vika~~ | **DONE** — `winning-plan` merged into `main` at `6c15b8b` (2026-10-02) |
