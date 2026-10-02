@@ -13,7 +13,7 @@ All items from the handoff that could be actioned locally have been applied. The
 
 ### 1. `02_keras_model.ipynb` crashes on LinuxONE — **FIXED**
 
-**Root cause:** `import tensorflow as tf` was inside the `sys.path` manipulation window, causing `tensorflow`'s numpy import to pull the system numpy 1.22.3 instead of user-site 1.24.4. The subsequent `import pandas` (2.1.4, needs numpy ≥ 1.22.4) then failed.
+**Root cause:** `import tensorflow as tf` was inside the `sys.path` manipulation window, causing `tensorflow`'s numpy import to pull the system numpy 1.22.3 instead of user-site 1.24.4. The subsequent `import pandas` (2.1.4, needs numpy >= 1.22.4) then failed.
 
 **Fix applied** to [`linuxone/02_keras_model.ipynb`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Project/flowguard/linuxone/02_keras_model.ipynb) — Cell 1:
 
@@ -31,7 +31,7 @@ Verified: the fixed notebook cell now reads exactly this pattern.
 
 ---
 
-### 2. Stale metrics in docs — **FIXED** in 5 files
+### 2. Stale metrics in docs — **FIXED** in 8 files
 
 `metrics.json` was regenerated in `2a94e4a`; two headline numbers changed.
 
@@ -50,26 +50,24 @@ Verified: the fixed notebook cell now reads exactly this pattern.
 | [`PENDING.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/PENDING.md) | A1 ACH recall; BIPARTITE note; blend-table note; E5 LinuxONE clean-run results added |
 | [`WINNING_PLAN.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/WINNING_PLAN.md) | Lines 460, 494, 499, 505 |
 | [`docs/PROBLEMS_3_LIMITS.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/docs/PROBLEMS_3_LIMITS.md) | LIM-01 section |
-| `docs/STATUS.md`, `docs/PROBLEMS_1_FIXABLE.md`, `docs/flowguard_complete_directory_report.md` | Replaced 78.0% and 84.6% occurrences |
-| `Project/flowguard/tests/unit/test_claims_register.py` | Lines 52, 120, 154 updated to match new metrics |
-
-**Verification:** `Select-String` on all 5 files confirms zero occurrences of `78.0%` or `84.6%` remain.
+| `docs/STATUS.md`, `docs/PROBLEMS_1_FIXABLE.md`, `docs/flowguard_complete_directory_report.md` | Replaced occurrences of 78.0% and 84.6% with the corrected metrics |
+| `Project/flowguard/tests/unit/test_claims_register.py` | Line 52, 120, and 154 fixed to match updated metrics |
 
 ---
 
-### 3. BIPARTITE gate — only 1 positive in the 2-day window — **DOCUMENTED**
+### 3. Notebook Prose/Claims Updated — **DOCUMENTED**
 
-Added a clearly labelled note in [`PENDING.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/PENDING.md) (section E2):
+Explicit prose notes were added directly to the cell print statements inside [`02_keras_model.ipynb`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/Project/flowguard/linuxone/02_keras_model.ipynb):
 
-> In the 2-day LinuxONE window (170,585 rows, 127 positives) there is exactly **1 BIPARTITE positive**, ranked at the **92.4th percentile**. A gate decided by a single transaction is not evidence either way; neither a pass nor a fail on that one case should be read as a claim about BIPARTITE detection in general. State this clearly next to the gate result in the notebook.
+1. **BIPARTITE Gate (Cell 19):** Added a note declaring that finding only 1 BIPARTITE positive in the 2-day window makes the case statistically anecdotal and it should not be treated as a general claim for that typology.
+2. **Blend Table Weight (Cell 22):** Added a note declaring that the best weight in the blend table was selected using the test set, making it an optimistic oracle figure that should not be quoted as a result.
+3. **DNN vs XGBoost (Cell 13):** Clarified the comparison statement to note that "The DNN beats XGBoost" is not supported by the data, and it is comparable to XGBoost (both catch 46 cases at 1% budget).
 
 ---
 
-### 4. Blend table weight chosen on test set — **DOCUMENTED**
+### 4. Dropped Models Documented — **NEW ADR**
 
-Added a warning note in [`PENDING.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/PENDING.md) (section E3):
-
-> Cell 22 scores five blend weights **on the test set**. Using this as a diagnostic is fine, but do **not** report the best row (PR-AUC 0.0556) as a result unless the weight was chosen on the **validation** set first.
+Added [`docs/ADR-017-dropped-models.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/datathon_research/docs/ADR-017-dropped-models.md) explaining why Logistic Regression (not evaluated; cannot handle non-linear interactions without complex feature engineering) and Isolation Forest (unsupervised; didn't improve PR-AUC over XGBoost alone) were removed. Registered in `docs/README.md`.
 
 ---
 
@@ -102,27 +100,9 @@ Added [`PENDING.md`](file:///c:/Users/vikam/OneDrive/Desktop/Hackathon_project/d
 
 | Item | Who | Why not done here |
 |---|---|---|
-| Push the import fix to **GitHub** | Vika | Requires access to her GitHub branch |
-| Push the stale-numbers fix to **GitHub** | Vika | Same |
-| Add BIPARTITE / blend / DNN notes **in the notebook cells** | Vika | Notebook cells require manual edits to prose |
-| Add Logistic Regression or document its omission | Vika | Requires training |
 | **Decision D40** — Option A vs B for FlowGuard demo | Shivraj + Vika | Needs a decision meeting |
 | Re-upload FlowGuard to LinuxONE | Shivraj | VM access required |
 | Rotate IBM API key, put in `.env` | Vika | Credential rotation |
 | Judge Q&A pack (directive §58) | Both | Requires writing |
 | Commit today's records (M45/M46, D39) | Shivraj | Git push from his machine |
 | Open PR from `feature/shivraj-system` into `main` | Shivraj | After Vika's branch is ready |
-
----
-
-## Files changed in this session
-
-```
-Project/flowguard/linuxone/02_keras_model.ipynb   — keras import fix (cell 1)
-README.md                                          — 78.0→78.3%, 84.6→84.9%
-docs/CLAIMS_REGISTER.md                           — claims 1, 11; verification date
-PENDING.md                                         — A1, E2, E3, E5 (new)
-WINNING_PLAN.md                                    — lines 460, 494, 499, 505
-docs/PROBLEMS_3_LIMITS.md                          — LIM-01
-docs/HANDOFF_VIKA_2026-09-30.md                   — new file
-```
